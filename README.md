@@ -49,10 +49,9 @@ The core domain of phase one is expense tracking. I envision the ability to manu
 
 Run `mix setup` from the project root folder to download the Elixir dependencies and various asset tooling.
 
-To run the app as a **standard Phoenix application** with `mix phx.server` or inside IEx with `iex -S mix phx.server`. Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+To run the app as a **standard Phoenix application** use `mix phx.server` or inside IEx with `iex -S mix phx.server`. Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 To run the app as a **macOS application bundle** use `cargo tauri dev` from the project root folder.
-```
 
 ## Release builds 
 
