@@ -4,7 +4,7 @@ A place to record generator or other prompts used to create notable files.
 
 ## May 24, 2026
 
-Before running this update Rust (I had it previously installed) with:
+Update Rust (I had it previously installed) with:
 
 ```
 rustup update
