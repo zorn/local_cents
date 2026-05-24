@@ -40,6 +40,10 @@ defmodule LocalCents.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # To help with Tauri integration
+      {:elixirkit, github: "livebook-dev/elixirkit"},
+
+      # Unorganized
       {:phoenix, "~> 1.8.7"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
