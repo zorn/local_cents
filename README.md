@@ -19,14 +19,20 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 
 ## Tauri
 
+### Developer Build
+
+```
+cargo tauri dev
+```
+
 ### Release Build
 
 ```
 cargo tauri build
 ```
 
-Then you can run this to launch the production bundle but connect to log files.
+Then you can run this to launch the production bundle with logs going to the console. (Note: This is using Fish-specific syntax if you use a different shell you might need to edit.)
 
-```
-open -W --stderr `tty` --stdout `tty` tauri/target/release/bundle/macos/local-cents.app
+```fish
+open -W --stderr (tty) --stdout (tty) tauri/target/release/bundle/macos/local-cents.app
 ```
