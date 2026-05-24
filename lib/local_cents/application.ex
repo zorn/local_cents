@@ -22,7 +22,10 @@ defmodule LocalCents.Application do
       # Start to serve requests, typically the last entry
       LocalCentsWeb.Endpoint,
 
-      # See <https://hexdocs.pm/elixirkit/tauri.html#phoenix-tauri>
+      # If `ELIXIRKIT_PUBSUB` env var is set, which we will from our Tauri app,
+      # we connect to PubSub and send a ready message. Otherwise, we start
+      # `ElixirKit.PubSub` with connect: `:ignore` which does nothing -- this
+      # way we can develop and test the Phoenix side in isolation.
       {Task,
        fn ->
          if pubsub do
