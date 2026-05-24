@@ -3,7 +3,7 @@ name = "local-cents"
 version = "0.1.0"
 description = "A local-first expense tracking app."
 authors = ["Mike Zornek"]
-edition = "2026"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
