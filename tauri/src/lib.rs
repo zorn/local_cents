@@ -20,8 +20,7 @@ pub fn run() {
             let app_handle = app.handle().clone();
 
             tauri::async_runtime::spawn_blocking(move || {
-                let rel_dir = app_handle.path().resource_dir().unwrap().join("rel");
-                let mut command = elixir_command(&rel_dir);
+                let mut command = elixir_command(&app_handle);
 
                 command.env("ELIXIRKIT_PUBSUB", pubsub.url());
                 let status = command.status().expect("failed to start Elixir");
@@ -45,13 +44,18 @@ fn create_window(app_handle: &tauri::AppHandle) {
         .unwrap();
 }
 
-fn elixir_command(rel_dir: &std::path::Path) -> std::process::Command {
+fn elixir_command(app_handle: &tauri::AppHandle) -> std::process::Command {
     if cfg!(debug_assertions) {
         let mut command = elixirkit::mix("phx.server", &[]);
         command.current_dir("..");
         command
     } else {
-        let mut command = elixirkit::release(rel_dir, "local_cents");
+        let rel_dir = app_handle
+            .path()
+            .resource_dir()
+            .expect("Tauri could not resolve the resource directory")
+            .join("rel");
+        let mut command = elixirkit::release(&rel_dir, "local_cents");
         command.env("PHX_SERVER", "true");
         command.env("PHX_HOST", "127.0.0.1");
         // FIXME: We may not want to use port 4000 in a production build since
