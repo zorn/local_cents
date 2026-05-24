@@ -1,4 +1,4 @@
-This is a web application written using the Phoenix web framework.
+LocalCents is an open-source expense-tracking application built with Phoenix LiveView and Tauri.
 
 ## Project guidelines
 
@@ -8,7 +8,7 @@ This is a web application written using the Phoenix web framework.
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
-- The `MyAppWeb.Layouts` module is aliased in the `my_app_web.ex` file, so you can use it without needing to alias it again
+- The `LocalCentsWeb.Layouts` module is aliased in the `local_cents_web.ex` file, so you can use it without needing to alias it again
 - Anytime you run into errors with no `current_scope` assign:
   - You failed to follow the Authenticated Routes guidelines, or you failed to pass `current_scope` to `<Layouts.app>`
   - **Always** fix the `current_scope` error by moving your routes to the proper `live_session` and ensure you pass `current_scope` as needed
@@ -26,7 +26,7 @@ custom classes must fully style the input
       @import "tailwindcss" source(none);
       @source "../css";
       @source "../js";
-      @source "../../lib/my_app_web";
+      @source "../../lib/local_cents_web";
 
 - **Always use and maintain this import syntax** in the app.css file for projects generated with `phx.new`
 - **Never** use `@apply` when writing raw css
@@ -43,6 +43,59 @@ custom classes must fully style the input
 - Ensure **clean typography, spacing, and layout balance** for a refined, premium look
 - Focus on **delightful details** like hover effects, loading states, and smooth page transitions
 
+
+## Tauri and Rust
+
+LocalCents uses [Tauri v2](https://tauri.app/) to package the Phoenix LiveView app as a cross-platform desktop application. Tauri acts as a thin native shell: it spawns the Elixir/Phoenix server as a child process and opens a WebView window pointed at `http://127.0.0.1:4000`.
+
+### Directory layout
+
+All Rust/Tauri code lives under `tauri/`:
+
+| Path | Purpose |
+|---|---|
+| `tauri/src/lib.rs` | Main Tauri setup — spawns Elixir, subscribes to PubSub, creates the window |
+| `tauri/src/main.rs` | Binary entry point — calls `local_cents_lib::run()` |
+| `tauri/Cargo.toml` | Rust crate manifest (`local-cents` package / `local_cents_lib` lib) |
+| `tauri/tauri.conf.json` | Tauri configuration (app identity, bundle targets, before-build command) |
+
+### How it works
+
+1. Rust creates an `elixirkit::PubSub` listener on a random TCP port.
+2. Rust spawns the Elixir process (see dev vs. release below), passing the PubSub URL via the `ELIXIRKIT_PUBSUB` environment variable.
+3. Once Phoenix is ready, Elixir sends `"ready"` on the `"messages"` PubSub channel.
+4. Rust responds by calling `create_window()`, which opens a `WebviewWindowBuilder` pointed at `http://127.0.0.1:4000`.
+
+The UI is entirely Phoenix LiveView — Tauri contributes no UI of its own beyond the native window chrome.
+
+### ElixirKit
+
+`elixirkit` is a local Rust library at `deps/elixirkit/elixirkit_rs`. It provides two things:
+
+- **`PubSub`** — a TCP-based pub/sub bridge. Rust listens; Elixir connects and sends messages. This is the only IPC channel between Rust and Elixir.
+- **Helper functions** — `elixirkit::mix(task, args)` builds a `mix` command, and `elixirkit::release(dir, name)` builds a command for running an Elixir release binary.
+
+Do **not** add a separate IPC mechanism (e.g., Tauri commands, custom TCP sockets) without a strong reason — the PubSub bridge is the intended extension point.
+
+### Dev vs. Release
+
+`elixir_command()` in `tauri/src/lib.rs` chooses the Elixir invocation based on build mode:
+
+- **Debug (`cargo tauri dev`)** — runs `mix phx.server` from the project root (one directory above `tauri/`). Phoenix hot-reloads normally.
+- **Release (`cargo tauri build`)** — runs the pre-built Elixir release from the app bundle's resource directory (`tauri/target/rel`). The before-build command in `tauri.conf.json` compiles assets and generates the release:
+  ```
+  MIX_ENV=prod mix do compile + assets.deploy + release --overwrite --path tauri/target/rel
+  ```
+  Environment variables injected for the release: `PHX_SERVER=true`, `PHX_HOST=127.0.0.1`, `PORT=4000`.
+
+### Rust guidelines
+
+- Run `cargo tauri dev` (not `cargo run`) to develop the desktop app — this also starts the Tauri dev server and asset watcher.
+- Run `cargo tauri build` to produce the release app bundle. Output lands in `tauri/target/release/bundle/`.
+- The Rust crate's lib name is `local_cents_lib` (note the `_lib` suffix — required to avoid a Windows linker conflict with the binary name).
+- Keep Rust logic minimal. Business logic belongs in Elixir; Rust is responsible only for native window management and process lifecycle.
+- Do **not** add Tauri commands (`#[tauri::command]`) for data work that can be done in Phoenix/LiveView.
+- The `SECRET_KEY_BASE` in `lib.rs` is a hardcoded placeholder suitable only for local desktop use — it is not a production web deployment.
 
 <!-- usage-rules-start -->
 
@@ -82,7 +135,7 @@ custom classes must fully style the input
 - Elixir's standard library has everything necessary for date and time manipulation. Familiarize yourself with the common `Time`, `Date`, `DateTime`, and `Calendar` interfaces by accessing their documentation as necessary. **Never** install additional dependencies unless asked or for date/time parsing (which you can use the `date_time_parser` package)
 - Don't use `String.to_atom/1` on user input (memory leak risk)
 - Predicate function names should not start with `is_` and should end in a question mark. Names like `is_thing` should be reserved for guards
-- Elixir's builtin OTP primitives like `DynamicSupervisor` and `Registry`, require names in the child spec, such as `{DynamicSupervisor, name: MyApp.MyDynamicSup}`, then you can use `DynamicSupervisor.start_child(MyApp.MyDynamicSup, child_spec)`
+- Elixir's builtin OTP primitives like `DynamicSupervisor` and `Registry`, require names in the child spec, such as `{DynamicSupervisor, name: LocalCents.MyDynamicSup}`, then you can use `DynamicSupervisor.start_child(LocalCents.MyDynamicSup, child_spec)`
 - Use `Task.async_stream(collection, callback, options)` for concurrent enumeration with back-pressure. The majority of times you will want to pass `timeout: :infinity` as option
 
 ## Mix guidelines
@@ -110,13 +163,13 @@ custom classes must fully style the input
 
 - You **never** need to create your own `alias` for route definitions! The `scope` provides the alias, ie:
 
-      scope "/admin", AppWeb.Admin do
+      scope "/admin", LocalCentsWeb.Admin do
         pipe_through :browser
 
         live "/users", UserLive, :index
       end
 
-  the UserLive route would point to the `AppWeb.Admin.UserLive` module
+  the UserLive route would point to the `LocalCentsWeb.Admin.UserLive` module
 
 - `Phoenix.View` no longer is needed or included with Phoenix, don't use it
 <!-- phoenix:phoenix-end -->
@@ -128,7 +181,7 @@ custom classes must fully style the input
 - **Always** use the imported `Phoenix.Component.form/1` and `Phoenix.Component.inputs_for/1` function to build forms. **Never** use `Phoenix.HTML.form_for` or `Phoenix.HTML.inputs_for` as they are outdated
 - When building forms **always** use the already imported `Phoenix.Component.to_form/2` (`assign(socket, form: to_form(...))` and `<.form for={@form} id="msg-form">`), then access those forms in the template via `@form[:field]`
 - **Always** add unique DOM IDs to key elements (like forms, buttons, etc) when writing templates, these IDs can later be used in tests (`<.form for={@form} id="product-form">`)
-- For "app wide" template imports, you can import/alias into the `my_app_web.ex`'s `html_helpers` block, so they will be available to all LiveViews, LiveComponent's, and all modules that do `use MyAppWeb, :html` (replace "my_app" by the actual app name)
+- For "app wide" template imports, you can import/alias into the `local_cents_web.ex`'s `html_helpers` block, so they will be available to all LiveViews, LiveComponent's, and all modules that do `use LocalCentsWeb, :html`
 
 - Elixir supports `if/else` but **does NOT support `if/else if` or `if/elsif`**. **Never use `else if` or `elseif` in Elixir**, **always** use `cond` or `case` for multiple conditionals.
 
@@ -205,7 +258,7 @@ custom classes must fully style the input
 
 - **Never** use the deprecated `live_redirect` and `live_patch` functions, instead **always** use the `<.link navigate={href}>` and  `<.link patch={href}>` in templates, and `push_navigate` and `push_patch` functions LiveViews
 - **Avoid LiveComponent's** unless you have a strong, specific need for them
-- LiveViews should be named like `AppWeb.WeatherLive`, with a `Live` suffix. When you go to add LiveView routes to the router, the default `:browser` scope is **already aliased** with the `AppWeb` module, so you can just do `live "/weather", WeatherLive`
+- LiveViews should be named like `LocalCentsWeb.WeatherLive`, with a `Live` suffix. When you go to add LiveView routes to the router, the default `:browser` scope is **already aliased** with the `LocalCentsWeb` module, so you can just do `live "/weather", WeatherLive`
 
 ### LiveView streams
 
@@ -393,14 +446,14 @@ You can also specify a name to nest the params:
 
 When using changesets, the underlying data, form params, and errors are retrieved from it. The `:as` option is automatically computed too. E.g. if you have a user schema:
 
-    defmodule MyApp.Users.User do
+    defmodule LocalCents.Users.User do
       use Ecto.Schema
       ...
     end
 
 And then you create a changeset that you pass to `to_form`:
 
-    %MyApp.Users.User{}
+    %LocalCents.Users.User{}
     |> Ecto.Changeset.change()
     |> to_form()
 
