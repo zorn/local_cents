@@ -41,3 +41,6 @@ local_cents-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Local Claude Code settings (personal overrides, not for sharing).
+.claude/settings.local.json
+
