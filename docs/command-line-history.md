@@ -26,10 +26,6 @@ info: downloading create-tauri-app
 ✔ Project name · local-cents
 ✔ Identifier · com.example.LocalCents
 ✔ Choose which language to use for your frontend · Rust - (cargo)
-✔ Choose your UI template · Vanilla](info: downloading create-tauri-app
-✔ Project name · local-cents
-✔ Identifier · com.example.LocalCents
-✔ Choose which language to use for your frontend · Rust - (cargo)
 ✔ Choose your UI template · Vanilla
 
 Template created! To get started run:
