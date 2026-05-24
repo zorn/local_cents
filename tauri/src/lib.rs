@@ -51,7 +51,7 @@ fn elixir_command(rel_dir: &std::path::Path) -> std::process::Command {
         command.current_dir("..");
         command
     } else {
-        let mut command = elixirkit::release(rel_dir, "local-cents");
+        let mut command = elixirkit::release(rel_dir, "local_cents");
         command.env("PHX_SERVER", "true");
         command.env("PHX_HOST", "127.0.0.1");
         // FIXME: We may not want to use port 4000 in a production build since
