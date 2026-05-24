@@ -16,3 +16,17 @@ Ready to run in production? Please [check our deployment guides](https://hexdocs
 * Docs: https://hexdocs.pm/phoenix
 * Forum: https://elixirforum.com/c/phoenix-forum
 * Source: https://github.com/phoenixframework/phoenix
+
+## Tauri
+
+### Release Build
+
+```
+cargo tauri build
+```
+
+Then you can run this to launch the production bundle but connect to log files.
+
+```
+open -W --stderr `tty` --stdout `tty` tauri/target/release/bundle/macos/local-cents.app
+```

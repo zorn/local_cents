@@ -7,14 +7,28 @@ defmodule LocalCents.Application do
 
   @impl true
   def start(_type, _args) do
+    pubsub = System.get_env("ELIXIRKIT_PUBSUB")
+
     children = [
       LocalCentsWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:local_cents, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: LocalCents.PubSub},
+
+      # See <https://hexdocs.pm/elixirkit/tauri.html#phoenix-tauri>
+      {ElixirKit.PubSub, connect: pubsub || :ignore, on_exit: fn -> System.stop() end},
+
       # Start a worker by calling: LocalCents.Worker.start_link(arg)
       # {LocalCents.Worker, arg},
       # Start to serve requests, typically the last entry
-      LocalCentsWeb.Endpoint
+      LocalCentsWeb.Endpoint,
+
+      # See <https://hexdocs.pm/elixirkit/tauri.html#phoenix-tauri>
+      {Task,
+       fn ->
+         if pubsub do
+           ElixirKit.PubSub.broadcast("messages", "ready")
+         end
+       end}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
