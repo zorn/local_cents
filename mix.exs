@@ -40,6 +40,9 @@ defmodule LocalCents.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # To allow calling Rust code from Elixir.
+      {:rustler, "~> 0.38.0"},
+
       # To help with Tauri integration
       {:elixirkit, github: "livebook-dev/elixirkit"},
 

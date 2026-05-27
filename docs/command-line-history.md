@@ -2,6 +2,24 @@
 
 A place to record generator or other prompts used to create notable files.
 
+## May 27, 2026
+
+Working through [this tutorial](https://fly.io/phoenix-files/elixir-and-rust-is-a-good-mix/) and ran `mix rustler.new`.
+
+```
+$ mix rustler.new
+This is the name of the Elixir module the NIF module will be registered to.
+Module name > LocalCents.ExAutomerge
+This is the name used for the generated Rust crate. The default is most likely fine.
+Library name (localcents_exautomerge) > ex_automerge
+Fetched latest rustler crate version: 0.38.0
+* creating native/ex_automerge/README.md
+* creating native/ex_automerge/Cargo.toml
+* creating native/ex_automerge/src/lib.rs
+* creating Cargo.toml
+Updating .gitignore file
+```
+
 ## May 24, 2026
 
 Update Rust (I had it previously installed) with:
