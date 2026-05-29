@@ -45,6 +45,42 @@ defmodule LocalCents.TrackingTest do
     end
   end
 
+  describe "amount integer boundaries" do
+    # Rust stores amount as i64. Rustler decodes Elixir integers to i64 when
+    # calling into the NIF — values outside i64 range raise ArgumentError.
+    # Elixir integers are arbitrary-precision, so the return direction is always safe.
+
+    @i64_max 9_223_372_036_854_775_807
+    @i64_min -9_223_372_036_854_775_808
+
+    test "i64::MAX amount round-trips correctly" do
+      book = Tracking.new_book()
+      book = Tracking.add_expense(book, %Expense{description: "Max", amount: @i64_max})
+      assert [%Expense{amount: @i64_max}] = Tracking.list_expenses(book)
+    end
+
+    test "i64::MIN amount round-trips correctly" do
+      book = Tracking.new_book()
+      book = Tracking.add_expense(book, %Expense{description: "Min", amount: @i64_min})
+      assert [%Expense{amount: @i64_min}] = Tracking.list_expenses(book)
+    end
+
+    test "negative amounts are accepted (no validation yet)" do
+      book = Tracking.new_book()
+      book = Tracking.add_expense(book, %Expense{description: "Refund", amount: -500})
+      assert [%Expense{amount: -500}] = Tracking.list_expenses(book)
+    end
+
+    test "amount exceeding i64::MAX raises ArgumentError" do
+      book = Tracking.new_book()
+      over_max = @i64_max + 1
+
+      assert_raise ArgumentError, fn ->
+        Tracking.add_expense(book, %Expense{description: "Over", amount: over_max})
+      end
+    end
+  end
+
   describe "merge/2" do
     test "merging two books preserves expenses from both" do
       starting_book = Tracking.new_book()
