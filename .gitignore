@@ -44,3 +44,9 @@ npm-debug.log
 # Local Claude Code settings (personal overrides, not for sharing).
 .claude/settings.local.json
 
+
+# Rust binary artifacts
+/target/
+
+# Compiled Rustler NIFs (rebuilt automatically by Rustler on demand)
+/priv/native/
