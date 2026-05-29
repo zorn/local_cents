@@ -47,3 +47,6 @@ npm-debug.log
 
 # Rust binary artifacts
 /target/
+
+# Compiled Rustler NIFs (rebuilt automatically by Rustler on demand)
+/priv/native/
