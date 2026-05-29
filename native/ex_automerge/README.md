@@ -1,4 +1,4 @@
-# NIF for LocalCents.ExAutomerge
+# NIF for LocalCents.Tracking.ExAutomerge
 
 ## To build the NIF module:
 
@@ -7,11 +7,14 @@
 ## To load the NIF:
 
 ```elixir
-defmodule LocalCents.ExAutomerge do
+defmodule LocalCents.Tracking.ExAutomerge do
   use Rustler, otp_app: :local_cents, crate: "ex_automerge"
 
-  # When your NIF is loaded, it will override this function.
-  def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
+  # When your NIF is loaded, it will override these functions.
+  def new_document, do: :erlang.nif_error(:nif_not_loaded)
+  def add_expense(_doc_bytes, _description, _amount), do: :erlang.nif_error(:nif_not_loaded)
+  def list_expenses(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def merge(_left_bytes, _right_bytes), do: :erlang.nif_error(:nif_not_loaded)
 end
 ```
 
