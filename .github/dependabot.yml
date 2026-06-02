@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "mix"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      elixir-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      rust-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "cargo"
+    directory: "/tauri"
+    schedule:
+      interval: "monthly"
+    groups:
+      tauri-dependencies:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
