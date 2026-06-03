@@ -47,6 +47,14 @@ The core domain of phase one is expense tracking. I envision the ability to manu
 
 ## How to launch the project for local development
 
+### Prerequisites
+
+This project uses [asdf](https://asdf-vm.com/) to manage Elixir and Erlang versions. A `.tool-versions` file is included in the repo root with the required versions. With asdf installed, run `asdf install` from the project root to install them.
+
+You will also need [Rust](https://www.rust-lang.org/tools/install) installed, as the project includes a Rust NIF for Automerge integration.
+
+### Setup
+
 Run `mix setup` from the project root folder to download the Elixir dependencies and various asset tooling.
 
 To run the app as a **standard Phoenix application** use `mix phx.server` or inside IEx with `iex -S mix phx.server`. Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.

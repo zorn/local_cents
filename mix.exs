@@ -26,8 +26,15 @@ defmodule LocalCents.MixProject do
   end
 
   def cli do
+    # Using the MIX_ENV of `:test` for the `precommit` task is required for
+    # running the tests. An unfortunate side effect is that tasks executed
+    # in-process (e.g. Sobelow) also run under `MIX_ENV=test`, which can
+    # produce different results than running `mix sobelow` directly in dev.
+    # Dialyzer is executed in a separate `MIX_ENV=dev` mix invocation below.
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [
+        precommit: :test
+      ]
     ]
   end
 
@@ -40,6 +47,16 @@ defmodule LocalCents.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # For test-driven development.
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+
+      # For code logic style and enforcement.
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+
+      # For security scans.
+      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
+
       # To allow calling Rust code from Elixir.
       {:rustler, "~> 0.38.0"},
 
@@ -89,7 +106,15 @@ defmodule LocalCents.MixProject do
         "esbuild local_cents --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --check-unused",
+        "format",
+        "credo --strict",
+        "cmd sh -c 'MIX_ENV=dev mix dialyzer'",
+        "sobelow --config",
+        "test"
+      ]
     ]
   end
 end

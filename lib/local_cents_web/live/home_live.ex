@@ -1,12 +1,12 @@
 defmodule LocalCentsWeb.HomeLive do
   use LocalCentsWeb, :live_view
 
-  @impl true
+  @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     {:ok, assign(socket, count: 0)}
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <div class="flex items-center justify-between m-4">
@@ -18,7 +18,7 @@ defmodule LocalCentsWeb.HomeLive do
     """
   end
 
-  @impl true
+  @impl Phoenix.LiveView
   def handle_event("inc", _params, socket) do
     count = socket.assigns.count + 1
     ElixirKit.PubSub.broadcast("messages", "count:#{count}")

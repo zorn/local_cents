@@ -4,11 +4,11 @@ defmodule LocalCents.Tracking do
   """
 
   alias LocalCents.Tracking.Book
-  alias LocalCents.Tracking.Expense
   alias LocalCents.Tracking.ExAutomerge
+  alias LocalCents.Tracking.Expense
 
   @spec new_book() :: Book.t()
-  def new_book() do
+  def new_book do
     ExAutomerge.new_document()
   end
 
