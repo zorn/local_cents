@@ -26,8 +26,16 @@ defmodule LocalCents.MixProject do
   end
 
   def cli do
+    # Using the MIX_ENV of `:test` for the `precommit` task is required for
+    # running the tests. A unfortunate side effect of this means that the
+    # execution of dialyzer and sobelow will run in a `:test` MIX_ENV as well
+    # which is not what you see when running `mix dialyzer` or `mix sobelow`
+    # directly. This can lead to non-green output that won't come up during CI
+    # runs related to test only modules.
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [
+        precommit: :test
+      ]
     ]
   end
 
@@ -40,6 +48,16 @@ defmodule LocalCents.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # For test-driven development.
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+
+      # For code logic style and enforcement.
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+
+      # For security scans.
+      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
+
       # To allow calling Rust code from Elixir.
       {:rustler, "~> 0.38.0"},
 
@@ -89,7 +107,12 @@ defmodule LocalCents.MixProject do
         "esbuild local_cents --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "credo --strict"
+      ]
     ]
   end
 end
