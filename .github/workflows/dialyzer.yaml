@@ -40,6 +40,10 @@ jobs:
         id: beam
         with:
           build-app: false
+          # Same rationale as build-and-test.yaml: fold a hash of the Rust NIF
+          # sources into cache-key so a change to native/ busts the Elixir
+          # _build cache and forces mix dialyzer to recompile with the updated NIF.
+          cache-key: v2-${{ hashFiles('native/**/*.rs', 'native/**/Cargo.toml', 'native/**/Cargo.lock') }}
 
       - name: Restore PLT cache
         uses: actions/cache@v5
