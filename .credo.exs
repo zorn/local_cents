@@ -149,6 +149,7 @@
           {Credo.Check.Refactor.RedundantWithClauseResult, []},
           {Credo.Check.Refactor.RejectFilter, []},
           {Credo.Check.Refactor.RejectReject, []},
+          {Credo.Check.Refactor.CondInsteadOfIfElse, []},
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.UtcNowTruncate, []},
           {Credo.Check.Refactor.WithClauses, []},
@@ -179,8 +180,11 @@
           {Credo.Check.Warning.UnusedPathOperation, []},
           {Credo.Check.Warning.UnusedRegexOperation, []},
           {Credo.Check.Warning.UnusedStringOperation, []},
+          {Credo.Check.Warning.UnusedMapOperation, []},
+          {Credo.Check.Warning.UnusedOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
-          {Credo.Check.Warning.WrongTestFileExtension, []}
+          {Credo.Check.Warning.WrongTestFileExtension, []},
+          {Credo.Check.Warning.WrongTestFilename, []}
         ],
         disabled: [
           {Credo.Check.Consistency.UnusedVariableNames, []},
@@ -189,7 +193,8 @@
           {Credo.Check.Readability.OnePipePerLine, []},
           {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Refactor.VariableRebinding, []},
-          {Credo.Check.Warning.LazyLogging, []}
+          {Credo.Check.Warning.LazyLogging, []},
+          {Credo.Check.Warning.StructFieldAmount, []}
 
           # Custom checks can be created using `mix credo.gen.check`.
         ]
