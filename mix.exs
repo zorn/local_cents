@@ -11,7 +11,36 @@ defmodule LocalCents.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+
+      # Docs
+      name: "LocalCents",
+      source_url: "https://github.com/zorn/local_cents",
+      # homepage_url: "https://github.com/zorn/local_cents",
+      extras: extras(),
+      groups_for_extras: groups_for_extras(),
+      docs: [
+        # can be changed to a module name, if you prefer
+        main: "readme",
+        extras: extras(),
+        groups_for_extras: groups_for_extras()
+      ]
+    ]
+  end
+
+  defp extras do
+    [
+      "README.md",
+      "docs/ubiquitous-language.md",
+      "docs/command-line-history.md",
+      "docs/decisions/about.md",
+      "docs/decisions/1-which-automerge-rust-library.md"
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      Decisions: ~r/docs\/decisions\/[^\/]+\.md/
     ]
   end
 
@@ -47,6 +76,9 @@ defmodule LocalCents.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # For documentation generation.
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
+
       # For test-driven development.
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
 
