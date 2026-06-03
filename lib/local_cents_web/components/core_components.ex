@@ -1,3 +1,7 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
+#
+# Since we plan to replace these components I not add new specs, but plan to
+# have specs for the future work.
 defmodule LocalCentsWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
