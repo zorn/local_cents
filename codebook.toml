@@ -2,4 +2,6 @@ words = [
     "ELIXIRKIT",
     "Tauri",
     "Zornek",
+    "cli",
+    "sobelow",
 ]
