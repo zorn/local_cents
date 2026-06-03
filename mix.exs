@@ -27,11 +27,10 @@ defmodule LocalCents.MixProject do
 
   def cli do
     # Using the MIX_ENV of `:test` for the `precommit` task is required for
-    # running the tests. A unfortunate side effect of this means that the
-    # execution of dialyzer and sobelow will run in a `:test` MIX_ENV as well
-    # which is not what you see when running `mix dialyzer` or `mix sobelow`
-    # directly. This can lead to non-green output that won't come up during CI
-    # runs related to test only modules.
+    # running the tests. An unfortunate side effect is that tasks executed
+    # in-process (e.g. Sobelow) also run under `MIX_ENV=test`, which can
+    # produce different results than running `mix sobelow` directly in dev.
+    # Dialyzer is executed in a separate `MIX_ENV=dev` mix invocation below.
     [
       preferred_envs: [
         precommit: :test
@@ -109,7 +108,7 @@ defmodule LocalCents.MixProject do
       ],
       precommit: [
         "compile --warnings-as-errors",
-        "deps.unlock --unused",
+        "deps.unlock --check-unused",
         "format",
         "credo --strict",
         "cmd sh -c 'MIX_ENV=dev mix dialyzer'",

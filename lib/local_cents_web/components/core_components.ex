@@ -1,8 +1,8 @@
 # credo:disable-for-this-file Credo.Check.Refactor.CondInsteadOfIfElse
 # credo:disable-for-this-file Credo.Check.Readability.Specs
 #
-# Since we plan to replace these components I not add new specs, but plan to
-# have specs for the future work.
+# Since we plan to replace these components, we are not adding new specs yet,
+# but we plan to add specs as part of that future work.
 defmodule LocalCentsWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
