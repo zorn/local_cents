@@ -61,14 +61,28 @@ runs:
         restore-keys: |
           deps-${{ inputs.cache-key }}-${{ runner.os }}-
 
+    # The build cache must include `priv/native/`, where the Rustler NIF
+    # (`ex_automerge.so`) is written. Inside `_build` the `priv` directory is
+    # only a symlink back to the source `priv/`, which is gitignored and absent
+    # on a fresh checkout. If we cache `_build` alone, the restored manifest
+    # tells `mix compile` the `ExAutomerge` module is already compiled, so the
+    # Rustler compile step is skipped and the `.so` is never regenerated — the
+    # NIF then fails to load at test time.
+    #
+    # The native source hash is part of both `key` and `restore-keys` so that
+    # any change to the Rust crate fully invalidates the cache (including the
+    # restore-key prefix), forcing a clean rebuild of the NIF rather than
+    # restoring a stale `.so`.
     - name: Get build cache
       uses: actions/cache@v5
       id: build-cache
       with:
-        path: ${{ inputs.working-directory }}/_build/${{env.MIX_ENV}}/
-        key: build-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV }}-${{ hashFiles('**/mix.lock') }}
+        path: |
+          ${{ inputs.working-directory }}/_build/${{env.MIX_ENV}}/
+          ${{ inputs.working-directory }}/priv/native/
+        key: build-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV }}-rs-${{ hashFiles('native/**/*.rs', 'native/**/Cargo.toml', 'native/**/Cargo.lock') }}-${{ hashFiles('**/mix.lock') }}
         restore-keys: |
-          build-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV }}-
+          build-${{ inputs.cache-key }}-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ env.MIX_ENV }}-rs-${{ hashFiles('native/**/*.rs', 'native/**/Cargo.toml', 'native/**/Cargo.lock') }}-
 
     - name: Get Hex cache
       uses: actions/cache@v5
