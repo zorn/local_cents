@@ -40,6 +40,15 @@ jobs:
         uses: ./.github/actions/elixir-setup
         with:
           build-flags: --all-warnings --warnings-as-errors
+          # We fold a hash of the Rust NIF sources into cache-key so that any
+          # change to native/ busts the Elixir _build cache. This is necessary
+          # because Rustler copies the compiled .so into _build/test/priv/native/
+          # during `mix compile`. If the Elixir _build cache is restored from a
+          # run that predates (or skipped) the NIF compilation, the .so will be
+          # missing at test time and all NIF calls will fail. Keeping this logic
+          # here rather than inside elixir-setup/action.yaml keeps that action
+          # free of Rust-specific concerns.
+          cache-key: v2-${{ hashFiles('native/**/*.rs', 'native/**/Cargo.toml', 'native/**/Cargo.lock') }}
 
       - name: Run Tests
         run: mix test
