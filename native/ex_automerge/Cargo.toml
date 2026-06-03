@@ -9,5 +9,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rustler = "0.38.0"
-automerge = "0.8"
+automerge = "=0.8.0"
 autosurgeon = "0.11"
