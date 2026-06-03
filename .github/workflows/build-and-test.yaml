@@ -1,6 +1,6 @@
 name: Build and Test
 
-on:
+"on":
   push:
     branches:
       - main

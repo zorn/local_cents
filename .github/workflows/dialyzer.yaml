@@ -1,6 +1,6 @@
 name: Run Dialyzer
 
-on:
+"on":
   push:
     branches:
       - main

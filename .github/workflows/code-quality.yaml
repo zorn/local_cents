@@ -1,6 +1,6 @@
 name: Code Quality
 
-on:
+"on":
   push:
     branches:
       - main
