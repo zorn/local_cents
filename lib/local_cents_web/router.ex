@@ -7,7 +7,12 @@ defmodule LocalCentsWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {LocalCentsWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => LocalCentsWeb.Plugs.ContentSecurityPolicy.fallback_csp()
+    }
+
+    plug LocalCentsWeb.Plugs.ContentSecurityPolicy
   end
 
   pipeline :api do

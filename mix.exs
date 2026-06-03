@@ -113,7 +113,7 @@ defmodule LocalCents.MixProject do
         "format",
         "credo --strict",
         "cmd sh -c 'MIX_ENV=dev mix dialyzer'",
-        "sobelow",
+        "sobelow --config",
         "test"
       ]
     ]
