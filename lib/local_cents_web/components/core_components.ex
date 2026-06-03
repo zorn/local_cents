@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.CondInsteadOfIfElse
 # credo:disable-for-this-file Credo.Check.Readability.Specs
 #
 # Since we plan to replace these components I not add new specs, but plan to

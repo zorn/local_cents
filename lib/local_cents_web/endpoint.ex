@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
 defmodule LocalCentsWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :local_cents
 

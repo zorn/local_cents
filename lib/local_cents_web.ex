@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
 defmodule LocalCentsWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
