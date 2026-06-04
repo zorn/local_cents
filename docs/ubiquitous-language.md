@@ -1,5 +1,7 @@
 # Ubiquitous Language
 
+The name of the application is `LocalCents`, no space. When represented inside Elixir this is atomized as `:local_cents`.
+
 ## Domain Terms
 
 ### Tracking (Bounded Context)
