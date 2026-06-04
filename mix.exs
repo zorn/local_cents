@@ -17,8 +17,6 @@ defmodule LocalCents.MixProject do
       name: "LocalCents",
       source_url: "https://github.com/zorn/local_cents",
       # homepage_url: "https://github.com/zorn/local_cents",
-      extras: extras(),
-      groups_for_extras: groups_for_extras(),
       docs: [
         # can be changed to a module name, if you prefer
         main: "readme",
