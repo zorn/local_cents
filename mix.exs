@@ -39,6 +39,7 @@ defmodule LocalCents.MixProject do
         if (!initialized) {
           mermaid.initialize({
             startOnLoad: false,
+            securityLevel: "strict",
             theme: document.body.className.includes("dark") ? "dark" : "default"
           });
           initialized = true;
