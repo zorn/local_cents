@@ -124,7 +124,7 @@ defmodule LocalCents.MixProject do
   defp deps do
     [
       # For documentation generation.
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
+      {:ex_doc, "~> 0.4", only: :dev, runtime: false, warn_if_outdated: true},
 
       # For test-driven development.
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
