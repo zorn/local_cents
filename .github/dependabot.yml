@@ -22,6 +22,8 @@ updates:
     directory: "/tauri"
     schedule:
       interval: "monthly"
+    ignore:
+      - dependency-name: "elixirkit"
     groups:
       tauri-dependencies:
         patterns:
