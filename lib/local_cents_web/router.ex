@@ -1,5 +1,6 @@
 defmodule LocalCentsWeb.Router do
   use LocalCentsWeb, :router
+  import PhoenixStorybook.Router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -19,10 +20,16 @@ defmodule LocalCentsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/" do
+    storybook_assets()
+  end
+
   scope "/", LocalCentsWeb do
     pipe_through :browser
 
     live "/", HomeLive
+
+    live_storybook("/storybook", backend_module: LocalCentsWeb.Storybook)
   end
 
   # Other scopes may use custom stacks.

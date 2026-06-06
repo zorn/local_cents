@@ -35,7 +35,7 @@ config :esbuild,
   version: "0.25.4",
   local_cents: [
     args:
-      ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
+      ~w(js/app.js js/storybook.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
@@ -47,6 +47,13 @@ config :tailwind,
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css
+    ),
+    cd: Path.expand("..", __DIR__)
+  ],
+  storybook: [
+    args: ~w(
+      --input=css/storybook.css
+      --output=../priv/static/assets/storybook.css
     ),
     cd: Path.expand("..", __DIR__)
   ]

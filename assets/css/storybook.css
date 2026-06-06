@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@source "../../lib/local_cents_web/**/*.{ex,heex}";
+@source "../js/**.js";
+@source "../storybook/**/*.*exs";
+
+/*
+ * Put your component styling within the Tailwind utilities layer.
+ * See the https://hexdocs.pm/phoenix_storybook/sandboxing.html guide for more info.
+ */
+
+/*Make sure your application styling is nested under your CSS sandbox class in assets/storybook.css:
+
+   .local-cents {
+     h1, h2, h3 {
+       // my custom application styling
+     }
+   }
+   ...*/
+
+@layer utilities {
+    * {
+        font-family: system-ui;
+    }
+}
