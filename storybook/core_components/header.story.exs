@@ -41,7 +41,7 @@ defmodule Storybook.Components.CoreComponents.Header do
           "Section title",
           """
           <:subtitle>
-            Here a subtitle
+            Here is a subtitle
           </:subtitle>
           """,
           """
