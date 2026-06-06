@@ -1,4 +1,4 @@
-defmodule Storybook.MyPage do
+defmodule Storybook.WelcomePage do
   # See https://hexdocs.pm/phoenix_storybook/PhoenixStorybook.Story.html for full story
   # documentation.
   use PhoenixStorybook.Story, :page
@@ -18,11 +18,11 @@ defmodule Storybook.MyPage do
   # This is a dummy function that you should replace with your own HEEx content.
   def render(assigns = %{tab: :welcome}) do
     ~H"""
-    <div class="psb-welcome-page">
+    <div class="psb:welcome-page">
       <p>
         We generated your storybook with an example of a page and a component.
         Explore the generated <code class="psb:inline">*.story.exs</code>
-        files in your <code class="inline">/storybook</code>
+        files in your <code class="psb:inline">/storybook</code>
         directory. When you're ready to add your own, just drop your new story & index files into the same directory and refresh your storybook.
       </p>
 
