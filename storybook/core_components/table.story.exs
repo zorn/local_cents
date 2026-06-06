@@ -26,7 +26,6 @@ defmodule Storybook.Components.CoreComponents.Table do
       },
       %Variation{
         id: :with_function,
-        id: :with_function,
         description: "Applying functions to row items",
         attributes: %{
           id: "users-with-function",
@@ -37,7 +36,6 @@ defmodule Storybook.Components.CoreComponents.Table do
         slots: table_slots()
       },
       %Variation{
-        id: :with_actions,
         id: :with_actions,
         description: "With an action slot",
         attributes: %{
