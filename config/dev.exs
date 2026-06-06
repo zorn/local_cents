@@ -16,7 +16,8 @@ config :local_cents, LocalCentsWeb.Endpoint,
   secret_key_base: "Cf5Tew27IsjW/lFNIkxQD+DkiToa4fLMkdsLINnVSBrrwNXbjqeaBwj3foI0NkUK",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:local_cents, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:local_cents, ~w(--watch)]}
+    tailwind: {Tailwind, :install_and_run, [:local_cents, ~w(--watch)]},
+    storybook_tailwind: {Tailwind, :install_and_run, [:storybook, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -53,7 +54,9 @@ config :local_cents, LocalCentsWeb.Endpoint,
       ~r"priv/gettext/.*\.po$"E,
       # Router, Controllers, LiveViews and LiveComponents
       ~r"lib/local_cents_web/router\.ex$"E,
-      ~r"lib/local_cents_web/(controllers|live|components)/.*\.(ex|heex)$"E
+      ~r"lib/local_cents_web/(controllers|live|components)/.*\.(ex|heex)$"E,
+      # Storybook files
+      ~r"storybook/.*\.exs$"E
     ]
   ]
 

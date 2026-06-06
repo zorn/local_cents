@@ -2,6 +2,12 @@
 
 A place to record generator or other prompts used to create notable files.
 
+## June 5, 2026
+
+Ran `mix phx.gen.storybook` as part of:
+
+https://phoenix-storybook.hexdocs.pm/PhoenixStorybook.html#module-2-run-the-generator
+
 ## May 27, 2026
 
 Working through [this tutorial](https://fly.io/phoenix-files/elixir-and-rust-is-a-good-mix/) and ran `mix rustler.new`.
