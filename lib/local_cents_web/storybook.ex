@@ -1,4 +1,9 @@
 defmodule LocalCentsWeb.Storybook do
+  @moduledoc """
+  Provides a UI component catalog and playground for developers to design,
+  document and test UI components in isolation.
+  """
+
   use PhoenixStorybook,
     otp_app: :local_cents,
     content_path: Path.expand("../../storybook", __DIR__),
