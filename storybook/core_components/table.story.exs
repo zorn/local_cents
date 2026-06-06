@@ -19,14 +19,17 @@ defmodule Storybook.Components.CoreComponents.Table do
       %Variation{
         id: :default,
         attributes: %{
+          id: "users-default",
           rows: table_rows()
         },
         slots: table_slots()
       },
       %Variation{
         id: :with_function,
+        id: :with_function,
         description: "Applying functions to row items",
         attributes: %{
+          id: "users-with-function",
           rows: table_rows(),
           row_id: {:eval, ~S|&"user-#{&1.id}"|},
           row_item: {:eval, ~S"&%{&1 | last_name: String.upcase(&1.last_name)}"}
@@ -35,8 +38,10 @@ defmodule Storybook.Components.CoreComponents.Table do
       },
       %Variation{
         id: :with_actions,
+        id: :with_actions,
         description: "With an action slot",
         attributes: %{
+          id: "users-with-actions",
           rows: table_rows()
         },
         slots: [
