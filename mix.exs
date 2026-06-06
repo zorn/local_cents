@@ -122,6 +122,9 @@ defmodule LocalCents.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # To help organize and document UI components.
+      {:phoenix_storybook, "~> 1.1.0"},
+
       # For documentation generation.
       {:ex_doc, "~> 0.4", only: :dev, runtime: false, warn_if_outdated: true},
 
