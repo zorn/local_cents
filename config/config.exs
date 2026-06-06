@@ -55,7 +55,7 @@ config :tailwind,
       --input=css/storybook.css
       --output=../priv/static/assets/storybook.css
     ),
-    cd: Path.expand("..", __DIR__)
+    cd: Path.expand("../assets", __DIR__)
   ]
 
 # Configure Elixir's Logger
