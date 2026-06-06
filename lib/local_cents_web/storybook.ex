@@ -7,7 +7,7 @@ defmodule LocalCentsWeb.Storybook do
   use PhoenixStorybook,
     otp_app: :local_cents,
     content_path: Path.expand("../../storybook", __DIR__),
-    # assets path are remote path, not local file-system paths
+    # asset paths are remote URL paths, not local file-system paths
     css_path: "/assets/storybook.css",
     js_path: "/assets/js/storybook.js",
     # Ex: "https://github.com/my-org/my-app/blob/main"
