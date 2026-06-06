@@ -56,7 +56,7 @@ config :local_cents, LocalCentsWeb.Endpoint,
       ~r"lib/local_cents_web/router\.ex$"E,
       ~r"lib/local_cents_web/(controllers|live|components)/.*\.(ex|heex)$"E,
       # Storybook files
-      ~r"storybook/.*(exs)$"
+      ~r"storybook/.*\.exs$"E
     ]
   ]
 
