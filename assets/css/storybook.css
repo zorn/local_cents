@@ -1,8 +1,8 @@
 @import "tailwindcss" source(none);
 
-@source "../../lib/local_cents_web/**/*.{ex,heex}";
-@source "../js/**.js";
-@source "../../storybook/**/*.*exs";
+@source "../../lib/local_cents_web";
+@source "../js";
+@source "../../storybook";
 
 @plugin "../vendor/heroicons";
 
