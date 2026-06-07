@@ -1,0 +1,67 @@
+# Invoice Flow Breadboard
+#
+# Technique from Shape Up (https://basecamp.com/shapeup/1.3-chapter-04#breadboarding)
+#
+# Three element types:
+#   Places      - screens, dialogs, menus you can navigate to
+#   Affordances - things the user can act on: buttons, fields, copy they read
+#   Connections - arrows showing how affordances move the user between places
+#
+# Render:  d2 invoice-breadboard.d2 images/invoice-breadboard.svg
+# Sketch:  d2 --sketch invoice-breadboard.d2 images/invoice-breadboard.svg
+
+direction: right
+
+# ---- Places -----------------------------------------------------------------
+
+invoices: Invoices {
+  new_btn: "[ + New Invoice ]"
+  draft_row: "Draft - Acme Corp - 2,400"
+  sent_row: "Sent - Globex Inc - 800"
+}
+
+new_invoice: "New Invoice" {
+  client: "Client"
+  issue_date: "Issue date"
+  due_date: "Due date"
+  line_items: "Line items + [ Add item ]"
+  preview_btn: "[ Preview ]"
+  save_draft: "[ Save Draft ]"
+  cancel: "Cancel"
+}
+
+preview: "Invoice Preview" {
+  rendered_copy: "Invoice #-- | Amount due --"
+  send_btn: "[ Send to Client ]"
+  edit_link: "<- Edit"
+}
+
+sent_confirmation: "Sent!" {
+  copy: "Emailed to client@acme.com"
+  client_link: "Client link"
+  back_link: "Back to Invoices"
+}
+
+client_portal: "Client Portal" {
+  intro: "Invoice from Freelancer Co."
+  amount: "2,400 due Nov 15"
+  pay_btn: "[ Pay Now ]"
+  download: "Download PDF"
+}
+
+# ---- Connections ------------------------------------------------------------
+
+invoices.new_btn -> new_invoice
+invoices.draft_row -> preview
+
+new_invoice.preview_btn -> preview
+new_invoice.save_draft -> invoices
+new_invoice.cancel -> invoices
+
+preview.send_btn -> sent_confirmation
+preview.edit_link -> new_invoice
+
+sent_confirmation.client_link -> client_portal
+sent_confirmation.back_link -> invoices
+
+client_portal.pay_btn -> invoices: "payment logged"
