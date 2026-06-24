@@ -1,4 +1,4 @@
-defmodule Bond.Button do
+defmodule Bond.Elements.Button do
   use Phoenix.Component
 
   attr :rest, :global

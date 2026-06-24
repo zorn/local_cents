@@ -1,7 +1,7 @@
-defmodule Storybook.Bond.Button do
+defmodule Storybook.Elements.Button do
   use PhoenixStorybook.Story, :component
 
-  def function, do: &Bond.Button.button/1
+  def function, do: &Bond.Elements.Button.button/1
   def render_source, do: :function
 
   def variations do

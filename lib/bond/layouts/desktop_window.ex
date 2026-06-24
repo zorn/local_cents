@@ -1,4 +1,4 @@
-defmodule Bond.DesktopWindow do
+defmodule Bond.Layouts.DesktopWindow do
   @moduledoc """
   A component that mimics the look and feel of a desktop window.
 

@@ -1,7 +1,7 @@
-defmodule Storybook.Bond.DesktopWindow do
+defmodule Storybook.Layouts.DesktopWindow do
   use PhoenixStorybook.Story, :component
 
-  def function, do: &Bond.DesktopWindow.desktop_window/1
+  def function, do: &Bond.Layouts.DesktopWindow.desktop_window/1
   def render_source, do: :function
 
   def variations do
