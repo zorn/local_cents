@@ -28,6 +28,7 @@ defmodule LocalCentsWeb.Router do
     pipe_through :browser
 
     live "/", HomeLive
+    live "/theme-test", ThemeTestLive
 
     live_storybook("/storybook", backend_module: LocalCentsWeb.Storybook)
   end
