@@ -9,6 +9,7 @@ defmodule Bond.Layouts.DesktopWindow do
 
   slot :inner_block, required: true
 
+  @spec desktop_window(map()) :: Phoenix.LiveView.Rendered.t()
   def desktop_window(assigns) do
     ~H"""
     <div class="bg-white rounded-lg shadow-lg border border-gray-300">
