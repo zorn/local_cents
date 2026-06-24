@@ -3,6 +3,8 @@
 @source "../js";
 @source "../../lib/local_cents_web";
 
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/forms";
 @plugin "../vendor/heroicons";
 
 @custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);

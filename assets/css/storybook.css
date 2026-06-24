@@ -3,7 +3,10 @@
 @source "../../lib/local_cents_web";
 @source "../js";
 @source "../../storybook";
+@source { rule: "all", value: "../../storybook/**/*.exs" }; /* .exs not scanned by default */
 
+@plugin "@tailwindcss/typography";
+@plugin "@tailwindcss/forms";
 @plugin "../vendor/heroicons";
 
 @custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);

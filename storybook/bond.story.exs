@@ -4,9 +4,7 @@ defmodule Storybook.AboutBondPage do
 
   def render(assigns) do
     ~H"""
-    <section class="prose">
-      <h1>Welcome to Bond</h1>
-
+    <section class="prose prose-sm prose-slate dark:prose-invert max-w-none font-sans">
       <h2>Why a named component system?</h2>
 
       <p>
