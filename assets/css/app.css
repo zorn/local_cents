@@ -1,9 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Nunito:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap');
 
 @import "tailwindcss" source(none);
 @source "../css";
 @source "../js";
 @source "../../lib/local_cents_web";
+@source "../../lib/bond";
 
 @plugin "@tailwindcss/typography";
 @plugin "@tailwindcss/forms";
@@ -18,7 +19,6 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* ===== Notebook Style Textures ===== */
-.font-caveat { font-family: 'Caveat', cursive; }
 .font-nunito { font-family: 'Nunito', sans-serif; }
 
 /* Denim marble composition cover — used for title bars & the edit panel */

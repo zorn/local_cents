@@ -123,8 +123,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
        expenses: expenses,
        show_new_expense: false,
        selected_expense: nil,
-       active_style: "simple",
-       notebook_texture: "light"
+       active_style: "simple"
      )}
   end
 
@@ -257,29 +256,9 @@ defmodule LocalCentsWeb.LibraryDemoLive do
               />
               <%!-- ══════════════════════════════════════════════ NOTEBOOK STYLE ═══ --%>
             <% @active_style == "notebook" -> %>
-              <div class="space-y-6 nb-tint-sapphire">
+              <div class="space-y-6">
                 <%!-- Notebook Library Window --%>
-                <div
-                  id="notebook-library-window"
-                  class={[
-                    "rounded-xl overflow-hidden border border-[#a8c0e0] shadow-lg shadow-[#3f7fd6]/20",
-                    "nb-tex-#{@notebook_texture}"
-                  ]}
-                >
-                  <%!-- Denim marble title bar --%>
-                  <div class="nb-denim relative flex items-center pl-3 pr-4 py-2 select-none border-b border-[#0d1a35]">
-                    <div class="flex items-center gap-2 z-10">
-                      <button class="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/20">
-                      </button>
-                      <button class="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/20">
-                      </button>
-                      <button class="w-3 h-3 rounded-full bg-[#28C840] border border-black/20">
-                      </button>
-                    </div>
-                    <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white/90 pointer-events-none">
-                      Library
-                    </span>
-                  </div>
+                <Bond.Layouts.DesktopWindow.desktop_window title="Library">
                   <%!-- Ruled paper book list --%>
                   <div class="m-4 bg-white rounded overflow-hidden border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20">
                     <div class="overflow-y-auto" style="min-height: 220px; max-height: 320px;">
@@ -319,30 +298,10 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       ?
                     </button>
                   </div>
-                </div>
+                </Bond.Layouts.DesktopWindow.desktop_window>
 
                 <%!-- Notebook Document Window --%>
-                <div
-                  id="notebook-document-window"
-                  class={[
-                    "rounded-xl overflow-hidden border border-[#a8c0e0] shadow-lg shadow-[#3f7fd6]/20",
-                    "nb-tex-#{@notebook_texture}"
-                  ]}
-                >
-                  <%!-- Denim title bar --%>
-                  <div class="nb-denim relative flex items-center pl-3 pr-4 py-2 select-none border-b border-[#0d1a35]">
-                    <div class="flex items-center gap-2 z-10">
-                      <button class="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/20">
-                      </button>
-                      <button class="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/20">
-                      </button>
-                      <button class="w-3 h-3 rounded-full bg-[#28C840] border border-black/20">
-                      </button>
-                    </div>
-                    <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white/90 pointer-events-none">
-                      Family Expenses
-                    </span>
-                  </div>
+                <Bond.Layouts.DesktopWindow.desktop_window title="Family Expenses">
                   <%!-- Content area (edit panel is relative to this, not the title bar) --%>
                   <div class="relative overflow-hidden">
                   <%!-- Graph paper chart placeholder --%>
@@ -520,7 +479,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                     </div>
                   <% end %>
                   </div>
-                </div>
+                </Bond.Layouts.DesktopWindow.desktop_window>
                 <%!-- Button Design Lab — B5 Press Variations --%>
                 <div class="bg-white/70 rounded-xl border border-[#c3d2f0] p-6 shadow-sm">
                   <p class="font-nunito text-[10px] font-bold uppercase tracking-widest text-[#6980b0] mb-5">
