@@ -259,25 +259,25 @@ defmodule LocalCentsWeb.LibraryDemoLive do
             <% @active_style == "notebook" -> %>
               <div class="space-y-6">
                 <%!-- Notebook Library Window --%>
-                <Bond.Layouts.DesktopWindow.desktop_window title="Library">
+                <Bond.desktop_window title="Library">
                   <%!-- Ruled paper book list --%>
-                  <Bond.Elements.ListView.list_view max_height="320px">
+                  <Bond.list_view max_height="320px">
                     <%= for book <- @books do %>
-                      <Bond.Composites.BookCell.book_cell
+                      <Bond.book_cell
                         name={book.name}
                         last_updated={book.last_updated}
                       />
                     <% end %>
-                  </Bond.Elements.ListView.list_view>
+                  </Bond.list_view>
                   <%!-- Footer --%>
                   <div class="flex items-center justify-between px-4 py-4">
-                    <Bond.Elements.Button.button>New Book</Bond.Elements.Button.button>
-                    <Bond.Elements.Button.button variant={:square}>?</Bond.Elements.Button.button>
+                    <Bond.button>New Book</Bond.button>
+                    <Bond.button variant={:square}>?</Bond.button>
                   </div>
-                </Bond.Layouts.DesktopWindow.desktop_window>
+                </Bond.desktop_window>
 
                 <%!-- Notebook Document Window --%>
-                <Bond.Layouts.DesktopWindow.desktop_window title="Family Expenses">
+                <Bond.desktop_window title="Family Expenses">
                   <%!-- Content area (edit panel is relative to this, not the title bar) --%>
                   <div class="relative overflow-hidden">
                     <%!-- Graph paper chart placeholder --%>
@@ -304,9 +304,9 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                           placeholder="coffee 4.75 or netflix 22.99 yesterday"
                           class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
                         />
-                        <Bond.Elements.Button.button id="notebook-new-expense-create-btn">
+                        <Bond.button id="notebook-new-expense-create-btn">
                           New Expense
-                        </Bond.Elements.Button.button>
+                        </Bond.button>
                       </div>
                     </div>
                     <%!-- Expense table --%>
@@ -447,13 +447,13 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             <button class="font-nunito text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
                               Delete
                             </button>
-                            <Bond.Elements.Button.button>Save</Bond.Elements.Button.button>
+                            <Bond.button>Save</Bond.button>
                           </div>
                         </div>
                       </div>
                     <% end %>
                   </div>
-                </Bond.Layouts.DesktopWindow.desktop_window>
+                </Bond.desktop_window>
                 <%!-- Button Design Lab — B5 Press Variations --%>
                 <div class="bg-white/70 rounded-xl border border-[#c3d2f0] p-6 shadow-sm">
                   <p class="font-nunito text-[10px] font-bold uppercase tracking-widest text-[#6980b0] mb-5">
