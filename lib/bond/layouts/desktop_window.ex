@@ -1,14 +1,14 @@
 defmodule Bond.Layouts.DesktopWindow do
   @moduledoc """
   A macOS-style desktop window chrome with a denim title bar and twill-textured background.
-  Renders traffic-light buttons and a centred title above slot content.
+  Renders traffic-light buttons and a centered title above slot content.
   """
 
   use Phoenix.Component
 
-  attr :title, :string, required: true
+  attr :title, :string, required: true, doc: "Text displayed centered in the title bar"
 
-  slot :inner_block, required: true
+  slot :inner_block, required: true, doc: "Content rendered below the title bar"
 
   @spec desktop_window(map()) :: Phoenix.LiveView.Rendered.t()
   def desktop_window(assigns) do
