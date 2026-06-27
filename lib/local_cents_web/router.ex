@@ -29,6 +29,7 @@ defmodule LocalCentsWeb.Router do
 
     live "/", HomeLive
     live "/theme-test", ThemeTestLive
+    live "/library-demo", LibraryDemoLive
 
     live_storybook("/storybook", backend_module: LocalCentsWeb.Storybook)
   end
