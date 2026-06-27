@@ -45,6 +45,54 @@
   background-position: 56px 0, 0 8px;
 }
 
+/* Notebook tint color system — set on parent wrapper, consumed by children */
+.nb-tint-sky      { --nb-t: #3f7fd6; --nb-t-dk: #2d6bc4; }
+.nb-tint-ocean    { --nb-t: #2563eb; --nb-t-dk: #1d4ed8; }
+.nb-tint-cobalt   { --nb-t: #1d4ed8; --nb-t-dk: #1a44c4; }
+.nb-tint-sapphire { --nb-t: #1e40af; --nb-t-dk: #1b3a9a; }
+.nb-tint-ink      { --nb-t: #1e3a6e; --nb-t-dk: #162d55; }
+
+.nb-t-text            { color: var(--nb-t); }
+.nb-t-border          { border-color: var(--nb-t); }
+.nb-t-bg              { background-color: var(--nb-t); }
+.nb-t-bg-soft         { background-color: color-mix(in srgb, var(--nb-t) 12%, transparent); }
+.nb-t-bar             { background-color: color-mix(in srgb, var(--nb-t) 70%, transparent); }
+.nb-t-shadow          { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--nb-t) 30%, transparent); }
+.nb-t-hover-row:hover { background-color: color-mix(in srgb, var(--nb-t) 5%, transparent); }
+.nb-t-hover-soft:hover  { background-color: color-mix(in srgb, var(--nb-t) 10%, transparent); }
+.nb-t-hover-solid:hover { background-color: var(--nb-t); color: white; }
+.nb-t-hover-dk:hover    { background-color: var(--nb-t-dk); }
+.nb-t-focus-border:focus { border-color: var(--nb-t); outline: none; }
+
+/* Ledger stamp button interactions */
+.nb-stamp-press {
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.nb-stamp-press:hover {
+  transform: translate(1px, 1px);
+}
+.nb-stamp-press:active {
+  transform: translate(2px, 3px);
+  box-shadow: none !important;
+}
+
+/* Shadow dissolves into an ink bleed glow */
+.nb-stamp-bloom {
+  transition: box-shadow 0.22s ease;
+}
+.nb-stamp-bloom:hover {
+  box-shadow: 2px 5px 14px color-mix(in srgb, var(--nb-t) 55%, transparent) !important;
+}
+
+/* Diagonal hatch overlay — adds woven texture to any fill */
+.nb-stamp-hatch {
+  background-image: repeating-linear-gradient(
+    -55deg,
+    rgba(255,255,255,0.07) 0px, rgba(255,255,255,0.07) 1px,
+    transparent 1px, transparent 5px
+  );
+}
+
 /* Library window texture options — twill family */
 
 /* 1px line, 9px gap — barely there */
