@@ -275,7 +275,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   <%!-- Expense table --%>
                   <div class="mx-4 mb-4 bg-white rounded-lg border border-[#c3d2f0] overflow-hidden">
                     <%!-- Toolbar --%>
-                    <div class="px-3 py-2.5 border-b border-[#c3d2f0] bg-white/90">
+                    <div class="px-3 py-2.5 border-b border-[#c3d2f0] nb-t-bg-soft">
                       <%= if @show_new_expense do %>
                         <div class="flex items-end gap-2">
                           <input
@@ -283,7 +283,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             type="text"
                             autofocus
                             placeholder="coffee 4.75 or netflix 22.99 yesterday"
-                            class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-transparent focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+                            class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
                           />
                           <button
                             id="notebook-new-expense-toggle-btn"
