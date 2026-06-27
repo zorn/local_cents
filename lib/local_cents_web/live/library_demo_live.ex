@@ -980,7 +980,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                               Last Updated: {book.last_updated}
                             </p>
                           </div>
-                          <button class="font-nunito flex-shrink-0 px-3 py-1 text-sm border-2 nb-t-border rounded-full nb-t-text nb-t-hover-solid font-bold transition-all">
+                          <button class="font-nunito flex-shrink-0 px-3 py-1 text-sm border-2 nb-t-border rounded nb-t-text font-bold nb-stamp-press" style="--sh: #1e293b; --sh-x: 1px; --sh-y: 2px">
                             Open
                           </button>
                         </div>
@@ -990,10 +990,10 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   </div>
                   <%!-- Footer --%>
                   <div class="flex items-center justify-between px-4 py-4">
-                    <button class="font-nunito font-bold px-4 py-1.5 text-sm nb-t-bg nb-t-hover-dk text-white rounded-full transition-colors nb-t-shadow">
+                    <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="--sh: #1e293b; --sh-x: 1px; --sh-y: 2px; background: #3060d8; border: 2px solid #1e40af">
                       New Book
                     </button>
-                    <button class="font-nunito w-7 h-7 rounded-full border-2 nb-t-border nb-t-bg-soft flex items-center justify-center nb-t-text nb-t-hover-soft text-sm font-bold transition-colors">
+                    <button class="font-nunito w-7 h-7 rounded border-2 nb-t-border nb-t-bg-soft flex items-center justify-center nb-t-text text-sm font-bold nb-stamp-press" style="--sh: #1e293b; --sh-x: 1px; --sh-y: 2px">
                       ?
                     </button>
                   </div>
