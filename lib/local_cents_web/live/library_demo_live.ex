@@ -49,6 +49,70 @@ defmodule LocalCentsWeb.LibraryDemoLive do
           %{label: "sports", class: "bg-red-100 text-red-700 border border-red-200"}
         ],
         amount: "$67.50"
+      },
+      %{
+        id: 4,
+        date: "05/25/2026",
+        description: "Target run — school supplies",
+        tags: [
+          %{label: "kids", class: "bg-sky-100 text-sky-700 border border-sky-200"}
+        ],
+        amount: "$43.18"
+      },
+      %{
+        id: 5,
+        date: "05/22/2026",
+        description: "Trader Joe's",
+        tags: [
+          %{label: "groceries", class: "bg-purple-100 text-purple-700 border border-purple-200"},
+          %{label: "food", class: "bg-orange-100 text-orange-700 border border-orange-200"}
+        ],
+        amount: "$89.76"
+      },
+      %{
+        id: 6,
+        date: "05/20/2026",
+        description: "Chipotle lunch",
+        tags: [
+          %{label: "dining", class: "bg-green-100 text-green-700 border border-green-200"},
+          %{label: "food", class: "bg-orange-100 text-orange-700 border border-orange-200"}
+        ],
+        amount: "$22.14"
+      },
+      %{
+        id: 7,
+        date: "05/18/2026",
+        description: "Netflix subscription",
+        tags: [],
+        amount: "$22.99"
+      },
+      %{
+        id: 8,
+        date: "05/15/2026",
+        description: "Baseball cleats",
+        tags: [
+          %{label: "kids", class: "bg-sky-100 text-sky-700 border border-sky-200"},
+          %{label: "sports", class: "bg-red-100 text-red-700 border border-red-200"}
+        ],
+        amount: "$54.99"
+      },
+      %{
+        id: 9,
+        date: "05/12/2026",
+        description: "Costco run",
+        tags: [
+          %{label: "groceries", class: "bg-purple-100 text-purple-700 border border-purple-200"}
+        ],
+        amount: "$213.55"
+      },
+      %{
+        id: 10,
+        date: "05/10/2026",
+        description: "Pizza night",
+        tags: [
+          %{label: "dining", class: "bg-green-100 text-green-700 border border-green-200"}
+        ],
+        amount: "$38.00"
       }
     ]
 
