@@ -1,2 +1,3 @@
 - we current pull in `Nunito` font but I'm not sure we want to keep it .. if we do we should pull it in locally and not use Google fonts
 - i wonder if `Bond` should inside `local_cents_web` since it is reliant on Phoenix Component. if we do change - need to clean up tailwind configs.
+- the buttons are using some CSS in `bond.css` but we should make those inline CSS when we update Phoenix soon™.
