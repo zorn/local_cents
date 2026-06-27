@@ -5,6 +5,7 @@ defmodule Storybook.AboutBondPage do
   def render(assigns) do
     ~H"""
     <section class="prose prose-sm prose-slate dark:prose-invert max-w-none font-sans">
+      <%!-- FIXME: I think in time we will likely have many pages and may wish to extract a `storybook_prose` component here. --%>
       <h2>Why a named component system?</h2>
 
       <p>
