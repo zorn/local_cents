@@ -1,0 +1,17 @@
+/* Bond component styles — imported by app.css and storybook.css */
+
+/* Stamp-press button interaction: button translates toward its shadow on hover,
+   giving the illusion the shadow is anchored to the page. Set --sh (color),
+   --sh-x (default 2px), and --sh-y (default 3px) on the element. */
+.nb-stamp-press {
+  box-shadow: var(--sh-x, 2px) var(--sh-y, 3px) 0 var(--sh, #1b3a9a);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.nb-stamp-press:hover {
+  transform: translate(calc(var(--sh-x, 2px) / 2), calc(var(--sh-y, 3px) / 2));
+  box-shadow: calc(var(--sh-x, 2px) / 2) calc(var(--sh-y, 3px) / 2) 0 var(--sh, #1b3a9a);
+}
+.nb-stamp-press:active {
+  transform: translate(var(--sh-x, 2px), var(--sh-y, 3px));
+  box-shadow: none;
+}

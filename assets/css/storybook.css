@@ -20,3 +20,5 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 .font-nunito { font-family: 'Nunito', sans-serif; }
+
+@import "../../lib/bond/bond.css";

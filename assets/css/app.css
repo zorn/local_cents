@@ -65,19 +65,7 @@
 .nb-t-hover-dk:hover    { background-color: var(--nb-t-dk); }
 .nb-t-focus-border:focus { border-color: var(--nb-t); outline: none; }
 
-/* Ledger stamp button interactions — set --sh (color), --sh-x (default 2px), --sh-y (default 3px) */
-.nb-stamp-press {
-  box-shadow: var(--sh-x, 2px) var(--sh-y, 3px) 0 var(--sh, #1b3a9a);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
-}
-.nb-stamp-press:hover {
-  transform: translate(calc(var(--sh-x, 2px) / 2), calc(var(--sh-y, 3px) / 2));
-  box-shadow: calc(var(--sh-x, 2px) / 2) calc(var(--sh-y, 3px) / 2) 0 var(--sh, #1b3a9a);
-}
-.nb-stamp-press:active {
-  transform: translate(var(--sh-x, 2px), var(--sh-y, 3px));
-  box-shadow: none;
-}
+@import "../../lib/bond/bond.css";
 
 /* Shadow dissolves into an ink bleed glow */
 .nb-stamp-bloom {
