@@ -7,20 +7,22 @@ defmodule Storybook.Elements.Button do
   def variations do
     [
       %Variation{
-        id: :default,
-        attributes: %{},
-        slots: [
-          "Click me!"
-        ]
+        id: :primary,
+        description: "Filled blue button for primary actions.",
+        attributes: %{variant: :primary},
+        slots: ["New Expense"]
       },
       %Variation{
-        id: :disabled,
-        attributes: %{
-          disabled: true
-        },
-        slots: [
-          "Click me!"
-        ]
+        id: :outline,
+        description: "Bordered button for secondary actions.",
+        attributes: %{variant: :outline},
+        slots: ["Open"]
+      },
+      %Variation{
+        id: :square,
+        description: "Small fixed-size square button for single characters.",
+        attributes: %{variant: :square},
+        slots: ["?"]
       }
     ]
   end

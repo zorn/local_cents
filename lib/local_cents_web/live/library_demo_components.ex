@@ -1,6 +1,9 @@
 defmodule LocalCentsWeb.LibraryDemoComponents do
+  @moduledoc "Demo component styles used by the library demo live view."
+
   use LocalCentsWeb, :html
 
+  @spec simple_style(map()) :: Phoenix.LiveView.Rendered.t()
   def simple_style(assigns) do
     ~H"""
     <%!-- Library Window --%>
@@ -177,7 +180,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
           <div class="flex-1 bg-gray-900/40" phx-click="close_expense"></div>
           <div class="w-80 bg-gray-50 border-l border-gray-200 flex flex-col shadow-xl">
             <div class="flex justify-end px-5 pt-5">
-              <button phx-click="close_expense" class="text-gray-500 hover:text-gray-900 transition-colors">
+              <button
+                phx-click="close_expense"
+                class="text-gray-500 hover:text-gray-900 transition-colors"
+              >
                 <.icon name="hero-x-mark" class="w-6 h-6" />
               </button>
             </div>
@@ -239,6 +245,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     """
   end
 
+  @spec warm_style(map()) :: Phoenix.LiveView.Rendered.t()
   def warm_style(assigns) do
     ~H"""
     <%!-- Warm Library Window --%>
@@ -397,7 +404,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             </span>
             <div class="flex items-center gap-1.5">
               <%= for tag <- expense.tags do %>
-                <span class={["px-2.5 py-0.5 text-xs font-medium rounded-full", tag_class("warm", tag.label)]}>
+                <span class={[
+                  "px-2.5 py-0.5 text-xs font-medium rounded-full",
+                  tag_class("warm", tag.label)
+                ]}>
                   {tag.label}
                 </span>
               <% end %>
@@ -415,7 +425,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
           <div class="flex-1 bg-[#2A1F14]/40" phx-click="close_expense"></div>
           <div class="w-80 bg-[#EBE4D8] border-l border-[#C5B89A] flex flex-col shadow-xl">
             <div class="flex justify-end px-5 pt-5">
-              <button phx-click="close_expense" class="text-[#8C7557] hover:text-[#2A1F14] transition-colors">
+              <button
+                phx-click="close_expense"
+                class="text-[#8C7557] hover:text-[#2A1F14] transition-colors"
+              >
                 <.icon name="hero-x-mark" class="w-6 h-6" />
               </button>
             </div>
@@ -462,7 +475,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                         checked={Enum.any?(@selected_expense.tags, &(&1.label == tag.label))}
                         class="w-4 h-4 rounded border-[#C5B89A] text-[#C4622D] focus:ring-[#C4622D]"
                       />
-                      <span class={["px-2.5 py-0.5 text-xs font-medium rounded-full", tag_class("warm", tag.label)]}>
+                      <span class={[
+                        "px-2.5 py-0.5 text-xs font-medium rounded-full",
+                        tag_class("warm", tag.label)
+                      ]}>
                         {tag.label}
                       </span>
                     </label>
@@ -485,6 +501,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     """
   end
 
+  @spec dark_style(map()) :: Phoenix.LiveView.Rendered.t()
   def dark_style(assigns) do
     ~H"""
     <%!-- Dark Library Window --%>
@@ -640,7 +657,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             </span>
             <div class="flex items-center gap-1.5">
               <%= for tag <- expense.tags do %>
-                <span class={["px-2.5 py-0.5 text-xs font-medium rounded-full", tag_class("dark", tag.label)]}>
+                <span class={[
+                  "px-2.5 py-0.5 text-xs font-medium rounded-full",
+                  tag_class("dark", tag.label)
+                ]}>
                   {tag.label}
                 </span>
               <% end %>
@@ -658,7 +678,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
           <div class="flex-1 bg-black/60" phx-click="close_expense"></div>
           <div class="w-80 bg-[#0D1117] border-l border-[#30363D] flex flex-col shadow-2xl">
             <div class="flex justify-end px-5 pt-5">
-              <button phx-click="close_expense" class="text-[#6E7681] hover:text-[#E6EDF3] transition-colors">
+              <button
+                phx-click="close_expense"
+                class="text-[#6E7681] hover:text-[#E6EDF3] transition-colors"
+              >
                 <.icon name="hero-x-mark" class="w-6 h-6" />
               </button>
             </div>
@@ -705,7 +728,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                         checked={Enum.any?(@selected_expense.tags, &(&1.label == tag.label))}
                         class="w-4 h-4 rounded border-[#444C56] bg-[#161B22] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-[#0D1117]"
                       />
-                      <span class={["px-2.5 py-0.5 text-xs font-medium rounded-full", tag_class("dark", tag.label)]}>
+                      <span class={[
+                        "px-2.5 py-0.5 text-xs font-medium rounded-full",
+                        tag_class("dark", tag.label)
+                      ]}>
                         {tag.label}
                       </span>
                     </label>

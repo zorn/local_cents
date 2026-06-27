@@ -130,7 +130,9 @@ defmodule LocalCentsWeb.LibraryDemoLive do
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
     style = Map.get(params, "style", socket.assigns.active_style)
-    style = if style in ["simple", "warm", "dark", "notebook"], do: style, else: "simple"
+
+    valid_styles = ["simple", "warm", "dark", "notebook"]
+    style = Enum.find(valid_styles, "simple", &(&1 == style))
 
     selected_expense =
       case Map.get(params, "expense_id") do
@@ -159,8 +161,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
   end
 
   def handle_event("close_expense", _, socket) do
-    {:noreply,
-     push_patch(socket, to: ~p"/library-demo?style=#{socket.assigns.active_style}")}
+    {:noreply, push_patch(socket, to: ~p"/library-demo?style=#{socket.assigns.active_style}")}
   end
 
   defp to_date_input(date) do
@@ -272,12 +273,9 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                               Last Updated: {book.last_updated}
                             </p>
                           </div>
-                          <button
-                            class="font-nunito flex-shrink-0 px-3 py-1 text-sm border-2 nb-t-border rounded nb-t-text font-bold nb-stamp-press"
-                            style="--sh: #1e293b"
-                          >
+                          <Bond.Elements.Button.button variant={:outline}>
                             Open
-                          </button>
+                          </Bond.Elements.Button.button>
                         </div>
                       <% end %>
                       <div class="h-16"></div>
@@ -285,18 +283,8 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   </div>
                   <%!-- Footer --%>
                   <div class="flex items-center justify-between px-4 py-4">
-                    <button
-                      class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                      style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
-                    >
-                      New Book
-                    </button>
-                    <button
-                      class="font-nunito w-7 h-7 rounded border-2 nb-t-border nb-t-bg-soft flex items-center justify-center nb-t-text text-sm font-bold nb-stamp-press"
-                      style="--sh: #1e293b"
-                    >
-                      ?
-                    </button>
+                    <Bond.Elements.Button.button>New Book</Bond.Elements.Button.button>
+                    <Bond.Elements.Button.button variant={:square}>?</Bond.Elements.Button.button>
                   </div>
                 </Bond.Layouts.DesktopWindow.desktop_window>
 
@@ -304,180 +292,178 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                 <Bond.Layouts.DesktopWindow.desktop_window title="Family Expenses">
                   <%!-- Content area (edit panel is relative to this, not the title bar) --%>
                   <div class="relative overflow-hidden">
-                  <%!-- Graph paper chart placeholder --%>
-                  <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
-                    <div class="flex items-end gap-2 h-24">
-                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%"></div>
-                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%"></div>
-                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-75" style="height: 58%"></div>
-                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-50" style="height: 21%"></div>
-                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%"></div>
-                    </div>
-                  </div>
-                  <%!-- New Expense row — standalone card --%>
-                  <div class="mx-4 rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 nb-t-bg-soft px-3 py-2.5">
-                    <div class="flex items-end gap-2">
-                      <input
-                        id="notebook-new-expense-input"
-                        type="text"
-                        placeholder="coffee 4.75 or netflix 22.99 yesterday"
-                        class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-                      />
-                      <button
-                        id="notebook-new-expense-create-btn"
-                        class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                        style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
-                      >
-                        New Expense
-                      </button>
-                    </div>
-                  </div>
-                  <%!-- Expense table --%>
-                  <div class="mx-4 mt-3 mb-4 bg-white rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 overflow-hidden">
-                    <%!-- Search / filter toolbar --%>
-                    <div class="px-3 py-2.5 border-b border-[#c3d2f0] nb-t-bg-soft">
-                      <div class="flex items-center gap-2">
-                        <div class="relative flex-1">
-                          <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
-                            <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#6980b0]" />
-                          </div>
-                          <input
-                            id="notebook-expense-search-input"
-                            type="text"
-                            placeholder="search..."
-                            class="font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-                          />
+                    <%!-- Graph paper chart placeholder --%>
+                    <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
+                      <div class="flex items-end gap-2 h-24">
+                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%">
                         </div>
-                        <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                          Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                        </button>
-                        <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                          ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                        </button>
+                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%">
+                        </div>
+                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-75" style="height: 58%">
+                        </div>
+                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-50" style="height: 21%">
+                        </div>
+                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%">
+                        </div>
                       </div>
                     </div>
-                    <%!-- Expense Rows --%>
-                    <div class="overflow-y-auto" style="max-height: 420px;">
-                      <%= for expense <- @expenses do %>
-                        <div
-                          id={"notebook-expense-row-#{expense.id}"}
-                          phx-click="select_expense"
-                          phx-value-id={expense.id}
-                          class="flex items-center gap-4 px-4 py-3 border-b border-[#c3d2f0]/60 nb-t-hover-row transition-colors cursor-pointer"
-                        >
-                          <span class="flex-shrink-0 font-nunito text-sm text-[#6980b0] tabular-nums w-24">
-                            {expense.date}
-                          </span>
-                          <span class="flex-1 font-nunito text-sm font-medium text-[#22335c]">
-                            {expense.description}
-                          </span>
-                          <div class="flex items-center gap-1.5">
-                            <%= for tag <- expense.tags do %>
-                              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-nunito bg-white border border-[#c3d2f0] text-[#22335c]">
-                                <span
-                                  class="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={"background: #{nb_tag_swatch(tag.label)}"}
-                                >
-                                </span>
-                                {tag.label}
-                              </span>
-                            <% end %>
-                          </div>
-                          <span class="flex-shrink-0 font-nunito text-sm font-bold text-[#3f9d6c] tabular-nums w-16 text-right">
-                            {expense.amount}
-                          </span>
-                        </div>
-                      <% end %>
+                    <%!-- New Expense row — standalone card --%>
+                    <div class="mx-4 rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 nb-t-bg-soft px-3 py-2.5">
+                      <div class="flex items-end gap-2">
+                        <input
+                          id="notebook-new-expense-input"
+                          type="text"
+                          placeholder="coffee 4.75 or netflix 22.99 yesterday"
+                          class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+                        />
+                        <Bond.Elements.Button.button id="notebook-new-expense-create-btn">
+                          New Expense
+                        </Bond.Elements.Button.button>
+                      </div>
                     </div>
-                  </div>
-                  <%!-- Notebook edit panel --%>
-                  <%= if @selected_expense do %>
-                    <div id="notebook-expense-edit-panel" class="absolute inset-0 flex">
-                      <%!-- Dim overlay --%>
-                      <div class="flex-1 bg-[#0d1a35]/50" phx-click="close_expense"></div>
-                      <%!-- Denim cover panel --%>
-                      <div class="nb-denim w-80 border-l border-[#0d1a35] flex flex-col shadow-2xl">
-                        <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
-                          <p class="font-nunito text-base font-bold text-white tracking-wide">
-                            Edit Expense
-                          </p>
-                          <button
-                            phx-click="close_expense"
-                            class="text-[#6ca0ea] hover:text-white transition-colors"
-                          >
-                            <.icon name="hero-x-mark" class="w-5 h-5" />
+                    <%!-- Expense table --%>
+                    <div class="mx-4 mt-3 mb-4 bg-white rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 overflow-hidden">
+                      <%!-- Search / filter toolbar --%>
+                      <div class="px-3 py-2.5 border-b border-[#c3d2f0] nb-t-bg-soft">
+                        <div class="flex items-center gap-2">
+                          <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+                              <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#6980b0]" />
+                            </div>
+                            <input
+                              id="notebook-expense-search-input"
+                              type="text"
+                              placeholder="search..."
+                              class="font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+                            />
+                          </div>
+                          <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
+                            Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
+                          </button>
+                          <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
+                            ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
                           </button>
                         </div>
-                        <div class="px-5 py-3 flex-1 space-y-3 overflow-y-auto">
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                              Date
-                            </label>
-                            <input
-                              type="date"
-                              value={to_date_input(@selected_expense.date)}
-                              class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
-                            />
-                          </div>
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                              Description
-                            </label>
-                            <input
-                              type="text"
-                              value={@selected_expense.description}
-                              class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
-                            />
-                          </div>
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                              Cost
-                            </label>
-                            <input
-                              type="text"
-                              value={@selected_expense.amount}
-                              class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
-                            />
-                          </div>
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-2 px-1">
-                              Tags
-                            </label>
-                            <div class="space-y-1.5">
-                              <%= for tag <- @available_tags do %>
-                                <label class="flex items-center gap-2.5 cursor-pointer bg-white/10 hover:bg-white/20 rounded-lg px-3 py-2 transition-colors">
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      Enum.any?(@selected_expense.tags, &(&1.label == tag.label))
-                                    }
-                                    class="w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
-                                  />
+                      </div>
+                      <%!-- Expense Rows --%>
+                      <div class="overflow-y-auto" style="max-height: 420px;">
+                        <%= for expense <- @expenses do %>
+                          <div
+                            id={"notebook-expense-row-#{expense.id}"}
+                            phx-click="select_expense"
+                            phx-value-id={expense.id}
+                            class="flex items-center gap-4 px-4 py-3 border-b border-[#c3d2f0]/60 nb-t-hover-row transition-colors cursor-pointer"
+                          >
+                            <span class="flex-shrink-0 font-nunito text-sm text-[#6980b0] tabular-nums w-24">
+                              {expense.date}
+                            </span>
+                            <span class="flex-1 font-nunito text-sm font-medium text-[#22335c]">
+                              {expense.description}
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                              <%= for tag <- expense.tags do %>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-nunito bg-white border border-[#c3d2f0] text-[#22335c]">
                                   <span
-                                    class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    class="w-2 h-2 rounded-full flex-shrink-0"
                                     style={"background: #{nb_tag_swatch(tag.label)}"}
                                   >
                                   </span>
-                                  <span class="font-nunito text-sm text-[#c3d2f0]">{tag.label}</span>
-                                </label>
+                                  {tag.label}
+                                </span>
                               <% end %>
                             </div>
+                            <span class="flex-shrink-0 font-nunito text-sm font-bold text-[#3f9d6c] tabular-nums w-16 text-right">
+                              {expense.amount}
+                            </span>
                           </div>
-                        </div>
-                        <div class="flex items-center justify-between px-6 py-4 border-t border-white/10">
-                          <button class="font-nunito text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
-                            Delete
-                          </button>
-                          <button
-                            class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                            style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
-                          >
-                            Save
-                          </button>
-                        </div>
+                        <% end %>
                       </div>
                     </div>
-                  <% end %>
+                    <%!-- Notebook edit panel --%>
+                    <%= if @selected_expense do %>
+                      <div id="notebook-expense-edit-panel" class="absolute inset-0 flex">
+                        <%!-- Dim overlay --%>
+                        <div class="flex-1 bg-[#0d1a35]/50" phx-click="close_expense"></div>
+                        <%!-- Denim cover panel --%>
+                        <div class="nb-denim w-80 border-l border-[#0d1a35] flex flex-col shadow-2xl">
+                          <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
+                            <p class="font-nunito text-base font-bold text-white tracking-wide">
+                              Edit Expense
+                            </p>
+                            <button
+                              phx-click="close_expense"
+                              class="text-[#6ca0ea] hover:text-white transition-colors"
+                            >
+                              <.icon name="hero-x-mark" class="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div class="px-5 py-3 flex-1 space-y-3 overflow-y-auto">
+                            <div>
+                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
+                                Date
+                              </label>
+                              <input
+                                type="date"
+                                value={to_date_input(@selected_expense.date)}
+                                class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
+                              />
+                            </div>
+                            <div>
+                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
+                                Description
+                              </label>
+                              <input
+                                type="text"
+                                value={@selected_expense.description}
+                                class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
+                              />
+                            </div>
+                            <div>
+                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
+                                Cost
+                              </label>
+                              <input
+                                type="text"
+                                value={@selected_expense.amount}
+                                class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
+                              />
+                            </div>
+                            <div>
+                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-2 px-1">
+                                Tags
+                              </label>
+                              <div class="space-y-1.5">
+                                <%= for tag <- @available_tags do %>
+                                  <label class="flex items-center gap-2.5 cursor-pointer bg-white/10 hover:bg-white/20 rounded-lg px-3 py-2 transition-colors">
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        Enum.any?(@selected_expense.tags, &(&1.label == tag.label))
+                                      }
+                                      class="w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
+                                    />
+                                    <span
+                                      class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                      style={"background: #{nb_tag_swatch(tag.label)}"}
+                                    >
+                                    </span>
+                                    <span class="font-nunito text-sm text-[#c3d2f0]">
+                                      {tag.label}
+                                    </span>
+                                  </label>
+                                <% end %>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="flex items-center justify-between px-6 py-4 border-t border-white/10">
+                            <button class="font-nunito text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
+                              Delete
+                            </button>
+                            <Bond.Elements.Button.button>Save</Bond.Elements.Button.button>
+                          </div>
+                        </div>
+                      </div>
+                    <% end %>
                   </div>
                 </Bond.Layouts.DesktopWindow.desktop_window>
                 <%!-- Button Design Lab — B5 Press Variations --%>
