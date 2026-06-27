@@ -438,49 +438,46 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       <div class="flex-1 bg-[#0d1a35]/50" phx-click="close_expense"></div>
                       <%!-- Denim cover panel --%>
                       <div class="nb-denim w-80 border-l border-[#0d1a35] flex flex-col shadow-2xl">
-                        <div class="flex items-start justify-between px-6 pt-5 pb-2">
-                          <div>
-                            <p class="font-caveat text-2xl text-white font-semibold leading-tight">
-                              Edit Expense
-                            </p>
-                            <p class="font-nunito text-xs text-[#6ca0ea] mt-0.5">June · Groceries</p>
-                          </div>
+                        <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
+                          <p class="font-nunito text-base font-bold text-white tracking-wide">
+                            Edit Expense
+                          </p>
                           <button
                             phx-click="close_expense"
-                            class="text-[#6ca0ea] hover:text-white transition-colors mt-0.5"
+                            class="text-[#6ca0ea] hover:text-white transition-colors"
                           >
-                            <.icon name="hero-x-mark" class="w-6 h-6" />
+                            <.icon name="hero-x-mark" class="w-5 h-5" />
                           </button>
                         </div>
-                        <div class="px-5 pb-4 flex-1 space-y-3 overflow-y-auto">
-                          <div class="bg-white/10 rounded-lg px-4 py-3">
+                        <div class="px-5 py-3 flex-1 space-y-3 overflow-y-auto">
+                          <div>
                             <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
                               Date
                             </label>
                             <input
                               type="date"
                               value={to_date_input(@selected_expense.date)}
-                              class="font-nunito w-full text-sm bg-transparent border-b border-[#6ca0ea]/50 text-white focus:outline-none focus:border-[#6ca0ea] pb-1 transition-colors"
+                              class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
                             />
                           </div>
-                          <div class="bg-white/10 rounded-lg px-4 py-3">
+                          <div>
                             <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
                               Description
                             </label>
                             <input
                               type="text"
                               value={@selected_expense.description}
-                              class="font-nunito w-full text-sm bg-transparent border-b border-[#6ca0ea]/50 text-white focus:outline-none focus:border-[#6ca0ea] pb-1 transition-colors"
+                              class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
                             />
                           </div>
-                          <div class="bg-white/10 rounded-lg px-4 py-3">
+                          <div>
                             <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
                               Cost
                             </label>
                             <input
                               type="text"
                               value={@selected_expense.amount}
-                              class="font-nunito w-full text-sm bg-transparent border-b border-[#6ca0ea]/50 text-white focus:outline-none focus:border-[#6ca0ea] pb-1 transition-colors"
+                              class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
                             />
                           </div>
                           <div>
@@ -512,7 +509,10 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                           <button class="font-nunito text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
                             Delete
                           </button>
-                          <button class="font-nunito font-bold px-5 py-2 text-sm text-white bg-[#3f9d6c] hover:bg-[#34875b] rounded-full transition-colors shadow-sm">
+                          <button
+                            class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
+                            style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
+                          >
                             Save
                           </button>
                         </div>
