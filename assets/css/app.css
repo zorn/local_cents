@@ -56,6 +56,7 @@
 .nb-t-border          { border-color: var(--nb-t); }
 .nb-t-bg              { background-color: var(--nb-t); }
 .nb-t-bg-soft         { background-color: color-mix(in srgb, var(--nb-t) 12%, transparent); }
+.nb-t-bg-soft-solid   { background-color: color-mix(in srgb, var(--nb-t) 12%, white); }
 .nb-t-bar             { background-color: color-mix(in srgb, var(--nb-t) 70%, transparent); }
 .nb-t-shadow          { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--nb-t) 30%, transparent); }
 .nb-t-hover-row:hover { background-color: color-mix(in srgb, var(--nb-t) 5%, transparent); }

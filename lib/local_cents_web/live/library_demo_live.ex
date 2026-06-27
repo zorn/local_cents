@@ -146,10 +146,6 @@ defmodule LocalCentsWeb.LibraryDemoLive do
     {:noreply, push_patch(socket, to: ~p"/library-demo?style=#{style}")}
   end
 
-  def handle_event("toggle_new_expense", _, socket) do
-    {:noreply, assign(socket, show_new_expense: !socket.assigns.show_new_expense)}
-  end
-
   def handle_event("select_expense", %{"id" => id}, socket) do
     expense = Enum.find(socket.assigns.expenses, &(&1.id == String.to_integer(id)))
     {:noreply, assign(socket, selected_expense: expense)}
@@ -339,7 +335,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                     </span>
                   </div>
                   <%!-- Graph paper chart placeholder --%>
-                  <div class="m-4 nb-graph rounded-lg border border-[#c3d2f0] px-6 py-5">
+                  <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
                     <div class="flex items-end gap-2 h-24">
                       <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%"></div>
                       <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%"></div>
@@ -348,58 +344,47 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%"></div>
                     </div>
                   </div>
+                  <%!-- New Expense row — standalone card --%>
+                  <div class="mx-4 rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 nb-t-bg-soft px-3 py-2.5">
+                    <div class="flex items-end gap-2">
+                      <input
+                        id="notebook-new-expense-input"
+                        type="text"
+                        placeholder="coffee 4.75 or netflix 22.99 yesterday"
+                        class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+                      />
+                      <button
+                        id="notebook-new-expense-create-btn"
+                        class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
+                        style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
+                      >
+                        New Expense
+                      </button>
+                    </div>
+                  </div>
                   <%!-- Expense table --%>
-                  <div class="mx-4 mb-4 bg-white rounded-lg border border-[#c3d2f0] overflow-hidden">
-                    <%!-- Toolbar --%>
+                  <div class="mx-4 mt-3 mb-4 bg-white rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 overflow-hidden">
+                    <%!-- Search / filter toolbar --%>
                     <div class="px-3 py-2.5 border-b border-[#c3d2f0] nb-t-bg-soft">
-                      <%= if @show_new_expense do %>
-                        <div class="flex items-end gap-2">
-                          <input
-                            id="notebook-new-expense-input"
-                            type="text"
-                            autofocus
-                            placeholder="coffee 4.75 or netflix 22.99 yesterday"
-                            class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-                          />
-                          <button
-                            id="notebook-new-expense-toggle-btn"
-                            phx-click="toggle_new_expense"
-                            class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                            style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
-                          >
-                            Create
-                          </button>
-                        </div>
-                      <% else %>
-                        <div class="flex items-center gap-2">
-                          <div class="relative">
-                            <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
-                              <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#6980b0]" />
-                            </div>
-                            <input
-                              id="notebook-expense-search-input"
-                              type="text"
-                              placeholder="search..."
-                              class="font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] w-44 transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-                            />
+                      <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                          <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+                            <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#6980b0]" />
                           </div>
-                          <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                            Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                          </button>
-                          <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                            ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                          </button>
-                          <div class="flex-1"></div>
-                          <button
-                            id="notebook-expense-new-btn"
-                            phx-click="toggle_new_expense"
-                            class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                            style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
-                          >
-                            New Expense
-                          </button>
+                          <input
+                            id="notebook-expense-search-input"
+                            type="text"
+                            placeholder="search..."
+                            class="font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+                          />
                         </div>
-                      <% end %>
+                        <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
+                          Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
+                        </button>
+                        <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
+                          ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
+                        </button>
+                      </div>
                     </div>
                     <%!-- Expense Rows --%>
                     <div class="overflow-y-auto" style="max-height: 420px;">
