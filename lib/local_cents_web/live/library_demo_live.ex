@@ -354,7 +354,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             phx-value-id={expense.id}
                             class="flex items-center gap-4 px-4 py-3 border-b border-[#c3d2f0]/60 nb-t-hover-row transition-colors cursor-pointer"
                           >
-                            <span class="flex-shrink-0 font-nunito text-sm text-[#6980b0] tabular-nums w-24">
+                            <span class="shrink-0 font-nunito text-sm text-[#6980b0] tabular-nums w-24">
                               {expense.date}
                             </span>
                             <span class="flex-1 font-nunito text-sm font-medium text-[#22335c]">
@@ -364,7 +364,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                               <%= for tag <- expense.tags do %>
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-nunito bg-white border border-[#c3d2f0] text-[#22335c]">
                                   <span
-                                    class="w-2 h-2 rounded-full flex-shrink-0"
+                                    class="w-2 h-2 rounded-full shrink-0"
                                     style={"background: #{nb_tag_swatch(tag.label)}"}
                                   >
                                   </span>
@@ -372,7 +372,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                                 </span>
                               <% end %>
                             </div>
-                            <span class="flex-shrink-0 font-nunito text-sm font-bold text-[#3f9d6c] tabular-nums w-16 text-right">
+                            <span class="shrink-0 font-nunito text-sm font-bold text-[#3f9d6c] tabular-nums w-16 text-right">
                               {expense.amount}
                             </span>
                           </div>
@@ -443,7 +443,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                                       class="w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
                                     />
                                     <span
-                                      class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                      class="w-2.5 h-2.5 rounded-full shrink-0"
                                       style={"background: #{nb_tag_swatch(tag.label)}"}
                                     >
                                     </span>

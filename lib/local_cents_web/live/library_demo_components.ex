@@ -39,7 +39,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                   Last Updated: {book.last_updated}
                 </p>
               </div>
-              <button class="flex-shrink-0 px-3 py-1 text-sm border border-gray-400 rounded bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors shadow-sm">
+              <button class="shrink-0 px-3 py-1 text-sm border border-gray-400 rounded bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors shadow-sm">
                 Open
               </button>
             </div>
@@ -113,7 +113,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
               <button
                 id="new-expense-toggle-btn"
                 phx-click="toggle_new_expense"
-                class="flex-shrink-0 px-3 py-1.5 text-sm border border-gray-400 rounded bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm border border-gray-400 rounded bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors"
               >
                 New Expense
               </button>
@@ -144,7 +144,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
               <button
                 id="expense-new-btn"
                 phx-click="toggle_new_expense"
-                class="flex-shrink-0 px-3 py-1.5 text-sm border border-gray-400 rounded bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm border border-gray-400 rounded bg-white hover:bg-gray-100 text-gray-700 font-medium transition-colors"
               >
                 New Expense
               </button>
@@ -158,7 +158,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             phx-value-id={expense.id}
             class="flex items-center gap-4 px-4 py-3.5 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
           >
-            <span class="flex-shrink-0 text-sm text-gray-500 tabular-nums w-24">
+            <span class="shrink-0 text-sm text-gray-500 tabular-nums w-24">
               {expense.date}
             </span>
             <span class="flex-1 text-sm font-medium text-gray-900">
@@ -171,7 +171,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                 </span>
               <% end %>
             </div>
-            <span class="flex-shrink-0 text-sm font-semibold text-gray-800 tabular-nums w-16 text-right">
+            <span class="shrink-0 text-sm font-semibold text-gray-800 tabular-nums w-16 text-right">
               {expense.amount}
             </span>
           </div>
@@ -278,7 +278,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                   Last Updated: {book.last_updated}
                 </p>
               </div>
-              <button class="flex-shrink-0 px-3 py-1 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors">
+              <button class="shrink-0 px-3 py-1 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors">
                 Open
               </button>
             </div>
@@ -354,7 +354,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
               <button
                 id="warm-new-expense-toggle-btn"
                 phx-click="toggle_new_expense"
-                class="flex-shrink-0 px-3 py-1.5 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors"
               >
                 New Expense
               </button>
@@ -385,7 +385,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
               <button
                 id="warm-expense-new-btn"
                 phx-click="toggle_new_expense"
-                class="flex-shrink-0 px-3 py-1.5 text-sm bg-[#C4622D] hover:bg-[#A8501E] text-white rounded font-medium transition-colors shadow-sm"
+                class="shrink-0 px-3 py-1.5 text-sm bg-[#C4622D] hover:bg-[#A8501E] text-white rounded font-medium transition-colors shadow-sm"
               >
                 New Expense
               </button>
@@ -399,7 +399,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             phx-value-id={expense.id}
             class="flex items-center gap-4 px-4 py-3.5 border-b border-[#E4DBD0] hover:bg-[#F0E8DB] transition-colors cursor-pointer"
           >
-            <span class="flex-shrink-0 text-sm text-[#8C7557] tabular-nums w-24">
+            <span class="shrink-0 text-sm text-[#8C7557] tabular-nums w-24">
               {expense.date}
             </span>
             <span class="flex-1 text-sm font-medium text-[#2A1F14]">
@@ -415,7 +415,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                 </span>
               <% end %>
             </div>
-            <span class="flex-shrink-0 text-sm font-semibold text-[#C4622D] tabular-nums w-16 text-right">
+            <span class="shrink-0 text-sm font-semibold text-[#C4622D] tabular-nums w-16 text-right">
               {expense.amount}
             </span>
           </div>
@@ -534,7 +534,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                   Last Updated: {book.last_updated}
                 </p>
               </div>
-              <button class="flex-shrink-0 px-3 py-1 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] font-medium transition-colors">
+              <button class="shrink-0 px-3 py-1 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] font-medium transition-colors">
                 Open
               </button>
             </div>
@@ -607,7 +607,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
               <button
                 id="dark-new-expense-toggle-btn"
                 phx-click="toggle_new_expense"
-                class="flex-shrink-0 px-3 py-1.5 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] font-medium transition-colors"
               >
                 New Expense
               </button>
@@ -638,7 +638,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
               <button
                 id="dark-expense-new-btn"
                 phx-click="toggle_new_expense"
-                class="flex-shrink-0 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded font-medium transition-colors"
               >
                 New Expense
               </button>
@@ -652,7 +652,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             phx-value-id={expense.id}
             class="flex items-center gap-4 px-4 py-3.5 border-b border-[#21262D] hover:bg-[#1C2130] transition-colors cursor-pointer"
           >
-            <span class="flex-shrink-0 text-sm text-[#6E7681] tabular-nums font-mono w-24">
+            <span class="shrink-0 text-sm text-[#6E7681] tabular-nums font-mono w-24">
               {expense.date}
             </span>
             <span class="flex-1 text-sm font-medium text-[#E6EDF3]">
@@ -668,7 +668,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                 </span>
               <% end %>
             </div>
-            <span class="flex-shrink-0 text-sm font-semibold text-emerald-400 tabular-nums font-mono w-16 text-right">
+            <span class="shrink-0 text-sm font-semibold text-emerald-400 tabular-nums font-mono w-16 text-right">
               {expense.amount}
             </span>
           </div>
