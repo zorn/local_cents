@@ -5,4 +5,5 @@ defmodule Storybook.Elements do
 
   def entry("button"), do: [icon: {:fa, "rectangle-ad", :thin}]
   def entry("input"), do: [icon: {:fa, "rectangle-ad", :thin}]
+  def entry("list_view"), do: [icon: {:fa, "rectangle-ad", :thin}]
 end

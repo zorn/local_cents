@@ -261,26 +261,14 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                 <%!-- Notebook Library Window --%>
                 <Bond.Layouts.DesktopWindow.desktop_window title="Library">
                   <%!-- Ruled paper book list --%>
-                  <div class="m-4 bg-white rounded overflow-hidden border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20">
-                    <div class="overflow-y-auto" style="min-height: 220px; max-height: 320px;">
-                      <%= for book <- @books do %>
-                        <div class="flex items-center gap-4 px-4 py-4 border-b border-[#c3d2f0]/60 nb-t-hover-row transition-colors">
-                          <div class="flex-1 min-w-0">
-                            <p class="font-nunito text-base font-semibold text-[#22335c] leading-snug">
-                              {book.name}
-                            </p>
-                            <p class="font-nunito text-xs text-[#6980b0] mt-0.5">
-                              Last Updated: {book.last_updated}
-                            </p>
-                          </div>
-                          <Bond.Elements.Button.button variant={:outline}>
-                            Open
-                          </Bond.Elements.Button.button>
-                        </div>
-                      <% end %>
-                      <div class="h-16"></div>
-                    </div>
-                  </div>
+                  <Bond.Elements.ListView.list_view max_height="320px">
+                    <%= for book <- @books do %>
+                      <Bond.Composites.BookCell.book_cell
+                        name={book.name}
+                        last_updated={book.last_updated}
+                      />
+                    <% end %>
+                  </Bond.Elements.ListView.list_view>
                   <%!-- Footer --%>
                   <div class="flex items-center justify-between px-4 py-4">
                     <Bond.Elements.Button.button>New Book</Bond.Elements.Button.button>
