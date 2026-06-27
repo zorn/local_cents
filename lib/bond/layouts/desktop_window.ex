@@ -6,11 +6,14 @@ defmodule Bond.Layouts.DesktopWindow do
 
   use Phoenix.Component
 
+  alias Phoenix.LiveView.Rendered
+  alias Phoenix.LiveView.Socket
+
   attr :title, :string, required: true, doc: "Text displayed centered in the title bar"
 
   slot :inner_block, required: true, doc: "Content rendered below the title bar"
 
-  @spec desktop_window(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec desktop_window(Socket.assigns()) :: Rendered.t()
   def desktop_window(assigns) do
     ~H"""
     <div

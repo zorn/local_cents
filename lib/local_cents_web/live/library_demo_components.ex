@@ -3,7 +3,10 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
 
   use LocalCentsWeb, :html
 
-  @spec simple_style(map()) :: Phoenix.LiveView.Rendered.t()
+  alias Phoenix.LiveView.Rendered
+  alias Phoenix.LiveView.Socket
+
+  @spec simple_style(Socket.assigns()) :: Rendered.t()
   def simple_style(assigns) do
     ~H"""
     <%!-- Library Window --%>
@@ -245,7 +248,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     """
   end
 
-  @spec warm_style(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec warm_style(Socket.assigns()) :: Rendered.t()
   def warm_style(assigns) do
     ~H"""
     <%!-- Warm Library Window --%>
@@ -501,7 +504,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     """
   end
 
-  @spec dark_style(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec dark_style(Socket.assigns()) :: Rendered.t()
   def dark_style(assigns) do
     ~H"""
     <%!-- Dark Library Window --%>

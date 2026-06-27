@@ -3,6 +3,9 @@ defmodule Bond.Elements.Button do
 
   use Phoenix.Component
 
+  alias Phoenix.LiveView.Rendered
+  alias Phoenix.LiveView.Socket
+
   attr :variant, :atom,
     default: :primary,
     values: [:primary, :outline, :square],
@@ -14,7 +17,7 @@ defmodule Bond.Elements.Button do
 
   slot :inner_block, required: true, doc: "Button label or character"
 
-  @spec button(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec button(Socket.assigns()) :: Rendered.t()
   def button(assigns) do
     ~H"""
     <button class={button_class(@variant)} style={button_style(@variant)} {@rest}>

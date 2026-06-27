@@ -5,6 +5,9 @@ defmodule LocalCentsWeb.Layouts do
   """
   use LocalCentsWeb, :html
 
+  alias Phoenix.LiveView.Rendered
+  alias Phoenix.LiveView.Socket
+
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
@@ -33,7 +36,7 @@ defmodule LocalCentsWeb.Layouts do
 
   slot :inner_block, required: true
 
-  @spec app(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec app(Socket.assigns()) :: Rendered.t()
   def app(assigns) do
     ~H"""
     <header class="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16 border-b border-gray-200 dark:border-gray-700">
@@ -96,7 +99,7 @@ defmodule LocalCentsWeb.Layouts do
   attr :flash, :map, required: true, doc: "the map of flash messages"
   attr :id, :string, default: "flash-group", doc: "the optional id of flash container"
 
-  @spec flash_group(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec flash_group(Socket.assigns()) :: Rendered.t()
   def flash_group(assigns) do
     ~H"""
     <div id={@id} aria-live="polite">
@@ -135,7 +138,7 @@ defmodule LocalCentsWeb.Layouts do
 
   See <head> in root.html.heex which applies the theme before page load.
   """
-  @spec theme_toggle(map()) :: Phoenix.LiveView.Rendered.t()
+  @spec theme_toggle(Socket.assigns()) :: Rendered.t()
   def theme_toggle(assigns) do
     ~H"""
     <div class="relative flex flex-row items-center border-2 border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 rounded-full">
