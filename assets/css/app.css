@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Nunito:wght@500;600;700;800&display=swap');
+
 @import "tailwindcss" source(none);
 @source "../css";
 @source "../js";
@@ -14,3 +16,125 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 [data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* ===== Notebook Style Textures ===== */
+.font-caveat { font-family: 'Caveat', cursive; }
+.font-nunito { font-family: 'Nunito', sans-serif; }
+
+/* Denim marble composition cover — used for title bars & the edit panel */
+.nb-denim {
+  background-color: #1e2d4d;
+  background-image:
+    radial-gradient(ellipse at 18% 32%, rgba(63, 127, 214, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 72%, rgba(20, 35, 75, 0.65) 0%, transparent 44%),
+    radial-gradient(ellipse at 50% 5%, rgba(34, 51, 92, 0.35) 0%, transparent 58%);
+}
+
+/* College-ruled paper — used for book/expense lists */
+.nb-ruled {
+  background-color: #fafcff;
+  background-image:
+    linear-gradient(to right, rgba(231, 163, 171, 0.55) 0px, rgba(231, 163, 171, 0.55) 1.5px, transparent 1.5px),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 27px,
+      rgba(195, 210, 240, 0.85) 27px,
+      rgba(195, 210, 240, 0.85) 28px
+    );
+  background-position: 56px 0, 0 8px;
+}
+
+/* Library window texture options — twill family */
+
+/* 1px line, 9px gap — barely there */
+.nb-tex-bare {
+  background-color: #d8eaf8;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.30) 0px,
+    rgba(255,255,255,0.30) 1px,
+    transparent 1px,
+    transparent 9px
+  );
+}
+
+/* 1px line, 5px gap — delicate */
+.nb-tex-light {
+  background-color: #cce0f5;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.30) 0px,
+    rgba(255,255,255,0.30) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* 2px line, 7px gap — the one you liked */
+.nb-tex-mid {
+  background-color: #c2d6ee;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.22) 0px,
+    rgba(255,255,255,0.22) 2px,
+    transparent 2px,
+    transparent 7px
+  );
+}
+
+/* 2px line, 4px gap — tighter repeat */
+.nb-tex-dense {
+  background-color: #bad0ea;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255,255,255,0.22) 0px,
+    rgba(255,255,255,0.22) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+}
+
+/* 2px line at 60° — more upright lean */
+.nb-tex-steep {
+  background-color: #c2d6ee;
+  background-image: repeating-linear-gradient(
+    60deg,
+    rgba(255,255,255,0.22) 0px,
+    rgba(255,255,255,0.22) 2px,
+    transparent 2px,
+    transparent 7px
+  );
+}
+
+/* Cross-diagonal — herringbone diamond */
+.nb-tex-herring {
+  background-color: #bfd0e8;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.20) 0px,
+      rgba(255,255,255,0.20) 2px,
+      transparent 2px,
+      transparent 8px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255,255,255,0.15) 0px,
+      rgba(255,255,255,0.15) 2px,
+      transparent 2px,
+      transparent 8px
+    );
+}
+
+/* Graph / grid paper — used for charts & summaries */
+.nb-graph {
+  background-color: #eef3fc;
+  background-image:
+    linear-gradient(rgba(195, 210, 240, 0.9) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(195, 210, 240, 0.9) 1px, transparent 1px),
+    linear-gradient(rgba(195, 210, 240, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(195, 210, 240, 0.35) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}
