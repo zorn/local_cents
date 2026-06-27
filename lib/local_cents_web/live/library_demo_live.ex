@@ -129,17 +129,23 @@ defmodule LocalCentsWeb.LibraryDemoLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(%{"style" => style}, _uri, socket)
-      when style in ["simple", "warm", "dark", "notebook"] do
+  def handle_params(params, _uri, socket) do
+    style = Map.get(params, "style", socket.assigns.active_style)
+    style = if style in ["simple", "warm", "dark", "notebook"], do: style, else: "simple"
+
+    selected_expense =
+      case Map.get(params, "expense_id") do
+        nil -> nil
+        id -> Enum.find(socket.assigns.expenses, &(&1.id == String.to_integer(id)))
+      end
+
     {:noreply,
      assign(socket,
        active_style: style,
        show_new_expense: false,
-       selected_expense: nil
+       selected_expense: selected_expense
      )}
   end
-
-  def handle_params(_params, _uri, socket), do: {:noreply, socket}
 
   @impl Phoenix.LiveView
   def handle_event("switch_style", %{"style" => style}, socket) do
@@ -147,12 +153,15 @@ defmodule LocalCentsWeb.LibraryDemoLive do
   end
 
   def handle_event("select_expense", %{"id" => id}, socket) do
-    expense = Enum.find(socket.assigns.expenses, &(&1.id == String.to_integer(id)))
-    {:noreply, assign(socket, selected_expense: expense)}
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/library-demo?style=#{socket.assigns.active_style}&expense_id=#{id}"
+     )}
   end
 
   def handle_event("close_expense", _, socket) do
-    {:noreply, assign(socket, selected_expense: nil)}
+    {:noreply,
+     push_patch(socket, to: ~p"/library-demo?style=#{socket.assigns.active_style}")}
   end
 
   defp to_date_input(date) do
@@ -316,7 +325,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                 <div
                   id="notebook-document-window"
                   class={[
-                    "relative rounded-xl overflow-hidden border border-[#a8c0e0] shadow-lg shadow-[#3f7fd6]/20",
+                    "rounded-xl overflow-hidden border border-[#a8c0e0] shadow-lg shadow-[#3f7fd6]/20",
                     "nb-tex-#{@notebook_texture}"
                   ]}
                 >
@@ -334,6 +343,8 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       Family Expenses
                     </span>
                   </div>
+                  <%!-- Content area (edit panel is relative to this, not the title bar) --%>
+                  <div class="relative overflow-hidden">
                   <%!-- Graph paper chart placeholder --%>
                   <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
                     <div class="flex items-end gap-2 h-24">
@@ -508,6 +519,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </div>
                     </div>
                   <% end %>
+                  </div>
                 </div>
                 <%!-- Button Design Lab — B5 Press Variations --%>
                 <div class="bg-white/70 rounded-xl border border-[#c3d2f0] p-6 shadow-sm">
