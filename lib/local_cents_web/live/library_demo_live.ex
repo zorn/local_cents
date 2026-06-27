@@ -1236,75 +1236,75 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                     </div>
                   <% end %>
                 </div>
-              <%!-- Button Design Lab — Ledger Stamp Forks --%>
+              <%!-- Button Design Lab — B5 Press Variations --%>
               <div class="bg-white/70 rounded-xl border border-[#c3d2f0] p-6 shadow-sm">
-                <p class="font-nunito text-[10px] font-bold uppercase tracking-widest text-[#6980b0] mb-5">Ledger Stamp · Explorations</p>
+                <p class="font-nunito text-[10px] font-bold uppercase tracking-widest text-[#6980b0] mb-5">Press Button · Color Variations</p>
                 <div class="grid grid-cols-3 gap-x-6 gap-y-7">
 
-                  <%!-- B1 — Baseline --%>
+                  <%!-- P1 — Classic (reference) --%>
                   <div class="space-y-2.5">
-                    <p class="font-nunito text-xs font-bold text-[#22335c]">B1 · Baseline</p>
+                    <p class="font-nunito text-xs font-bold text-[#22335c]">P1 · Classic <span class="font-normal text-[#6980b0]">reference</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm nb-t-bg text-white rounded nb-t-hover-dk transition-colors" style="box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
-                      <button class="font-nunito font-bold text-sm border-2 nb-t-border nb-t-text rounded px-3 py-1 nb-t-hover-soft transition-colors">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded border-2 nb-t-border nb-t-bg-soft nb-t-text text-sm font-bold flex items-center justify-center" style="box-shadow: 2px 2px 0 #1b3a9a">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="background: #1e40af; border: 2px solid #1e40af; box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="border: 2px solid #1e40af; color: #1e40af; box-shadow: 1px 2px 0 #1b3a9a">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent); box-shadow: 1px 2px 0 #1b3a9a">?</button>
                     </div>
-                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">The reference point. Sapphire fill, hard dark offset, slight corner radius.</p>
+                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Fill, border, and shadow all drawn from one sapphire tint. The reference point.</p>
                   </div>
 
-                  <%!-- B2 — Ivory (color fork) --%>
+                  <%!-- P2 — Emerald Ring --%>
                   <div class="space-y-2.5">
-                    <p class="font-nunito text-xs font-bold text-[#22335c]">B2 · Ivory <span class="font-normal text-[#6980b0]">color</span></p>
+                    <p class="font-nunito text-xs font-bold text-[#22335c]">P2 · Emerald Ring <span class="font-normal text-[#6980b0]">border contrast</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm bg-[#f5f2e8] text-[#1e2d4d] border-2 border-[#1e2d4d] rounded hover:bg-[#ece8d4] transition-colors" style="box-shadow: 2px 3px 0 #0d1525">New Expense</button>
-                      <button class="font-nunito font-bold text-sm border-2 border-[#1e2d4d] text-[#1e2d4d] rounded px-3 py-1 hover:bg-[#1e2d4d]/5 transition-colors">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded border-2 border-[#1e2d4d] bg-[#f5f2e8] text-[#1e2d4d] text-sm font-bold flex items-center justify-center" style="box-shadow: 2px 2px 0 #0d1525">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="background: #1e40af; border: 2px solid #059669; box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="border: 2px solid #059669; color: #059669; box-shadow: 1px 2px 0 #1b3a9a">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="border: 2px solid #059669; color: #059669; background: color-mix(in srgb, #059669 12%, transparent); box-shadow: 1px 2px 0 #1b3a9a">?</button>
                     </div>
-                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Inverted — warm paper fill, dark ink shadow. Feels like the button is stamped onto the page rather than raised off it.</p>
+                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Sapphire fill, emerald border, dark sapphire shadow. The ring reads as a distinct accent layer from a separate hue family.</p>
                   </div>
 
-                  <%!-- B3 — Denim (color fork) --%>
+                  <%!-- P3 — Dark Frame --%>
                   <div class="space-y-2.5">
-                    <p class="font-nunito text-xs font-bold text-[#22335c]">B3 · Denim <span class="font-normal text-[#6980b0]">color</span></p>
+                    <p class="font-nunito text-xs font-bold text-[#22335c]">P3 · Dark Frame <span class="font-normal text-[#6980b0]">border contrast</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm bg-[#1e2d4d] text-white border-2 border-[#1e2d4d] rounded hover:bg-[#2d3f60] transition-colors" style="box-shadow: 2px 3px 0 rgba(255,255,255,0.2)">New Expense</button>
-                      <button class="font-nunito font-bold text-sm border-2 border-[#1e2d4d] text-[#1e2d4d] rounded px-3 py-1 hover:bg-[#1e2d4d]/8 transition-colors">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded border-2 border-[#1e2d4d] bg-[#1e2d4d] text-white text-sm font-bold flex items-center justify-center hover:bg-[#2d3f60] transition-colors" style="box-shadow: 2px 2px 0 rgba(255,255,255,0.2)">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="background: #1e40af; border: 2px solid #0e2060; box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="border: 2px solid #0e2060; color: #0e2060; box-shadow: 1px 2px 0 #1b3a9a">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="border: 2px solid #0e2060; color: #0e2060; background: color-mix(in srgb, #1e40af 12%, transparent); box-shadow: 1px 2px 0 #1b3a9a">?</button>
                     </div>
-                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Same navy as the title bar — one tonal family. White offset shadow reverses the depth cue; feels like a nightshift or muted mode.</p>
+                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Classic sapphire fill with a darker navy border. The frame is visibly distinct from the fill — adds definition without leaving the blue family.</p>
                   </div>
 
-                  <%!-- B4 — Hatch (texture fork) --%>
+                  <%!-- P4 — Amber Shadow --%>
                   <div class="space-y-2.5">
-                    <p class="font-nunito text-xs font-bold text-[#22335c]">B4 · Hatch <span class="font-normal text-[#6980b0]">texture</span></p>
+                    <p class="font-nunito text-xs font-bold text-[#22335c]">P4 · Amber Shadow <span class="font-normal text-[#6980b0]">shadow contrast</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm nb-t-bg nb-stamp-hatch text-white rounded nb-t-hover-dk transition-colors" style="box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
-                      <button class="font-nunito font-bold text-sm border-2 nb-t-border nb-t-text rounded px-3 py-1 nb-t-hover-soft transition-colors">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded border-2 nb-t-border nb-t-bg nb-stamp-hatch text-white text-sm font-bold flex items-center justify-center" style="box-shadow: 2px 2px 0 #1b3a9a">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="background: #1e40af; border: 2px solid #1e40af; box-shadow: 2px 3px 0 #b45309">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="border: 2px solid #1e40af; color: #1e40af; box-shadow: 1px 2px 0 #b45309">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent); box-shadow: 1px 2px 0 #b45309">?</button>
                     </div>
-                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Diagonal hatch lines over the fill — like a woven fabric or engineering cross-hatch. Adds a crafted, hand-drawn quality to the button surface.</p>
+                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Border matches fill but the offset shadow shifts to amber. The button reads cool; the depth cue reads warm — a subtle surprise on press.</p>
                   </div>
 
-                  <%!-- B5 — Press (animation fork) --%>
+                  <%!-- P5 — Full Split --%>
                   <div class="space-y-2.5">
-                    <p class="font-nunito text-xs font-bold text-[#22335c]">B5 · Press <span class="font-normal text-[#6980b0]">animation ↗ hover</span></p>
+                    <p class="font-nunito text-xs font-bold text-[#22335c]">P5 · Full Split <span class="font-normal text-[#6980b0]">fill / border / shadow</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm nb-t-bg text-white rounded nb-stamp-press" style="box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
-                      <button class="font-nunito font-bold text-sm border-2 nb-t-border nb-t-text rounded px-3 py-1 nb-stamp-press" style="box-shadow: 1px 2px 0 #1b3a9a">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded border-2 nb-t-border nb-t-bg-soft nb-t-text text-sm font-bold flex items-center justify-center nb-stamp-press" style="box-shadow: 1px 2px 0 #1b3a9a">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="background: #1e40af; border: 2px solid #059669; box-shadow: 2px 3px 0 #c2410c">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="border: 2px solid #059669; color: #059669; box-shadow: 1px 2px 0 #c2410c">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="border: 2px solid #059669; color: #059669; background: color-mix(in srgb, #059669 12%, transparent); box-shadow: 1px 2px 0 #c2410c">?</button>
                     </div>
-                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Hover → shadow shrinks as the button "moves toward the page." Active → fully depresses. Satisfying physical feedback without any JS.</p>
+                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Sapphire fill · emerald border · orange-red shadow. Every visual layer speaks a different hue — loud but compositionally rich.</p>
                   </div>
 
-                  <%!-- B6 — Bloom (animation fork) --%>
+                  <%!-- P6 — Ivory Press --%>
                   <div class="space-y-2.5">
-                    <p class="font-nunito text-xs font-bold text-[#22335c]">B6 · Bloom <span class="font-normal text-[#6980b0]">animation ↗ hover</span></p>
+                    <p class="font-nunito text-xs font-bold text-[#22335c]">P6 · Ivory Press <span class="font-normal text-[#6980b0]">light fill</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm nb-t-bg text-white rounded nb-stamp-bloom" style="box-shadow: 2px 3px 0 #1b3a9a">New Expense</button>
-                      <button class="font-nunito font-bold text-sm border-2 nb-t-border nb-t-text rounded px-3 py-1 nb-stamp-bloom" style="box-shadow: 1px 2px 0 #1b3a9a">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded border-2 nb-t-border nb-t-bg-soft nb-t-text text-sm font-bold flex items-center justify-center nb-stamp-bloom" style="box-shadow: 1px 2px 0 #1b3a9a">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm rounded nb-stamp-press" style="background: #f5f2e8; color: #1e2d4d; border: 2px solid #1e40af; box-shadow: 2px 3px 0 #059669">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="border: 2px solid #1e40af; color: #1e40af; box-shadow: 1px 2px 0 #059669">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent); box-shadow: 1px 2px 0 #059669">?</button>
                     </div>
-                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Hover → the hard geometric shadow dissolves into a soft ink bleed. The button glows outward rather than pressing inward — dreamy counterpoint to B5.</p>
+                    <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Warm ivory fill, sapphire border, emerald shadow. Feels like a rubber stamp pressed onto notepaper — the green undercut reads as ink pooling.</p>
                   </div>
 
                 </div>

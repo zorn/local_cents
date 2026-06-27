@@ -66,14 +66,15 @@
 
 /* Ledger stamp button interactions */
 .nb-stamp-press {
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
 }
 .nb-stamp-press:hover {
-  transform: translate(1px, 1px);
+  filter: brightness(1.1);
 }
 .nb-stamp-press:active {
   transform: translate(2px, 3px);
   box-shadow: none !important;
+  filter: brightness(0.95);
 }
 
 /* Shadow dissolves into an ink bleed glow */
