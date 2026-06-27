@@ -1267,9 +1267,9 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   <div class="space-y-2.5">
                     <p class="font-nunito text-xs font-bold text-[#22335c]">P3 · Lifted Fill <span class="font-normal text-[#6980b0]">fill contrast</span></p>
                     <div class="flex items-center gap-2">
-                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="--sh: #1b3a9a; background: #3060d8; border: 2px solid #1e40af">New Expense</button>
-                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="--sh: #1b3a9a; border: 2px solid #1e40af; color: #1e40af">Open</button>
-                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="--sh: #1b3a9a; border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)">?</button>
+                      <button class="font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press" style="--sh: #1e293b; --sh-x: 1px; --sh-y: 2px; background: #3060d8; border: 2px solid #1e40af">New Expense</button>
+                      <button class="font-nunito font-bold text-sm rounded px-3 py-1 nb-stamp-press" style="--sh: #1e293b; --sh-x: 1px; --sh-y: 2px; border: 2px solid #1e40af; color: #1e40af">Open</button>
+                      <button class="font-nunito w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press" style="--sh: #1e293b; --sh-x: 1px; --sh-y: 2px; border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)">?</button>
                     </div>
                     <p class="font-nunito text-[10px] text-[#6980b0] leading-snug">Fill is one step lighter than classic; border and shadow stay classic. The darker frame visibly wraps the lighter fill.</p>
                   </div>
