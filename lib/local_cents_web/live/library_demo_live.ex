@@ -246,7 +246,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                 <%!-- Notebook Document Window --%>
                 <div
                   id="notebook-document-window"
-                  class="relative bg-white rounded-xl overflow-hidden border border-[#c3d2f0] shadow-lg shadow-[#3f7fd6]/15"
+                  class={["relative rounded-xl overflow-hidden border border-[#a8c0e0] shadow-lg shadow-[#3f7fd6]/20", "nb-tex-#{@notebook_texture}"]}
                 >
                   <%!-- Denim title bar --%>
                   <div class="nb-denim relative flex items-center pl-3 pr-4 py-2 select-none border-b border-[#0d1a35]">
@@ -264,68 +264,34 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   </div>
                   <%!-- Graph paper chart placeholder --%>
                   <div class="m-4 nb-graph rounded-lg border border-[#c3d2f0] px-6 py-5">
-                    <p class="font-caveat text-lg nb-t-text mb-4">where it all went →</p>
-                    <div class="flex items-end gap-2 h-20 mb-3">
-                      <div class="flex-1 flex flex-col justify-end items-center gap-1">
-                        <span class="font-caveat text-sm text-[#22335c]">$247</span>
-                        <div class="w-full nb-t-bar rounded-t-sm" style="height: 75%"></div>
-                        <span class="font-nunito text-[9px] font-bold uppercase tracking-wider text-[#22335c] mt-1">
-                          Food
-                        </span>
-                      </div>
-                      <div class="flex-1 flex flex-col justify-end items-center gap-1">
-                        <span class="font-caveat text-sm text-[#22335c]">$135</span>
-                        <div class="w-full bg-[#9b8bd6]/70 rounded-t-sm" style="height: 41%"></div>
-                        <span class="font-nunito text-[9px] font-bold uppercase tracking-wider text-[#22335c] mt-1">
-                          Sports
-                        </span>
-                      </div>
-                      <div class="flex-1 flex flex-col justify-end items-center gap-1">
-                        <span class="font-caveat text-sm text-[#22335c]">$67</span>
-                        <div class="w-full bg-[#e0796e]/70 rounded-t-sm" style="height: 21%"></div>
-                        <span class="font-nunito text-[9px] font-bold uppercase tracking-wider text-[#22335c] mt-1">
-                          Kids
-                        </span>
-                      </div>
-                      <div class="flex-1 flex flex-col justify-end items-center gap-1">
-                        <span class="font-caveat text-sm text-[#22335c]">$68</span>
-                        <div class="w-full bg-[#6fc59a]/70 rounded-t-sm" style="height: 22%"></div>
-                        <span class="font-nunito text-[9px] font-bold uppercase tracking-wider text-[#22335c] mt-1">
-                          Dining
-                        </span>
-                      </div>
-                      <div class="flex-1 flex flex-col justify-end items-center gap-1">
-                        <span class="font-caveat text-sm text-[#22335c]">$44</span>
-                        <div class="w-full bg-[#e6b53c]/70 rounded-t-sm" style="height: 14%"></div>
-                        <span class="font-nunito text-[9px] font-bold uppercase tracking-wider text-[#22335c] mt-1">
-                          Other
-                        </span>
-                      </div>
-                    </div>
-                    <div class="border-t border-[#c3d2f0] pt-2 flex justify-between items-baseline">
-                      <span class="font-caveat text-base text-[#6980b0]">June, so far</span>
-                      <span class="font-caveat text-xl text-[#22335c] font-semibold">$561.43</span>
+                    <div class="flex items-end gap-2 h-24">
+                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%"></div>
+                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%"></div>
+                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-75" style="height: 58%"></div>
+                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-50" style="height: 21%"></div>
+                      <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%"></div>
                     </div>
                   </div>
-                  <%!-- Ruled paper expense table --%>
-                  <div class="mx-4 mb-4 nb-ruled rounded-lg border border-[#c3d2f0] overflow-hidden">
+                  <%!-- Expense table --%>
+                  <div class="mx-4 mb-4 bg-white rounded-lg border border-[#c3d2f0] overflow-hidden">
                     <%!-- Toolbar --%>
                     <div class="px-3 py-2.5 border-b border-[#c3d2f0] bg-white/90">
                       <%= if @show_new_expense do %>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-end gap-2">
                           <input
                             id="notebook-new-expense-input"
                             type="text"
                             autofocus
                             placeholder="coffee 4.75 or netflix 22.99 yesterday"
-                            class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-transparent focus:outline-none text-[#22335c] placeholder-[#a0b4d0]"
+                            class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-transparent focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
                           />
                           <button
                             id="notebook-new-expense-toggle-btn"
                             phx-click="toggle_new_expense"
-                            class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm border-2 nb-t-border rounded-full nb-t-text nb-t-hover-soft transition-colors"
+                            class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
+                            style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
                           >
-                            New Expense
+                            Create
                           </button>
                         </div>
                       <% else %>
@@ -338,7 +304,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                               id="notebook-expense-search-input"
                               type="text"
                               placeholder="search..."
-                              class="font-nunito pl-7 pr-3 py-1.5 text-sm border-2 border-[#c3d2f0] rounded-full bg-white focus:outline-none nb-t-focus-border text-[#22335c] placeholder-[#a0b4d0] w-44 transition-colors"
+                              class="font-nunito pl-7 pr-3 py-1.5 text-sm border-2 nb-t-border rounded-full bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] w-44 transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
                             />
                           </div>
                           <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
@@ -351,7 +317,8 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                           <button
                             id="notebook-expense-new-btn"
                             phx-click="toggle_new_expense"
-                            class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm nb-t-bg nb-t-hover-dk text-white rounded-full transition-colors nb-t-shadow"
+                            class="font-nunito font-bold flex-shrink-0 px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
+                            style="--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
                           >
                             New Expense
                           </button>
