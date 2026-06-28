@@ -1,13 +1,6 @@
 /* Bond component styles — imported by app.css and storybook.css */
 
-/* Notebook tint color system — set on parent wrapper, consumed by children.
-   :root provides a default so components render correctly in storybook and
-   other contexts where no nb-tint-* wrapper is present. */
-:root {
-  --nb-t: #1e40af;
-  --nb-t-dk: #1b3a9a;
-}
-
+/* Notebook tint color system — set on parent wrapper, consumed by children */
 .nb-tint-sky      { --nb-t: #3f7fd6; --nb-t-dk: #2d6bc4; }
 .nb-tint-ocean    { --nb-t: #2563eb; --nb-t-dk: #1d4ed8; }
 .nb-tint-cobalt   { --nb-t: #1d4ed8; --nb-t-dk: #1a44c4; }
@@ -26,6 +19,9 @@
 .nb-t-hover-solid:hover { background-color: var(--nb-t); color: white; }
 .nb-t-hover-dk:hover    { background-color: var(--nb-t-dk); }
 .nb-t-focus-border:focus { border-color: var(--nb-t); outline: none; }
+
+/* Placeholder color driven by --bond-placeholder CSS variable set inline by Bond.Elements.Input */
+.bond-input::placeholder { color: var(--bond-placeholder); }
 
 /* Stamp-press button interaction: button translates toward its shadow on hover,
    giving the illusion the shadow is anchored to the page. Set --sh (color),

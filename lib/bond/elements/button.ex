@@ -36,13 +36,21 @@ defmodule Bond.Elements.Button do
     do:
       "font-nunito font-bold text-sm rounded nb-stamp-press w-7 h-7 flex items-center justify-center"
 
-  defp button_style(:primary),
-    do: "--sh: #1e293b; background: #1e40af; border: 2px solid #1e40af"
+  defp button_style(:primary) do
+    a = Bond.Tokens.color(:accent)
+    s = Bond.Tokens.color(:button_shadow)
+    "--sh: #{s}; background: #{a}; border: 2px solid #{a}"
+  end
 
-  defp button_style(:outline),
-    do: "--sh: #1e293b; color: #1e40af; border: 2px solid #1e40af; background: transparent"
+  defp button_style(:outline) do
+    a = Bond.Tokens.color(:accent)
+    s = Bond.Tokens.color(:button_shadow)
+    "--sh: #{s}; color: #{a}; border: 2px solid #{a}; background: transparent"
+  end
 
-  defp button_style(:square),
-    do:
-      "--sh: #1e293b; color: #1e40af; border: 2px solid #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)"
+  defp button_style(:square) do
+    a = Bond.Tokens.color(:accent)
+    s = Bond.Tokens.color(:button_shadow)
+    "--sh: #{s}; color: #{a}; border: 2px solid #{a}; background: color-mix(in srgb, #{a} 12%, transparent)"
+  end
 end

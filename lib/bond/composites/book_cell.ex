@@ -19,13 +19,14 @@ defmodule Bond.Composites.BookCell do
     ~H"""
     <div
       class="flex items-center gap-4 px-4 py-4 nb-t-hover-row transition-colors"
+      style={"--nb-t: #{Bond.Tokens.color(:accent)}"}
       {@rest}
     >
       <div class="flex-1 min-w-0">
-        <p class="font-nunito text-base font-semibold text-[#22335c] leading-snug">
+        <p class="font-nunito text-base font-semibold leading-snug" style={"color: #{Bond.Tokens.color(:content)}"}>
           {@name}
         </p>
-        <p class="font-nunito text-xs text-[#6980b0] mt-0.5">
+        <p class="font-nunito text-xs mt-0.5" style={"color: #{Bond.Tokens.color(:content_secondary)}"}>
           Last Updated: {@last_updated}
         </p>
       </div>
