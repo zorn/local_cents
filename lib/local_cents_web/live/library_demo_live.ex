@@ -311,47 +311,45 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </:trailing_content>
                     </Bond.input_bar>
                     <%!-- Expense table --%>
-                    <div class="mx-4 mt-3 mb-4 bg-white rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 overflow-hidden">
-                      <%!-- Search / filter toolbar --%>
-                      <Bond.list_controls>
-                        <:leading_content>
-                          <Bond.input
-                            type="search"
-                            id="notebook-expense-search-input"
-                            placeholder="search..."
-                            class="flex-1"
-                          />
-                        </:leading_content>
-                        <:trailing_content>
-                          <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                            Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                          </button>
-                          <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                            ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                          </button>
-                        </:trailing_content>
-                      </Bond.list_controls>
-                      <%!-- Expense Rows --%>
-                      <div class="overflow-y-auto" style="max-height: 420px;">
-                        <%= for expense <- @expenses do %>
-                          <%!-- FIXME: In the future we should be able to pass in the tags directly without the mapping. --%>
-                          <Bond.expense_cell
-                            id={"notebook-expense-row-#{expense.id}"}
-                            date={expense.date}
-                            description={expense.description}
-                            amount={expense.amount}
-                            tags={
-                              Enum.map(
-                                expense.tags,
-                                &%{label: &1.label, color: nb_tag_swatch(&1.label)}
-                              )
-                            }
-                            phx-click="select_expense"
-                            phx-value-id={expense.id}
-                          />
-                        <% end %>
-                      </div>
-                    </div>
+                    <Bond.list_view max_height="420px">
+                      <:header>
+                        <Bond.list_controls>
+                          <:leading_content>
+                            <Bond.input
+                              type="search"
+                              id="notebook-expense-search-input"
+                              placeholder="search..."
+                              class="flex-1"
+                            />
+                          </:leading_content>
+                          <:trailing_content>
+                            <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
+                              Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
+                            </button>
+                            <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
+                              ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
+                            </button>
+                          </:trailing_content>
+                        </Bond.list_controls>
+                      </:header>
+                      <%!-- FIXME: In the future we should be able to pass in the tags directly without the mapping. --%>
+                      <%= for expense <- @expenses do %>
+                        <Bond.expense_cell
+                          id={"notebook-expense-row-#{expense.id}"}
+                          date={expense.date}
+                          description={expense.description}
+                          amount={expense.amount}
+                          tags={
+                            Enum.map(
+                              expense.tags,
+                              &%{label: &1.label, color: nb_tag_swatch(&1.label)}
+                            )
+                          }
+                          phx-click="select_expense"
+                          phx-value-id={expense.id}
+                        />
+                      <% end %>
+                    </Bond.list_view>
                     <%!-- Notebook edit panel --%>
                     <%= if @selected_expense do %>
                       <div id="notebook-expense-edit-panel" class="absolute inset-0 flex">

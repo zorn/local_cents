@@ -33,6 +33,28 @@ defmodule Storybook.Elements.ListView do
           <div class="px-4 py-3">Item Eight</div>
           """
         ]
+      },
+      %Variation{
+        id: :with_header,
+        description:
+          "Optional header slot renders above the scrollable area, inside the container.",
+        attributes: %{max_height: "200px"},
+        slots: [
+          """
+          <:header>
+            <div class="px-3 py-2 font-semibold text-sm text-[#22335c]">
+              Toolbar goes here
+            </div>
+          </:header>
+          """,
+          """
+          <div class="px-4 py-3">Item One</div>
+          <div class="px-4 py-3">Item Two</div>
+          <div class="px-4 py-3">Item Three</div>
+          <div class="px-4 py-3">Item Four</div>
+          <div class="px-4 py-3">Item Five</div>
+          """
+        ]
       }
     ]
   end

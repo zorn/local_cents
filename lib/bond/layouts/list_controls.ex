@@ -13,8 +13,8 @@ defmodule Bond.Layouts.ListControls do
   def list_controls(assigns) do
     ~H"""
     <div
-      class="px-3 py-2.5 border-b nb-t-bg-soft"
-      style={"--nb-t: #{Bond.Tokens.color(:accent)}; border-color: #{Bond.Tokens.color(:border_subtle)}"}
+      class="px-3 py-2.5 nb-t-bg-soft"
+      style={"--nb-t: #{Bond.Tokens.color(:accent)}"}
     >
       <div class="flex items-center gap-2">
         {render_slot(@leading_content)}

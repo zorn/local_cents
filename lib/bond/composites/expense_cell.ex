@@ -21,7 +21,7 @@ defmodule Bond.Composites.ExpenseCell do
     ~H"""
     <div
       class="flex items-center gap-4 px-4 py-3 nb-t-hover-row transition-colors cursor-pointer"
-      style={"--nb-t: #{Bond.Tokens.color(:accent)}; border-bottom: 1px solid color-mix(in srgb, #{Bond.Tokens.color(:border_subtle)} 60%, transparent)"}
+      style={"--nb-t: #{Bond.Tokens.color(:accent)}"}
       {@rest}
     >
       <span
