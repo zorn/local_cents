@@ -4,5 +4,5 @@ defmodule Storybook.Root do
 
   use PhoenixStorybook.Index
 
-  def folder_name, do: "Storybook"
+  def folder_name, do: "Bond"
 end
