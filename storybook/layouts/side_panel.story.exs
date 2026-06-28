@@ -1,7 +1,7 @@
 defmodule Storybook.Layouts.SidePanel do
   use PhoenixStorybook.Story, :example
 
-  def doc, do: "Right-aligned slide-in panel with a dimmed overlay backdrop."
+  def doc, do: "Right-aligned modal panel using the native <dialog> element."
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
@@ -28,7 +28,7 @@ defmodule Storybook.Layouts.SidePanel do
       <%!-- Normal: all close paths open --%>
       <div>
         <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-          Default — Escape, overlay, or × closes
+          Default — Escape, backdrop, or × closes
         </p>
         <div
           class="relative overflow-hidden rounded-lg border"
@@ -47,7 +47,11 @@ defmodule Storybook.Layouts.SidePanel do
           </div>
 
           <%= if @open_normal do %>
-            <Bond.Layouts.SidePanel.side_panel title="Edit Expense" on_close="close_normal">
+            <Bond.Layouts.SidePanel.side_panel
+              id="story-panel-normal"
+              title="Edit Expense"
+              on_close="close_normal"
+            >
               <div class="space-y-3">
                 <div>
                   <label
@@ -112,6 +116,7 @@ defmodule Storybook.Layouts.SidePanel do
 
           <%= if @open_locked do %>
             <Bond.Layouts.SidePanel.side_panel
+              id="story-panel-locked"
               title="Edit Expense"
               on_close="close_locked"
               locked={true}
@@ -140,7 +145,7 @@ defmodule Storybook.Layouts.SidePanel do
                   <Bond.Elements.Input.input variant="frosted" class="w-full" placeholder="127.43" />
                 </div>
                 <p class="font-nunito text-xs" style="color: rgba(255,255,255,0.45);">
-                  Form has unsaved changes — Escape, overlay, and × are disabled.
+                  Form has unsaved changes — Escape, backdrop, and × are disabled.
                 </p>
               </div>
               <:footer>
