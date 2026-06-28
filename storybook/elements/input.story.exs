@@ -21,6 +21,11 @@ defmodule Storybook.Elements.Input do
         attributes: %{
           value: "Whole Foods $127.43"
         }
+      },
+      %Variation{
+        id: :search,
+        description: "Pill-shaped search field with magnifying glass icon.",
+        attributes: %{type: "search", placeholder: "search..."}
       }
     ]
   end

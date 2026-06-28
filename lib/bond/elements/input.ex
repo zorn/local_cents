@@ -1,16 +1,44 @@
 defmodule Bond.Elements.Input do
-  @moduledoc "A notebook-themed text input element."
+  @moduledoc "A notebook-themed input element. Supports text (underline style) and search (pill with icon) variants."
 
   use Phoenix.Component
+
+  import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
-  attr :type, :string, default: "text", doc: "HTML input type; only text supported for now"
-  attr :class, :string, default: nil, doc: "Additional classes appended to the base input classes"
+  # FIXME: Maybe accept a known list of atoms.
+  attr :type, :string,
+    default: "text",
+    doc: "HTML input type; \"search\" renders a pill field with a magnifying glass icon"
+
+  attr :class, :string,
+    default: nil,
+    doc: "Additional classes; applied to wrapper div for search, input element otherwise"
+
   attr :rest, :global, doc: "HTML attributes (id, placeholder, value, phx-*, etc.)"
 
   @spec input(Socket.assigns()) :: Rendered.t()
+  def input(%{type: "search"} = assigns) do
+    ~H"""
+    <div class={["relative", @class]}>
+      <div
+        class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none"
+        style={"color: #{Bond.Tokens.color(:content_secondary)}"}
+      >
+        <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
+      </div>
+      <input
+        type="search"
+        class="bond-input font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+        style={"background: #{Bond.Tokens.color(:surface)}; color: #{Bond.Tokens.color(:content)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+        {@rest}
+      />
+    </div>
+    """
+  end
+
   def input(assigns) do
     ~H"""
     <input
