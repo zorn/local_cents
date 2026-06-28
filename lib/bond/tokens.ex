@@ -10,6 +10,7 @@ defmodule Bond.Tokens do
   def color(:content_placeholder),  do: "#a0b4d0"
 
   def color(:border),               do: "#a8c0e0"
+  def color(:border_subtle),        do: "#c3d2f0"
   def color(:surface),              do: "#ffffff"
   def color(:surface_sunken),       do: "#cce0f5"
 

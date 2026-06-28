@@ -351,14 +351,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             </span>
                             <div class="flex items-center gap-1.5">
                               <%= for tag <- expense.tags do %>
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-nunito bg-white border border-[#c3d2f0] text-[#22335c]">
-                                  <span
-                                    class="w-2 h-2 rounded-full shrink-0"
-                                    style={"background: #{nb_tag_swatch(tag.label)}"}
-                                  >
-                                  </span>
-                                  {tag.label}
-                                </span>
+                                <Bond.tag_pill label={tag.label} color={nb_tag_swatch(tag.label)} />
                               <% end %>
                             </div>
                             <span class="shrink-0 font-nunito text-sm font-bold text-[#3f9d6c] tabular-nums w-16 text-right">

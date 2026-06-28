@@ -7,4 +7,5 @@ defmodule Bond do
   defdelegate desktop_window(assigns), to: Bond.Layouts.DesktopWindow
   defdelegate input_bar(assigns), to: Bond.Layouts.InputBar
   defdelegate book_cell(assigns), to: Bond.Composites.BookCell
+  defdelegate tag_pill(assigns), to: Bond.Elements.TagPill
 end
