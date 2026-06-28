@@ -354,37 +354,25 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                         on_close="close_expense"
                       >
                         <div class="space-y-3">
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                              Date
-                            </label>
-                            <Bond.input
-                              type="date"
-                              variant="frosted"
-                              class="w-full"
-                              value={to_date_input(@selected_expense.date)}
-                            />
-                          </div>
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                              Description
-                            </label>
-                            <Bond.input
-                              variant="frosted"
-                              class="w-full"
-                              value={@selected_expense.description}
-                            />
-                          </div>
-                          <div>
-                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                              Cost
-                            </label>
-                            <Bond.input
-                              variant="frosted"
-                              class="w-full"
-                              value={@selected_expense.amount}
-                            />
-                          </div>
+                          <Bond.input
+                            label="Date"
+                            type="date"
+                            variant="frosted"
+                            class="w-full"
+                            value={to_date_input(@selected_expense.date)}
+                          />
+                          <Bond.input
+                            label="Description"
+                            variant="frosted"
+                            class="w-full"
+                            value={@selected_expense.description}
+                          />
+                          <Bond.input
+                            label="Cost"
+                            variant="frosted"
+                            class="w-full"
+                            value={@selected_expense.amount}
+                          />
                           <div>
                             <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-2 px-1">
                               Tags

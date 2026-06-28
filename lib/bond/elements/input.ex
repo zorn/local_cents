@@ -1,5 +1,70 @@
 defmodule Bond.Elements.Input do
-  @moduledoc "A notebook-themed input element. Supports text (underline style) and search (pill with icon) variants."
+  @moduledoc """
+  A notebook-themed input element.
+
+  Always renders an outer `<div>` wrapper containing an optional label, the
+  input element itself, and any validation error messages. This means the
+  component is self-contained — callers do not need to wrap it in their own
+  `<div>` or manually add a `<label>`.
+
+  ## Variants
+
+  The `variant` attr controls the visual style of the input element:
+
+  - **`"default"`** — an underline-only style suited for light backgrounds.
+    The bottom border uses the notebook tint accent color.
+  - **`"frosted"`** — a semi-transparent frosted-glass style for use inside
+    dark panel backgrounds (e.g. `Bond.Layouts.SidePanel`).
+  - **`type="search"`** — a pill-shaped field with an inset magnifying glass
+    icon. Only works with `variant="default"`; combining search with another
+    variant raises `ArgumentError`.
+
+  ## Label
+
+  Pass `label="My Label"` to render a small uppercase label above the input.
+  Omit it (the default) to render no label at all — there is no opt-out attr
+  needed. Label color is derived from the variant: `accent_light` for frosted,
+  `content_secondary` for default.
+
+  ## Errors
+
+  Pass `errors={["can't be blank", "is too short"]}` to render one error
+  paragraph per message below the input. When no errors are present (the
+  default), nothing is rendered in that slot.
+
+  ## Form field integration
+
+  Pass `field={@form[:email]}` to wire the component directly to a Phoenix
+  form field. The component unpacks `id`, `name`, and `value` from the field
+  struct automatically, and only shows errors once the user has interacted with
+  the field (via `Phoenix.Component.used_input?/1`). Raw `{msg, opts}` error
+  tuples from the changeset are translated through Gettext before display.
+
+  You can still pass `id`, `name`, and `value` explicitly when not using a
+  form field — useful for standalone inputs that are not backed by a changeset.
+
+  ## The `class` attr
+
+  For `type="search"`, `class` is applied to the inner pill wrapper `<div>`
+  (which controls the width of the search widget). For all other variants,
+  `class` is applied directly to the `<input>` element. In both cases the outer
+  wrapper `<div>` has no class from this attr, so its width is governed by the
+  parent layout.
+
+  ## Examples
+
+      <%!-- Bare input, no label --%>
+      <Bond.input placeholder="coffee 4.75" />
+
+      <%!-- With label and explicit value --%>
+      <Bond.input label="Description" value={@expense.description} variant="frosted" class="w-full" />
+
+      <%!-- Wired to a Phoenix form field --%>
+      <Bond.input field={@form[:email]} label="Email" />
+
+      <%!-- Search filter, no label --%>
+      <Bond.input type="search" placeholder="search..." class="flex-1" />
+  """
 
   use Phoenix.Component
 
@@ -17,15 +82,52 @@ defmodule Bond.Elements.Input do
     default: "default",
     doc: "Visual variant; \"frosted\" suits dark panel backgrounds"
 
+  attr :label, :string,
+    default: nil,
+    doc: "Label text shown above the input; omit to render no label"
+
+  attr :errors, :list,
+    default: [],
+    doc: "List of error message strings shown below the input"
+
+  attr :field, Phoenix.HTML.FormField,
+    doc: "A form field struct (@form[:field]); unpacks id, name, value, and errors automatically"
+
+  attr :id, :any,
+    default: nil,
+    doc: "DOM id for the input element; derived automatically when field is given"
+
+  attr :name, :any,
+    default: nil,
+    doc: "Input name attribute; derived automatically when field is given"
+
+  attr :value, :any,
+    default: nil,
+    doc:
+      "Input value — accepts strings, Date, Decimal, or any type normalize_value/2 handles; derived automatically when field is given"
+
   attr :class, :string,
     default: nil,
     doc: "Additional classes; applied to wrapper div for search, input element otherwise"
 
-  attr :rest, :global,
-    include: ~w(value),
-    doc: "HTML attributes (id, placeholder, value, phx-*, etc.)"
+  attr :rest, :global, doc: "HTML attributes (placeholder, phx-*, disabled, etc.)"
 
   @spec input(Socket.assigns()) :: Rendered.t()
+  def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
+    errors =
+      case Phoenix.Component.used_input?(field) do
+        true -> field.errors
+        false -> []
+      end
+
+    assigns
+    |> assign(field: nil, id: assigns.id || field.id)
+    |> assign(:errors, Enum.map(errors, &translate_error(&1)))
+    |> assign_new(:name, fn -> field.name end)
+    |> assign_new(:value, fn -> field.value end)
+    |> input()
+  end
+
   def input(%{type: "search", variant: v} = _assigns) when v != "default" do
     raise ArgumentError,
           "Bond.Elements.Input: variant=#{inspect(v)} is not supported with type=\"search\""
@@ -33,48 +135,104 @@ defmodule Bond.Elements.Input do
 
   def input(%{type: "search"} = assigns) do
     ~H"""
-    <div class={["relative", @class]}>
-      <div
-        class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none"
-        style={"color: #{Bond.Tokens.color(:content_secondary)}"}
-      >
-        <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
+    <div>
+      <.input_label label={@label} id={@id} variant={@variant} />
+      <div class={["relative", @class]}>
+        <div
+          class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none"
+          style={"color: #{Bond.Tokens.color(:content_secondary)}"}
+        >
+          <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
+        </div>
+        <input
+          type="search"
+          id={@id}
+          name={@name}
+          value={@value}
+          class="bond-input font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+          style={"background: #{Bond.Tokens.color(:surface)}; color: #{Bond.Tokens.color(:content)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+          {@rest}
+        />
       </div>
-      <input
-        type="search"
-        class="bond-input font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-        style={"background: #{Bond.Tokens.color(:surface)}; color: #{Bond.Tokens.color(:content)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
-        {@rest}
-      />
+      <.input_errors errors={@errors} />
     </div>
     """
   end
 
   def input(%{variant: "frosted"} = assigns) do
     ~H"""
-    <input
-      type={@type}
-      class={[
-        "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]",
-        @class
-      ]}
-      style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent_light)}; background: #{Bond.Tokens.color(:surface_frosted)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
-      {@rest}
-    />
+    <div>
+      <.input_label label={@label} id={@id} variant={@variant} />
+      <input
+        type={@type}
+        id={@id}
+        name={@name}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        class={[
+          "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]",
+          @class
+        ]}
+        style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent_light)}; background: #{Bond.Tokens.color(:surface_frosted)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+        {@rest}
+      />
+      <.input_errors errors={@errors} />
+    </div>
     """
   end
 
   def input(assigns) do
     ~H"""
-    <input
-      type={@type}
-      class={[
-        "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none",
-        @class
-      ]}
-      style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent)}; background: #{Bond.Tokens.color(:surface)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
-      {@rest}
-    />
+    <div>
+      <.input_label label={@label} id={@id} variant={@variant} />
+      <input
+        type={@type}
+        id={@id}
+        name={@name}
+        value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+        class={[
+          "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none",
+          @class
+        ]}
+        style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent)}; background: #{Bond.Tokens.color(:surface)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+        {@rest}
+      />
+      <.input_errors errors={@errors} />
+    </div>
     """
+  end
+
+  defp input_label(assigns) do
+    ~H"""
+    <label
+      :if={@label}
+      for={@id}
+      class="font-nunito text-xs font-semibold uppercase tracking-wide block mb-1"
+      style={"color: #{Bond.Tokens.color(label_color_token(@variant))}"}
+    >
+      {@label}
+    </label>
+    """
+  end
+
+  defp input_errors(assigns) do
+    ~H"""
+    <p
+      :for={msg <- @errors}
+      class="mt-1 font-nunito text-xs flex items-center gap-1"
+      style="color: #e0796e;"
+    >
+      {msg}
+    </p>
+    """
+  end
+
+  defp label_color_token("frosted"), do: :accent_light
+  defp label_color_token(_), do: :content_secondary
+
+  defp translate_error({msg, opts}) do
+    case opts[:count] do
+      nil -> Gettext.dgettext(LocalCentsWeb.Gettext, "errors", msg, opts)
+      count -> Gettext.dngettext(LocalCentsWeb.Gettext, "errors", msg, msg, count, opts)
+    end
   end
 end

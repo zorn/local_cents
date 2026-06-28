@@ -17,9 +17,20 @@ defmodule Storybook.Elements.Input do
         }
       },
       %Variation{
-        id: :with_value,
+        id: :with_label,
+        description: "Input with a label rendered above it.",
         attributes: %{
-          value: "Whole Foods $127.43"
+          label: "Email",
+          placeholder: "you@example.com"
+        }
+      },
+      %Variation{
+        id: :with_errors,
+        description: "Input with a label and validation errors.",
+        attributes: %{
+          label: "Email",
+          placeholder: "you@example.com",
+          errors: ["can't be blank"]
         }
       },
       %Variation{
@@ -31,6 +42,11 @@ defmodule Storybook.Elements.Input do
         id: :frosted,
         description: "Frosted-blue variant for use inside dark panel backgrounds.",
         attributes: %{variant: "frosted", placeholder: "Enter value..."}
+      },
+      %Variation{
+        id: :frosted_with_label,
+        description: "Frosted variant with a label — typical usage inside the edit panel.",
+        attributes: %{variant: "frosted", label: "Description", placeholder: "Enter value..."}
       }
     ]
   end
