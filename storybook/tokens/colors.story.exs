@@ -20,6 +20,7 @@ defmodule Storybook.Tokens.Colors do
         tokens={[
           {:accent, "Primary interactive / brand color"},
           {:accent_dark, "Pressed and shadow state of the accent"},
+          {:accent_light, "Lighter accent for dark / frosted panel contexts"},
           {:button_shadow, "Neutral dark stamp shadow for buttons"}
         ]}
       />
@@ -38,6 +39,7 @@ defmodule Storybook.Tokens.Colors do
         tokens={[
           {:surface, "Input and card background"},
           {:surface_sunken, "Recessed window body background"},
+          {:surface_frosted, "Frosted blue input surface for dark panels"},
           {:border, "Component and chrome borders"}
         ]}
       />

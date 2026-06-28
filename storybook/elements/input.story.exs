@@ -26,6 +26,11 @@ defmodule Storybook.Elements.Input do
         id: :search,
         description: "Pill-shaped search field with magnifying glass icon.",
         attributes: %{type: "search", placeholder: "search..."}
+      },
+      %Variation{
+        id: :frosted,
+        description: "Frosted-blue variant for use inside dark panel backgrounds.",
+        attributes: %{variant: "frosted", placeholder: "Enter value..."}
       }
     ]
   end

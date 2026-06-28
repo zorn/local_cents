@@ -369,30 +369,31 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                               <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
                                 Date
                               </label>
-                              <input
+                              <Bond.input
                                 type="date"
+                                variant="frosted"
+                                class="w-full"
                                 value={to_date_input(@selected_expense.date)}
-                                class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
                               />
                             </div>
                             <div>
                               <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
                                 Description
                               </label>
-                              <input
-                                type="text"
+                              <Bond.input
+                                variant="frosted"
+                                class="w-full"
                                 value={@selected_expense.description}
-                                class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
                               />
                             </div>
                             <div>
                               <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
                                 Cost
                               </label>
-                              <input
-                                type="text"
+                              <Bond.input
+                                variant="frosted"
+                                class="w-full"
                                 value={@selected_expense.amount}
-                                class="font-nunito w-full px-3 py-1.5 text-sm bg-[#b8d0ee] border-b-2 border-[#6ca0ea] text-[#22335c] rounded-sm focus:outline-none transition-shadow focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.7)]"
                               />
                             </div>
                             <div>

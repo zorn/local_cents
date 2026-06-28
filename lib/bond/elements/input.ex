@@ -13,6 +13,10 @@ defmodule Bond.Elements.Input do
     default: "text",
     doc: "HTML input type; \"search\" renders a pill field with a magnifying glass icon"
 
+  attr :variant, :string,
+    default: "default",
+    doc: "Visual variant; \"frosted\" suits dark panel backgrounds"
+
   attr :class, :string,
     default: nil,
     doc: "Additional classes; applied to wrapper div for search, input element otherwise"
@@ -20,6 +24,11 @@ defmodule Bond.Elements.Input do
   attr :rest, :global, doc: "HTML attributes (id, placeholder, value, phx-*, etc.)"
 
   @spec input(Socket.assigns()) :: Rendered.t()
+  def input(%{type: "search", variant: v} = _assigns) when v != "default" do
+    raise ArgumentError,
+          "Bond.Elements.Input: variant=#{inspect(v)} is not supported with type=\"search\""
+  end
+
   def input(%{type: "search"} = assigns) do
     ~H"""
     <div class={["relative", @class]}>
@@ -36,6 +45,20 @@ defmodule Bond.Elements.Input do
         {@rest}
       />
     </div>
+    """
+  end
+
+  def input(%{variant: "frosted"} = assigns) do
+    ~H"""
+    <input
+      type={@type}
+      class={[
+        "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]",
+        @class
+      ]}
+      style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent_light)}; background: #{Bond.Tokens.color(:surface_frosted)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+      {@rest}
+    />
     """
   end
 

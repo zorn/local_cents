@@ -4,6 +4,7 @@ defmodule Bond.Tokens do
   @spec color(atom()) :: String.t()
   def color(:accent), do: "#1e40af"
   def color(:accent_dark), do: "#1b3a9a"
+  def color(:accent_light), do: "#6ca0ea"
   def color(:button_shadow), do: "#1e293b"
 
   def color(:content), do: "#22335c"
@@ -14,6 +15,7 @@ defmodule Bond.Tokens do
   def color(:border_subtle), do: "#c3d2f0"
   def color(:surface), do: "#ffffff"
   def color(:surface_sunken), do: "#cce0f5"
+  def color(:surface_frosted), do: "#b8d0ee"
 
   def color(:positive_currency), do: "#3f9d6c"
 
