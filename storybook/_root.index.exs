@@ -5,4 +5,6 @@ defmodule Storybook.Root do
   use PhoenixStorybook.Index
 
   def folder_name, do: "Bond"
+
+  def entry("overview"), do: [index: 0]
 end
