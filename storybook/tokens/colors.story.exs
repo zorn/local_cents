@@ -1,7 +1,8 @@
 defmodule Storybook.Tokens.Colors do
   use PhoenixStorybook.Story, :page
 
-  def doc, do: "Color tokens defined in Bond.Tokens. All Bond components source their colors from here."
+  def doc,
+    do: "Color tokens defined in Bond.Tokens. All Bond components source their colors from here."
 
   def render(assigns) do
     ~H"""
@@ -14,34 +15,49 @@ defmodule Storybook.Tokens.Colors do
     </section>
 
     <div class="mt-8 space-y-8 font-sans">
-      <.color_group heading="Accent" tokens={[
-        {:accent,         "Primary interactive / brand color"},
-        {:accent_dark,    "Pressed and shadow state of the accent"},
-        {:button_shadow,  "Neutral dark stamp shadow for buttons"},
-      ]} />
+      <.color_group
+        heading="Accent"
+        tokens={[
+          {:accent, "Primary interactive / brand color"},
+          {:accent_dark, "Pressed and shadow state of the accent"},
+          {:button_shadow, "Neutral dark stamp shadow for buttons"}
+        ]}
+      />
 
-      <.color_group heading="Content" tokens={[
-        {:content,              "Primary text"},
-        {:content_secondary,    "Supporting text and icons"},
-        {:content_placeholder,  "Placeholder and hint text"},
-      ]} />
+      <.color_group
+        heading="Content"
+        tokens={[
+          {:content, "Primary text"},
+          {:content_secondary, "Supporting text and icons"},
+          {:content_placeholder, "Placeholder and hint text"}
+        ]}
+      />
 
-      <.color_group heading="Surface & Border" tokens={[
-        {:surface,        "Input and card background"},
-        {:surface_sunken, "Recessed window body background"},
-        {:border,         "Component and chrome borders"},
-      ]} />
+      <.color_group
+        heading="Surface & Border"
+        tokens={[
+          {:surface, "Input and card background"},
+          {:surface_sunken, "Recessed window body background"},
+          {:border, "Component and chrome borders"}
+        ]}
+      />
 
-      <.color_group heading="Title Bar" tokens={[
-        {:title_bar_background, "Denim title bar background"},
-        {:title_bar_border,     "Title bar bottom border / deep shadow"},
-      ]} />
+      <.color_group
+        heading="Title Bar"
+        tokens={[
+          {:title_bar_background, "Denim title bar background"},
+          {:title_bar_border, "Title bar bottom border / deep shadow"}
+        ]}
+      />
 
-      <.color_group heading="macOS Traffic Lights" tokens={[
-        {:mac_os_close,    "Close button"},
-        {:mac_os_minimize, "Minimize button"},
-        {:mac_os_maximize, "Maximize button"},
-      ]} />
+      <.color_group
+        heading="macOS Traffic Lights"
+        tokens={[
+          {:mac_os_close, "Close button"},
+          {:mac_os_minimize, "Minimize button"},
+          {:mac_os_maximize, "Maximize button"}
+        ]}
+      />
     </div>
     """
   end

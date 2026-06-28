@@ -337,27 +337,21 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       <%!-- Expense Rows --%>
                       <div class="overflow-y-auto" style="max-height: 420px;">
                         <%= for expense <- @expenses do %>
-                          <div
+                          <%!-- FIXME: In the future we should be able to pass in the tags directly without the mapping. --%>
+                          <Bond.expense_cell
                             id={"notebook-expense-row-#{expense.id}"}
+                            date={expense.date}
+                            description={expense.description}
+                            amount={expense.amount}
+                            tags={
+                              Enum.map(
+                                expense.tags,
+                                &%{label: &1.label, color: nb_tag_swatch(&1.label)}
+                              )
+                            }
                             phx-click="select_expense"
                             phx-value-id={expense.id}
-                            class="flex items-center gap-4 px-4 py-3 border-b border-[#c3d2f0]/60 nb-t-hover-row transition-colors cursor-pointer"
-                          >
-                            <span class="shrink-0 font-nunito text-sm text-[#6980b0] tabular-nums w-24">
-                              {expense.date}
-                            </span>
-                            <span class="flex-1 font-nunito text-sm font-medium text-[#22335c]">
-                              {expense.description}
-                            </span>
-                            <div class="flex items-center gap-1.5">
-                              <%= for tag <- expense.tags do %>
-                                <Bond.tag_pill label={tag.label} color={nb_tag_swatch(tag.label)} />
-                              <% end %>
-                            </div>
-                            <span class="shrink-0 font-nunito text-sm font-bold text-[#3f9d6c] tabular-nums w-16 text-right">
-                              {expense.amount}
-                            </span>
-                          </div>
+                          />
                         <% end %>
                       </div>
                     </div>

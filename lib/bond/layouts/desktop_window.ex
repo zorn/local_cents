@@ -25,9 +25,21 @@ defmodule Bond.Layouts.DesktopWindow do
         style={"border-bottom: 1px solid #{Bond.Tokens.color(:title_bar_border)}; background-color: #{Bond.Tokens.color(:title_bar_background)}; background-image: radial-gradient(ellipse at 18% 32%, rgba(63,127,214,0.28) 0%, transparent 52%), radial-gradient(ellipse at 78% 72%, rgba(20,35,75,0.65) 0%, transparent 44%), radial-gradient(ellipse at 50% 5%, rgba(34,51,92,0.35) 0%, transparent 58%)"}
       >
         <div class="flex items-center gap-2 z-10">
-          <button style={"background: #{Bond.Tokens.color(:mac_os_close)}"} class="w-3 h-3 rounded-full border border-black/20"></button>
-          <button style={"background: #{Bond.Tokens.color(:mac_os_minimize)}"} class="w-3 h-3 rounded-full border border-black/20"></button>
-          <button style={"background: #{Bond.Tokens.color(:mac_os_maximize)}"} class="w-3 h-3 rounded-full border border-black/20"></button>
+          <button
+            style={"background: #{Bond.Tokens.color(:mac_os_close)}"}
+            class="w-3 h-3 rounded-full border border-black/20"
+          >
+          </button>
+          <button
+            style={"background: #{Bond.Tokens.color(:mac_os_minimize)}"}
+            class="w-3 h-3 rounded-full border border-black/20"
+          >
+          </button>
+          <button
+            style={"background: #{Bond.Tokens.color(:mac_os_maximize)}"}
+            class="w-3 h-3 rounded-full border border-black/20"
+          >
+          </button>
         </div>
         <span class="absolute inset-0 flex items-center justify-center font-nunito text-sm font-semibold text-white/90 pointer-events-none">
           {@title}
