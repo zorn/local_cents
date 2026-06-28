@@ -313,27 +313,24 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                     <%!-- Expense table --%>
                     <div class="mx-4 mt-3 mb-4 bg-white rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 overflow-hidden">
                       <%!-- Search / filter toolbar --%>
-                      <div class="px-3 py-2.5 border-b border-[#c3d2f0] nb-t-bg-soft">
-                        <div class="flex items-center gap-2">
-                          <div class="relative flex-1">
-                            <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
-                              <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#6980b0]" />
-                            </div>
-                            <input
-                              id="notebook-expense-search-input"
-                              type="text"
-                              placeholder="search..."
-                              class="font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-                            />
-                          </div>
+                      <Bond.list_controls>
+                        <:leading_content>
+                          <Bond.input
+                            type="search"
+                            id="notebook-expense-search-input"
+                            placeholder="search..."
+                            class="flex-1"
+                          />
+                        </:leading_content>
+                        <:trailing_content>
                           <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
                             Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
                           </button>
                           <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
                             ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
                           </button>
-                        </div>
-                      </div>
+                        </:trailing_content>
+                      </Bond.list_controls>
                       <%!-- Expense Rows --%>
                       <div class="overflow-y-auto" style="max-height: 420px;">
                         <%= for expense <- @expenses do %>
