@@ -323,12 +323,8 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             />
                           </:leading_content>
                           <:trailing_content>
-                            <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                              Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                            </button>
-                            <button class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors">
-                              ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
-                            </button>
+                            <Bond.action_chip label="Tags" />
+                            <Bond.action_chip label="↕ Newest" />
                           </:trailing_content>
                         </Bond.list_controls>
                       </:header>

@@ -1,6 +1,7 @@
 defmodule Bond do
   @moduledoc "Top-level facade for the Bond component library."
 
+  defdelegate action_chip(assigns), to: Bond.Elements.ActionChip
   defdelegate button(assigns), to: Bond.Elements.Button
   defdelegate input(assigns), to: Bond.Elements.Input
   defdelegate list_view(assigns), to: Bond.Elements.ListView
