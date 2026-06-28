@@ -51,6 +51,7 @@ defmodule Bond.Elements.Button do
   defp button_style(:square) do
     a = Bond.Tokens.color(:accent)
     s = Bond.Tokens.color(:button_shadow)
+
     "--sh: #{s}; color: #{a}; border: 2px solid #{a}; background: color-mix(in srgb, #{a} 12%, transparent)"
   end
 end
