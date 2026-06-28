@@ -11,15 +11,15 @@ defmodule Storybook.Elements.Input do
         attributes: %{}
       },
       %Variation{
-        id: :with_static_value,
+        id: :with_placeholder,
         attributes: %{
-          value: "some-value"
+          placeholder: "coffee 4.75 or netflix 22.99 yesterday"
         }
       },
       %Variation{
-        id: :with_placeholder,
+        id: :with_value,
         attributes: %{
-          placeholder: "Enter your name"
+          value: "Whole Foods $127.43"
         }
       }
     ]

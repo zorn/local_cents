@@ -298,11 +298,10 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                     <%!-- New Expense row — standalone card --%>
                     <div class="mx-4 rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 nb-t-bg-soft px-3 py-2.5">
                       <div class="flex items-end gap-2">
-                        <input
+                        <Bond.input
                           id="notebook-new-expense-input"
-                          type="text"
                           placeholder="coffee 4.75 or netflix 22.99 yesterday"
-                          class="font-nunito flex-1 px-3 py-1.5 text-sm border-b-2 nb-t-border bg-white focus:outline-none text-[#22335c] placeholder-[#a0b4d0] rounded-sm transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+                          class="flex-1"
                         />
                         <Bond.button id="notebook-new-expense-create-btn">
                           New Expense
