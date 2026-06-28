@@ -182,6 +182,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
     end
   end
 
+  defp graph_paper_chart_placeholder(assigns) do
+    ~H"""
+    <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
+      <div class="flex items-end gap-2 h-24">
+        <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%"></div>
+        <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%"></div>
+        <div class="flex-1 nb-t-bar rounded-t-sm opacity-75" style="height: 58%"></div>
+        <div class="flex-1 nb-t-bar rounded-t-sm opacity-50" style="height: 21%"></div>
+        <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%"></div>
+      </div>
+    </div>
+    """
+  end
+
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
@@ -280,21 +294,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                 <Bond.desktop_window title="Family Expenses">
                   <%!-- Content area (edit panel is relative to this, not the title bar) --%>
                   <div class="relative overflow-hidden">
-                    <%!-- Graph paper chart placeholder --%>
-                    <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
-                      <div class="flex items-end gap-2 h-24">
-                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%">
-                        </div>
-                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%">
-                        </div>
-                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-75" style="height: 58%">
-                        </div>
-                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-50" style="height: 21%">
-                        </div>
-                        <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%">
-                        </div>
-                      </div>
-                    </div>
+                    <.graph_paper_chart_placeholder />
                     <%!-- New Expense row — standalone card --%>
                     <div class="mx-4 rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 nb-t-bg-soft px-3 py-2.5">
                       <div class="flex items-end gap-2">
