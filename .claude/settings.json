@@ -1,6 +1,0 @@
-{
-  "permissions": {
-    "allow": ["Bash(/Applications/Google Chrome.app/Contents/MacOS/Google Chrome --headless=new --screenshot=*)"],
-    "deny": ["Bash(git commit*)"]
-  }
-}
