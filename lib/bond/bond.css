@@ -1,5 +1,14 @@
 /* Bond component styles — imported by app.css and storybook.css */
 
+/* Denim marble composition cover — used for title bars & the edit panel */
+.nb-denim {
+  background-color: #1e2d4d;
+  background-image:
+    radial-gradient(ellipse at 18% 32%, rgba(63, 127, 214, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 72%, rgba(20, 35, 75, 0.65) 0%, transparent 44%),
+    radial-gradient(ellipse at 50% 5%, rgba(34, 51, 92, 0.35) 0%, transparent 58%);
+}
+
 /* Notebook tint color system — set on parent wrapper, consumed by children */
 .nb-tint-sky      { --nb-t: #3f7fd6; --nb-t-dk: #2d6bc4; }
 .nb-tint-ocean    { --nb-t: #2563eb; --nb-t-dk: #1d4ed8; }

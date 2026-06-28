@@ -21,7 +21,9 @@ defmodule Bond.Elements.Input do
     default: nil,
     doc: "Additional classes; applied to wrapper div for search, input element otherwise"
 
-  attr :rest, :global, doc: "HTML attributes (id, placeholder, value, phx-*, etc.)"
+  attr :rest, :global,
+    include: ~w(value),
+    doc: "HTML attributes (id, placeholder, value, phx-*, etc.)"
 
   @spec input(Socket.assigns()) :: Rendered.t()
   def input(%{type: "search", variant: v} = _assigns) when v != "default" do

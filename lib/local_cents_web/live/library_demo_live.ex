@@ -348,89 +348,77 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                     </Bond.list_view>
                     <%!-- Notebook edit panel --%>
                     <%= if @selected_expense do %>
-                      <div id="notebook-expense-edit-panel" class="absolute inset-0 flex">
-                        <%!-- Dim overlay --%>
-                        <div class="flex-1 bg-[#0d1a35]/50" phx-click="close_expense"></div>
-                        <%!-- Denim cover panel --%>
-                        <div class="nb-denim w-80 border-l border-[#0d1a35] flex flex-col shadow-2xl">
-                          <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
-                            <p class="font-nunito text-base font-bold text-white tracking-wide">
-                              Edit Expense
-                            </p>
-                            <button
-                              phx-click="close_expense"
-                              class="text-[#6ca0ea] hover:text-white transition-colors"
-                            >
-                              <.icon name="hero-x-mark" class="w-5 h-5" />
-                            </button>
+                      <Bond.side_panel
+                        id="notebook-expense-edit-panel"
+                        title="Edit Expense"
+                        on_close="close_expense"
+                      >
+                        <div class="space-y-3">
+                          <div>
+                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
+                              Date
+                            </label>
+                            <Bond.input
+                              type="date"
+                              variant="frosted"
+                              class="w-full"
+                              value={to_date_input(@selected_expense.date)}
+                            />
                           </div>
-                          <div class="px-5 py-3 flex-1 space-y-3 overflow-y-auto">
-                            <div>
-                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                                Date
-                              </label>
-                              <Bond.input
-                                type="date"
-                                variant="frosted"
-                                class="w-full"
-                                value={to_date_input(@selected_expense.date)}
-                              />
-                            </div>
-                            <div>
-                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                                Description
-                              </label>
-                              <Bond.input
-                                variant="frosted"
-                                class="w-full"
-                                value={@selected_expense.description}
-                              />
-                            </div>
-                            <div>
-                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
-                                Cost
-                              </label>
-                              <Bond.input
-                                variant="frosted"
-                                class="w-full"
-                                value={@selected_expense.amount}
-                              />
-                            </div>
-                            <div>
-                              <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-2 px-1">
-                                Tags
-                              </label>
-                              <div class="space-y-1.5">
-                                <%= for tag <- @available_tags do %>
-                                  <label class="flex items-center gap-2.5 cursor-pointer bg-white/10 hover:bg-white/20 rounded-lg px-3 py-2 transition-colors">
-                                    <input
-                                      type="checkbox"
-                                      checked={
-                                        Enum.any?(@selected_expense.tags, &(&1.label == tag.label))
-                                      }
-                                      class="w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
-                                    />
-                                    <span
-                                      class="w-2.5 h-2.5 rounded-full shrink-0"
-                                      style={"background: #{nb_tag_swatch(tag.label)}"}
-                                    >
-                                    </span>
-                                    <span class="font-nunito text-sm text-[#c3d2f0]">
-                                      {tag.label}
-                                    </span>
-                                  </label>
-                                <% end %>
-                              </div>
-                            </div>
+                          <div>
+                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
+                              Description
+                            </label>
+                            <Bond.input
+                              variant="frosted"
+                              class="w-full"
+                              value={@selected_expense.description}
+                            />
                           </div>
-                          <div class="flex items-center justify-between px-6 py-4 border-t border-white/10">
-                            <button class="font-nunito text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
-                              Delete
-                            </button>
-                            <Bond.button>Save</Bond.button>
+                          <div>
+                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-1">
+                              Cost
+                            </label>
+                            <Bond.input
+                              variant="frosted"
+                              class="w-full"
+                              value={@selected_expense.amount}
+                            />
+                          </div>
+                          <div>
+                            <label class="font-nunito text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-2 px-1">
+                              Tags
+                            </label>
+                            <div class="space-y-1.5">
+                              <%= for tag <- @available_tags do %>
+                                <label class="flex items-center gap-2.5 cursor-pointer bg-white/10 hover:bg-white/20 rounded-lg px-3 py-2 transition-colors">
+                                  <input
+                                    type="checkbox"
+                                    checked={
+                                      Enum.any?(@selected_expense.tags, &(&1.label == tag.label))
+                                    }
+                                    class="w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
+                                  />
+                                  <span
+                                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                                    style={"background: #{nb_tag_swatch(tag.label)}"}
+                                  >
+                                  </span>
+                                  <span class="font-nunito text-sm text-[#c3d2f0]">
+                                    {tag.label}
+                                  </span>
+                                </label>
+                              <% end %>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                        <:footer>
+                          <button class="font-nunito text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
+                            Delete
+                          </button>
+                          <Bond.button>Save</Bond.button>
+                        </:footer>
+                      </Bond.side_panel>
                     <% end %>
                   </div>
                 </Bond.desktop_window>
