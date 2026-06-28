@@ -129,6 +129,11 @@ defmodule Bond.Elements.Input do
     |> input()
   end
 
+  def input(%{type: "checkbox"} = _assigns) do
+    raise ArgumentError,
+          "Bond.Elements.Input does not support type=\"checkbox\"; use Bond.Elements.Checkbox instead"
+  end
+
   def input(%{type: "search", variant: v} = _assigns) when v != "default" do
     raise ArgumentError,
           "Bond.Elements.Input: variant=#{inspect(v)} is not supported with type=\"search\""

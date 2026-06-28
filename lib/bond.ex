@@ -3,6 +3,7 @@ defmodule Bond do
 
   defdelegate action_chip(assigns), to: Bond.Elements.ActionChip
   defdelegate button(assigns), to: Bond.Elements.Button
+  defdelegate checkbox(assigns), to: Bond.Elements.Checkbox
   defdelegate input(assigns), to: Bond.Elements.Input
   defdelegate list_view(assigns), to: Bond.Elements.ListView
   defdelegate desktop_window(assigns), to: Bond.Layouts.DesktopWindow

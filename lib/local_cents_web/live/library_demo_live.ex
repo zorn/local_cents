@@ -379,23 +379,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             </label>
                             <div class="space-y-1.5">
                               <%= for tag <- @available_tags do %>
-                                <label class="flex items-center gap-2.5 cursor-pointer bg-white/10 hover:bg-white/20 rounded-lg px-3 py-2 transition-colors">
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      Enum.any?(@selected_expense.tags, &(&1.label == tag.label))
-                                    }
-                                    class="w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
-                                  />
+                                <Bond.checkbox
+                                  variant="pill_row"
+                                  checked={
+                                    Enum.any?(@selected_expense.tags, &(&1.label == tag.label))
+                                  }
+                                >
                                   <span
                                     class="w-2.5 h-2.5 rounded-full shrink-0"
                                     style={"background: #{nb_tag_swatch(tag.label)}"}
-                                  >
-                                  </span>
+                                  />
                                   <span class="font-nunito text-sm text-[#c3d2f0]">
                                     {tag.label}
                                   </span>
-                                </label>
+                                </Bond.checkbox>
                               <% end %>
                             </div>
                           </div>
