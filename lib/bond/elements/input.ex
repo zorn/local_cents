@@ -45,11 +45,12 @@ defmodule Bond.Elements.Input do
 
   ## The `class` attr
 
-  For `type="search"`, `class` is applied to the inner pill wrapper `<div>`
-  (which controls the width of the search widget). For all other variants,
-  `class` is applied directly to the `<input>` element. In both cases the outer
-  wrapper `<div>` has no class from this attr, so its width is governed by the
-  parent layout.
+  `class` is always applied to the **outer wrapper `<div>`**, not to the
+  `<input>` element. This means it participates correctly in the parent's
+  layout — passing `class="flex-1"` makes the whole field (label + input +
+  errors) grow inside a flex container, and `class="w-full"` constrains the
+  wrapper width. The inner `<input>` and search pill always fill their wrapper
+  with `w-full` internally.
 
   ## Examples
 
@@ -108,7 +109,7 @@ defmodule Bond.Elements.Input do
 
   attr :class, :string,
     default: nil,
-    doc: "Additional classes; applied to wrapper div for search, input element otherwise"
+    doc: "Classes applied to the outer wrapper div — use for layout (flex-1, w-full, etc.)"
 
   attr :rest, :global, doc: "HTML attributes (placeholder, phx-*, disabled, etc.)"
 
@@ -135,9 +136,9 @@ defmodule Bond.Elements.Input do
 
   def input(%{type: "search"} = assigns) do
     ~H"""
-    <div>
+    <div class={@class}>
       <.input_label label={@label} id={@id} variant={@variant} />
-      <div class={["relative", @class]}>
+      <div class="relative w-full">
         <div
           class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none"
           style={"color: #{Bond.Tokens.color(:content_secondary)}"}
@@ -161,17 +162,14 @@ defmodule Bond.Elements.Input do
 
   def input(%{variant: "frosted"} = assigns) do
     ~H"""
-    <div>
+    <div class={@class}>
       <.input_label label={@label} id={@id} variant={@variant} />
       <input
         type={@type}
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]",
-          @class
-        ]}
+        class="bond-input w-full font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]"
         style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent_light)}; background: #{Bond.Tokens.color(:surface_frosted)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
         {@rest}
       />
@@ -182,17 +180,14 @@ defmodule Bond.Elements.Input do
 
   def input(assigns) do
     ~H"""
-    <div>
+    <div class={@class}>
       <.input_label label={@label} id={@id} variant={@variant} />
       <input
         type={@type}
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class={[
-          "bond-input font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none",
-          @class
-        ]}
+        class="bond-input w-full font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none"
         style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent)}; background: #{Bond.Tokens.color(:surface)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
         {@rest}
       />
