@@ -1,5 +1,32 @@
 /* Bond component styles — imported by app.css and storybook.css */
 
+/* Notebook tint color system — set on parent wrapper, consumed by children.
+   :root provides a default so components render correctly in storybook and
+   other contexts where no nb-tint-* wrapper is present. */
+:root {
+  --nb-t: #1e40af;
+  --nb-t-dk: #1b3a9a;
+}
+
+.nb-tint-sky      { --nb-t: #3f7fd6; --nb-t-dk: #2d6bc4; }
+.nb-tint-ocean    { --nb-t: #2563eb; --nb-t-dk: #1d4ed8; }
+.nb-tint-cobalt   { --nb-t: #1d4ed8; --nb-t-dk: #1a44c4; }
+.nb-tint-sapphire { --nb-t: #1e40af; --nb-t-dk: #1b3a9a; }
+.nb-tint-ink      { --nb-t: #1e3a6e; --nb-t-dk: #162d55; }
+
+.nb-t-text            { color: var(--nb-t); }
+.nb-t-border          { border-color: var(--nb-t); }
+.nb-t-bg              { background-color: var(--nb-t); }
+.nb-t-bg-soft         { background-color: color-mix(in srgb, var(--nb-t) 12%, transparent); }
+.nb-t-bg-soft-solid   { background-color: color-mix(in srgb, var(--nb-t) 12%, white); }
+.nb-t-bar             { background-color: color-mix(in srgb, var(--nb-t) 70%, transparent); }
+.nb-t-shadow          { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--nb-t) 30%, transparent); }
+.nb-t-hover-row:hover { background-color: color-mix(in srgb, var(--nb-t) 5%, transparent); }
+.nb-t-hover-soft:hover  { background-color: color-mix(in srgb, var(--nb-t) 10%, transparent); }
+.nb-t-hover-solid:hover { background-color: var(--nb-t); color: white; }
+.nb-t-hover-dk:hover    { background-color: var(--nb-t-dk); }
+.nb-t-focus-border:focus { border-color: var(--nb-t); outline: none; }
+
 /* Stamp-press button interaction: button translates toward its shadow on hover,
    giving the illusion the shadow is anchored to the page. Set --sh (color),
    --sh-x (default 2px), and --sh-y (default 3px) on the element. */
