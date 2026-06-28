@@ -295,19 +295,21 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   <%!-- Content area (edit panel is relative to this, not the title bar) --%>
                   <div class="relative overflow-hidden">
                     <.graph_paper_chart_placeholder />
-                    <%!-- New Expense row — standalone card --%>
-                    <div class="mx-4 rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 nb-t-bg-soft px-3 py-2.5">
-                      <div class="flex items-end gap-2">
+                    <%!-- New Expense row --%>
+                    <Bond.input_bar>
+                      <:leading_content>
                         <Bond.input
                           id="notebook-new-expense-input"
                           placeholder="coffee 4.75 or netflix 22.99 yesterday"
                           class="flex-1"
                         />
+                      </:leading_content>
+                      <:trailing_content>
                         <Bond.button id="notebook-new-expense-create-btn">
                           New Expense
                         </Bond.button>
-                      </div>
-                    </div>
+                      </:trailing_content>
+                    </Bond.input_bar>
                     <%!-- Expense table --%>
                     <div class="mx-4 mt-3 mb-4 bg-white rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 overflow-hidden">
                       <%!-- Search / filter toolbar --%>
