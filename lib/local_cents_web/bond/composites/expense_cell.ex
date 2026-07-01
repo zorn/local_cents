@@ -26,13 +26,13 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
       {@rest}
     >
       <span
-        class="shrink-0 font-nunito text-sm tabular-nums w-24"
+        class="shrink-0 text-sm tabular-nums w-24"
         style={"color: #{Bond.Tokens.color(:content_secondary)}"}
       >
         {@date}
       </span>
       <span
-        class="flex-1 font-nunito text-sm font-medium"
+        class="flex-1 text-sm font-medium"
         style={"color: #{Bond.Tokens.color(:content)}"}
       >
         {@description}
@@ -43,7 +43,7 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
         <% end %>
       </div>
       <span
-        class="shrink-0 font-nunito text-sm font-bold tabular-nums w-16 text-right"
+        class="shrink-0 text-sm font-bold tabular-nums w-16 text-right"
         style={"color: #{Bond.Tokens.color(:positive_currency)}"}
       >
         {@amount}

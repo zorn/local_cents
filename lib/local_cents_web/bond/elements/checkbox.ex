@@ -33,7 +33,7 @@ defmodule LocalCentsWeb.Bond.Elements.Checkbox do
       <Bond.checkbox variant="pill_row" name="tags[]" value={tag.label}
                      checked={tag.label in @selected_tags}>
         <span class="w-2.5 h-2.5 rounded-full shrink-0" style={"background: \#{tag.color}"} />
-        <span class="font-nunito text-sm">{tag.label}</span>
+        <span class="text-sm">{tag.label}</span>
       </Bond.checkbox>
   """
 

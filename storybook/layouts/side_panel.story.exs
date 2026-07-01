@@ -36,7 +36,7 @@ defmodule Storybook.Layouts.SidePanel do
         >
           <div class="p-4">
             <p
-              class="font-nunito text-sm mb-3"
+              class="text-sm mb-3"
               style={"color: #{Bond.Tokens.color(:content_secondary)}"}
             >
               Background content
@@ -55,7 +55,7 @@ defmodule Storybook.Layouts.SidePanel do
               <div class="space-y-3">
                 <div>
                   <label
-                    class="font-nunito text-xs font-semibold uppercase tracking-wide block mb-1"
+                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
                     style={"color: #{Bond.Tokens.color(:accent_light)}"}
                   >
                     Description
@@ -68,7 +68,7 @@ defmodule Storybook.Layouts.SidePanel do
                 </div>
                 <div>
                   <label
-                    class="font-nunito text-xs font-semibold uppercase tracking-wide block mb-1"
+                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
                     style={"color: #{Bond.Tokens.color(:accent_light)}"}
                   >
                     Cost
@@ -78,7 +78,7 @@ defmodule Storybook.Layouts.SidePanel do
               </div>
               <:footer>
                 <button
-                  class="font-nunito text-sm font-bold transition-colors"
+                  class="text-sm font-bold transition-colors"
                   style="color: #e0796e;"
                   phx-click="close_normal"
                 >
@@ -104,7 +104,7 @@ defmodule Storybook.Layouts.SidePanel do
         >
           <div class="p-4">
             <p
-              class="font-nunito text-sm mb-3"
+              class="text-sm mb-3"
               style={"color: #{Bond.Tokens.color(:content_secondary)}"}
             >
               Background content
@@ -124,7 +124,7 @@ defmodule Storybook.Layouts.SidePanel do
               <div class="space-y-3">
                 <div>
                   <label
-                    class="font-nunito text-xs font-semibold uppercase tracking-wide block mb-1"
+                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
                     style={"color: #{Bond.Tokens.color(:accent_light)}"}
                   >
                     Description
@@ -137,20 +137,20 @@ defmodule Storybook.Layouts.SidePanel do
                 </div>
                 <div>
                   <label
-                    class="font-nunito text-xs font-semibold uppercase tracking-wide block mb-1"
+                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
                     style={"color: #{Bond.Tokens.color(:accent_light)}"}
                   >
                     Cost
                   </label>
                   <Bond.Elements.Input.input variant="frosted" class="w-full" placeholder="127.43" />
                 </div>
-                <p class="font-nunito text-xs" style="color: rgba(255,255,255,0.45);">
+                <p class="text-xs" style="color: rgba(255,255,255,0.45);">
                   Form has unsaved changes — Escape, backdrop, and × are disabled.
                 </p>
               </div>
               <:footer>
                 <button
-                  class="font-nunito text-sm font-bold transition-colors"
+                  class="text-sm font-bold transition-colors"
                   style="color: rgba(224,121,110,0.4);"
                 >
                   Delete

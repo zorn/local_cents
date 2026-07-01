@@ -17,10 +17,10 @@ defmodule Storybook.Layouts.ListControls do
           """,
           """
           <:trailing_content>
-            <button style="font-family: Nunito, sans-serif; display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.875rem; font-weight: 600; border-radius: 9999px;">
+            <button style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.875rem; font-weight: 600; border-radius: 9999px;">
               Tags
             </button>
-            <button style="font-family: Nunito, sans-serif; display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.875rem; font-weight: 600; border-radius: 9999px;">
+            <button style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.875rem; font-weight: 600; border-radius: 9999px;">
               ↕ Newest
             </button>
           </:trailing_content>

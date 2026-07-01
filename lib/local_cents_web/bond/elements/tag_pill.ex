@@ -14,7 +14,7 @@ defmodule LocalCentsWeb.Bond.Elements.TagPill do
   def tag_pill(assigns) do
     ~H"""
     <span
-      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-nunito"
+      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold"
       style={"background: #{Bond.Tokens.color(:surface)}; border: 1px solid #{Bond.Tokens.color(:border_subtle)}; color: #{Bond.Tokens.color(:content)}"}
     >
       <span class="w-2 h-2 rounded-full shrink-0" style={"background: #{@color}"}></span>

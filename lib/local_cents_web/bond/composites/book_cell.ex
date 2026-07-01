@@ -25,13 +25,13 @@ defmodule LocalCentsWeb.Bond.Composites.BookCell do
     >
       <div class="flex-1 min-w-0">
         <p
-          class="font-nunito text-base font-semibold leading-snug"
+          class="text-base font-semibold leading-snug"
           style={"color: #{Bond.Tokens.color(:content)}"}
         >
           {@name}
         </p>
         <p
-          class="font-nunito text-xs mt-0.5"
+          class="text-xs mt-0.5"
           style={"color: #{Bond.Tokens.color(:content_secondary)}"}
         >
           Last Updated: {@last_updated}

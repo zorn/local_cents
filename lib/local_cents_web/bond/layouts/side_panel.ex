@@ -102,7 +102,7 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
       >
         <%!-- Header --%>
         <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
-          <p class="font-nunito text-base font-bold text-white tracking-wide">{@title}</p>
+          <p class="text-base font-bold text-white tracking-wide">{@title}</p>
           <button
             phx-click={if !@locked, do: @on_close}
             class="transition-colors"

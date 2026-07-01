@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap');
-
 @import "tailwindcss" source(none);
 
 @source "../js";
@@ -17,5 +15,15 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 [data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* PhoenixStorybook's sandbox sets `font-family: serif` on `.psb-sandbox` to
+   isolate component styling. Bond components no longer pin a font (they inherit
+   the app's system sans), so inside the storybook they would fall back to that
+   serif default. Restore the same system sans stack the real app inherits from
+   Tailwind's preflight. Scoped to `.psb-sandbox.local-cents` (our sandbox_class)
+   so it out-specifies the library's `.psb-sandbox` rule. */
+.psb-sandbox.local-cents {
+  font-family: var(--font-sans);
+}
 
 @import "../../lib/local_cents_web/bond/bond.css";

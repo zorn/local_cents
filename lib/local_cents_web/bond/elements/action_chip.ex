@@ -18,7 +18,7 @@ defmodule LocalCentsWeb.Bond.Elements.ActionChip do
   def action_chip(assigns) do
     ~H"""
     <button
-      class="font-nunito flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors"
+      class="flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors"
       style={"--nb-t: #{Bond.Tokens.color(:accent)}"}
       {@rest}
     >

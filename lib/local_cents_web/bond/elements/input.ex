@@ -156,7 +156,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
           id={@id}
           name={@name}
           value={@value}
-          class="bond-input font-nunito pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
+          class="bond-input pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
           style={"background: #{Bond.Tokens.color(:surface)}; color: #{Bond.Tokens.color(:content)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
           {@rest}
         />
@@ -175,7 +175,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]"
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]"
         style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent_light)}; background: #{Bond.Tokens.color(:surface_frosted)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
         {@rest}
       />
@@ -193,7 +193,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full font-nunito px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none"
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none"
         style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent)}; background: #{Bond.Tokens.color(:surface)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
         {@rest}
       />
@@ -207,7 +207,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     <label
       :if={@label}
       for={@id}
-      class="font-nunito text-xs font-semibold uppercase tracking-wide block mb-1"
+      class="text-xs font-semibold uppercase tracking-wide block mb-1"
       style={"color: #{Bond.Tokens.color(label_color_token(@variant))}"}
     >
       {@label}
@@ -219,7 +219,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     ~H"""
     <p
       :for={msg <- @errors}
-      class="mt-1 font-nunito text-xs flex items-center gap-1"
+      class="mt-1 text-xs flex items-center gap-1"
       style="color: #e0796e;"
     >
       {msg}

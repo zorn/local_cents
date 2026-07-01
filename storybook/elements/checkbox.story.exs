@@ -15,10 +15,10 @@ defmodule Storybook.Elements.Checkbox do
         </p>
         <div class="space-y-2">
           <Bond.Elements.Checkbox.checkbox>
-            <span class="font-nunito text-sm text-gray-700">Unchecked option</span>
+            <span class="text-sm text-gray-700">Unchecked option</span>
           </Bond.Elements.Checkbox.checkbox>
           <Bond.Elements.Checkbox.checkbox checked={true}>
-            <span class="font-nunito text-sm text-gray-700">Checked option</span>
+            <span class="text-sm text-gray-700">Checked option</span>
           </Bond.Elements.Checkbox.checkbox>
         </div>
       </div>
@@ -31,15 +31,15 @@ defmodule Storybook.Elements.Checkbox do
         <div class="nb-denim rounded-lg p-3 space-y-1.5">
           <Bond.Elements.Checkbox.checkbox variant="pill_row">
             <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: #3f7fd6;" />
-            <span class="font-nunito text-sm text-[#c3d2f0]">Food</span>
+            <span class="text-sm text-[#c3d2f0]">Food</span>
           </Bond.Elements.Checkbox.checkbox>
           <Bond.Elements.Checkbox.checkbox variant="pill_row" checked={true}>
             <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: #e0796e;" />
-            <span class="font-nunito text-sm text-[#c3d2f0]">Dining (checked)</span>
+            <span class="text-sm text-[#c3d2f0]">Dining (checked)</span>
           </Bond.Elements.Checkbox.checkbox>
           <Bond.Elements.Checkbox.checkbox variant="pill_row">
             <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: #6ab97c;" />
-            <span class="font-nunito text-sm text-[#c3d2f0]">Groceries</span>
+            <span class="text-sm text-[#c3d2f0]">Groceries</span>
           </Bond.Elements.Checkbox.checkbox>
         </div>
       </div>

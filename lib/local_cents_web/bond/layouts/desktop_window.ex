@@ -42,7 +42,7 @@ defmodule LocalCentsWeb.Bond.Layouts.DesktopWindow do
           >
           </button>
         </div>
-        <span class="absolute inset-0 flex items-center justify-center font-nunito text-sm font-semibold text-white/90 pointer-events-none">
+        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white/90 pointer-events-none">
           {@title}
         </span>
       </div>

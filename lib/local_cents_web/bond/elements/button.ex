@@ -28,14 +28,13 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   end
 
   defp button_class(:primary),
-    do: "font-nunito font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
+    do: "font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
 
   defp button_class(:outline),
-    do: "font-nunito font-bold px-3 py-1 text-sm rounded nb-stamp-press"
+    do: "font-bold px-3 py-1 text-sm rounded nb-stamp-press"
 
   defp button_class(:square),
-    do:
-      "font-nunito font-bold text-sm rounded nb-stamp-press w-7 h-7 flex items-center justify-center"
+    do: "font-bold text-sm rounded nb-stamp-press w-7 h-7 flex items-center justify-center"
 
   defp button_style(:primary) do
     a = Bond.Tokens.color(:accent)
