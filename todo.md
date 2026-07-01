@@ -1,2 +1,0 @@
-- the buttons are using some CSS in `bond.css` but we should make those inline CSS when we update Phoenix soon™.
-- refactor / rename / reorg color tokens based on other design system norms
