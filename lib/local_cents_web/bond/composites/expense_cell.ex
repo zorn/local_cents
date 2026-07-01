@@ -22,19 +22,13 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
     ~H"""
     <div
       class="flex items-center gap-4 px-4 py-3 nb-t-hover-row transition-colors cursor-pointer"
-      style={"--nb-t: #{Bond.Tokens.color(:accent)}"}
+      style="--nb-t: var(--color-accent)"
       {@rest}
     >
-      <span
-        class="shrink-0 text-sm tabular-nums w-24"
-        style={"color: #{Bond.Tokens.color(:content_secondary)}"}
-      >
+      <span class="shrink-0 text-sm tabular-nums w-24 text-content-secondary">
         {@date}
       </span>
-      <span
-        class="flex-1 text-sm font-medium"
-        style={"color: #{Bond.Tokens.color(:content)}"}
-      >
+      <span class="flex-1 text-sm font-medium text-content">
         {@description}
       </span>
       <div class="flex items-center gap-1.5">
@@ -42,10 +36,7 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
           <Bond.Elements.TagPill.tag_pill label={tag.label} color={tag.color} />
         <% end %>
       </div>
-      <span
-        class="shrink-0 text-sm font-bold tabular-nums w-16 text-right"
-        style={"color: #{Bond.Tokens.color(:positive_currency)}"}
-      >
+      <span class="shrink-0 text-sm font-bold tabular-nums w-16 text-right text-positive-currency">
         {@amount}
       </span>
     </div>

@@ -71,7 +71,6 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
-  alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
@@ -145,10 +144,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     <div class={@class}>
       <.input_label label={@label} id={@id} variant={@variant} />
       <div class="relative w-full">
-        <div
-          class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none"
-          style={"color: #{Bond.Tokens.color(:content_secondary)}"}
-        >
+        <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-content-secondary">
           <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
         </div>
         <input
@@ -156,8 +152,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
           id={@id}
           name={@name}
           value={@value}
-          class="bond-input pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)]"
-          style={"background: #{Bond.Tokens.color(:surface)}; color: #{Bond.Tokens.color(:content)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+          class="bond-input pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)] bg-surface text-content"
+          style="--bond-placeholder: var(--color-content-placeholder)"
           {@rest}
         />
       </div>
@@ -175,8 +171,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)]"
-        style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent_light)}; background: #{Bond.Tokens.color(:surface_frosted)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)] text-content border-accent-light bg-surface-frosted"
+        style="--bond-placeholder: var(--color-content-placeholder)"
         {@rest}
       />
       <.input_errors errors={@errors} />
@@ -193,8 +189,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none"
-        style={"color: #{Bond.Tokens.color(:content)}; border-color: #{Bond.Tokens.color(:accent)}; background: #{Bond.Tokens.color(:surface)}; --bond-placeholder: #{Bond.Tokens.color(:content_placeholder)}"}
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none text-content border-accent bg-surface"
+        style="--bond-placeholder: var(--color-content-placeholder)"
         {@rest}
       />
       <.input_errors errors={@errors} />
@@ -207,8 +203,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     <label
       :if={@label}
       for={@id}
-      class="text-xs font-semibold uppercase tracking-wide block mb-1"
-      style={"color: #{Bond.Tokens.color(label_color_token(@variant))}"}
+      class={["text-xs font-semibold uppercase tracking-wide block mb-1", label_color_class(@variant)]}
     >
       {@label}
     </label>
@@ -227,8 +222,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     """
   end
 
-  defp label_color_token("frosted"), do: :accent_light
-  defp label_color_token(_), do: :content_secondary
+  defp label_color_class("frosted"), do: "text-accent-light"
+  defp label_color_class(_), do: "text-content-secondary"
 
   defp translate_error({msg, opts}) do
     case opts[:count] do

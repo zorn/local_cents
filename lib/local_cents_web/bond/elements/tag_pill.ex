@@ -2,7 +2,6 @@ defmodule LocalCentsWeb.Bond.Elements.TagPill do
   @moduledoc "A small pill displaying a colored dot swatch and a text label."
 
   use Phoenix.Component
-  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -13,10 +12,7 @@ defmodule LocalCentsWeb.Bond.Elements.TagPill do
   @spec tag_pill(Socket.assigns()) :: Rendered.t()
   def tag_pill(assigns) do
     ~H"""
-    <span
-      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold"
-      style={"background: #{Bond.Tokens.color(:surface)}; border: 1px solid #{Bond.Tokens.color(:border_subtle)}; color: #{Bond.Tokens.color(:content)}"}
-    >
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface border border-border-subtle text-content">
       <span class="w-2 h-2 rounded-full shrink-0" style={"background: #{@color}"}></span>
       {@label}
     </span>

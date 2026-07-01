@@ -1,5 +1,37 @@
 /* Bond component styles — imported by app.css and storybook.css */
 
+/* Bond color tokens. Names describe purpose, not hue. Tailwind generates both
+   the `--color-*` CSS variables and matching utilities (`text-content`,
+   `bg-surface`, `border-border-subtle`, …). Components reference the utilities
+   where a single color property is set, and `var(--color-*)` inline for
+   CSS-variable injection and composite styles. This is the single source of
+   truth for Bond colors. */
+@theme {
+  --color-accent: #1e40af;
+  --color-accent-dark: #1b3a9a;
+  --color-accent-light: #6ca0ea;
+  --color-button-shadow: #1e293b;
+
+  --color-content: #22335c;
+  --color-content-secondary: #6980b0;
+  --color-content-placeholder: #a0b4d0;
+
+  --color-border: #a8c0e0;
+  --color-border-subtle: #c3d2f0;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #cce0f5;
+  --color-surface-frosted: #b8d0ee;
+
+  --color-positive-currency: #3f9d6c;
+
+  --color-title-bar-background: #1e2d4d;
+  --color-title-bar-border: #0d1a35;
+
+  --color-mac-os-close: #ff5f57;
+  --color-mac-os-minimize: #febc2e;
+  --color-mac-os-maximize: #28c840;
+}
+
 /* Denim marble composition cover — used for title bars & the edit panel */
 .nb-denim {
   background-color: #1e2d4d;

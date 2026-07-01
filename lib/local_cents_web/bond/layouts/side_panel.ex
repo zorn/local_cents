@@ -53,7 +53,6 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
-  alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
@@ -91,22 +90,23 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
       <div
         class="flex-1"
         phx-click={if !@locked, do: @on_close}
-        style={"background: color-mix(in srgb, #{Bond.Tokens.color(:title_bar_border)} 50%, transparent)"}
+        style="background: color-mix(in srgb, var(--color-title-bar-border) 50%, transparent)"
       >
       </div>
       <%!-- Panel — <dialog open> for semantic HTML; non-modal so it stays scoped to the container --%>
       <dialog
         open
-        class="bond-side-panel nb-denim flex flex-col shadow-2xl"
-        style={"border-left: 1px solid #{Bond.Tokens.color(:title_bar_border)}"}
+        class="bond-side-panel nb-denim flex flex-col shadow-2xl border-l border-title-bar-border"
       >
         <%!-- Header --%>
         <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
           <p class="text-base font-bold text-white tracking-wide">{@title}</p>
           <button
             phx-click={if !@locked, do: @on_close}
-            class="transition-colors"
-            style={"color: #{Bond.Tokens.color(if @locked, do: :content_secondary, else: :accent_light)}"}
+            class={[
+              "transition-colors",
+              if(@locked, do: "text-content-secondary", else: "text-accent-light")
+            ]}
           >
             <.icon name="hero-x-mark" class="w-5 h-5" />
           </button>

@@ -9,8 +9,8 @@ defmodule LocalCentsWeb.Storybook.Story do
 
       use LocalCentsWeb.Storybook.Story, :component
 
-  Stories can then reference `Bond.Elements.Button.button/1`,
-  `Bond.Tokens.color/1`, and friends directly.
+  Stories can then reference `Bond.Elements.Button.button/1` and friends
+  directly.
   """
 
   defmacro __using__(type) do

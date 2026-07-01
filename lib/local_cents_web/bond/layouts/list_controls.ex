@@ -2,7 +2,6 @@ defmodule LocalCentsWeb.Bond.Layouts.ListControls do
   @moduledoc "A styled horizontal strip for list search, filtering, and sorting controls."
 
   use Phoenix.Component
-  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -15,7 +14,7 @@ defmodule LocalCentsWeb.Bond.Layouts.ListControls do
     ~H"""
     <div
       class="px-3 py-2.5 nb-t-bg-soft"
-      style={"--nb-t: #{Bond.Tokens.color(:accent)}"}
+      style="--nb-t: var(--color-accent)"
     >
       <div class="flex items-center gap-2">
         {render_slot(@leading_content)}

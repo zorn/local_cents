@@ -1,3 +1,2 @@
-- we current pull in `Nunito` font but I'm not sure we want to keep it .. if we do we should pull it in locally and not use Google fonts
 - the buttons are using some CSS in `bond.css` but we should make those inline CSS when we update Phoenix soon™.
-- we currently define colors as an Elixir module but I wonder if we might convert this to a Tailwind configuration to make call sites look more natural
+- refactor / rename / reorg color tokens based on other design system norms

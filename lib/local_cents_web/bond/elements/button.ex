@@ -2,7 +2,6 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   @moduledoc "A stamp-press button with primary, outline, and square variants."
 
   use Phoenix.Component
-  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -36,22 +35,15 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   defp button_class(:square),
     do: "font-bold text-sm rounded nb-stamp-press w-7 h-7 flex items-center justify-center"
 
-  defp button_style(:primary) do
-    a = Bond.Tokens.color(:accent)
-    s = Bond.Tokens.color(:button_shadow)
-    "--sh: #{s}; background: #{a}; border: 2px solid #{a}"
-  end
+  defp button_style(:primary),
+    do:
+      "--sh: var(--color-button-shadow); background: var(--color-accent); border: 2px solid var(--color-accent)"
 
-  defp button_style(:outline) do
-    a = Bond.Tokens.color(:accent)
-    s = Bond.Tokens.color(:button_shadow)
-    "--sh: #{s}; color: #{a}; border: 2px solid #{a}; background: transparent"
-  end
+  defp button_style(:outline),
+    do:
+      "--sh: var(--color-button-shadow); color: var(--color-accent); border: 2px solid var(--color-accent); background: transparent"
 
-  defp button_style(:square) do
-    a = Bond.Tokens.color(:accent)
-    s = Bond.Tokens.color(:button_shadow)
-
-    "--sh: #{s}; color: #{a}; border: 2px solid #{a}; background: color-mix(in srgb, #{a} 12%, transparent)"
-  end
+  defp button_style(:square),
+    do:
+      "--sh: var(--color-button-shadow); color: var(--color-accent); border: 2px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 12%, transparent)"
 end

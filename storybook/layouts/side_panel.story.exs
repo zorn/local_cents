@@ -31,14 +31,11 @@ defmodule Storybook.Layouts.SidePanel do
           Default — Escape, backdrop, or × closes
         </p>
         <div
-          class="relative overflow-hidden rounded-lg border"
-          style={"height: 380px; background: #{Bond.Tokens.color(:surface_sunken)}; border-color: #{Bond.Tokens.color(:border_subtle)}"}
+          class="relative overflow-hidden rounded-lg border bg-surface-sunken border-border-subtle"
+          style="height: 380px"
         >
           <div class="p-4">
-            <p
-              class="text-sm mb-3"
-              style={"color: #{Bond.Tokens.color(:content_secondary)}"}
-            >
+            <p class="text-sm mb-3 text-content-secondary">
               Background content
             </p>
             <Bond.Elements.Button.button phx-click="open_normal">
@@ -54,10 +51,7 @@ defmodule Storybook.Layouts.SidePanel do
             >
               <div class="space-y-3">
                 <div>
-                  <label
-                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
-                    style={"color: #{Bond.Tokens.color(:accent_light)}"}
-                  >
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
                     Description
                   </label>
                   <Bond.Elements.Input.input
@@ -67,10 +61,7 @@ defmodule Storybook.Layouts.SidePanel do
                   />
                 </div>
                 <div>
-                  <label
-                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
-                    style={"color: #{Bond.Tokens.color(:accent_light)}"}
-                  >
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
                     Cost
                   </label>
                   <Bond.Elements.Input.input variant="frosted" class="w-full" placeholder="0.00" />
@@ -99,14 +90,11 @@ defmodule Storybook.Layouts.SidePanel do
           Locked — dirty form guard, only Save dismisses
         </p>
         <div
-          class="relative overflow-hidden rounded-lg border"
-          style={"height: 380px; background: #{Bond.Tokens.color(:surface_sunken)}; border-color: #{Bond.Tokens.color(:border_subtle)}"}
+          class="relative overflow-hidden rounded-lg border bg-surface-sunken border-border-subtle"
+          style="height: 380px"
         >
           <div class="p-4">
-            <p
-              class="text-sm mb-3"
-              style={"color: #{Bond.Tokens.color(:content_secondary)}"}
-            >
+            <p class="text-sm mb-3 text-content-secondary">
               Background content
             </p>
             <Bond.Elements.Button.button phx-click="open_locked">
@@ -123,10 +111,7 @@ defmodule Storybook.Layouts.SidePanel do
             >
               <div class="space-y-3">
                 <div>
-                  <label
-                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
-                    style={"color: #{Bond.Tokens.color(:accent_light)}"}
-                  >
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
                     Description
                   </label>
                   <Bond.Elements.Input.input
@@ -136,10 +121,7 @@ defmodule Storybook.Layouts.SidePanel do
                   />
                 </div>
                 <div>
-                  <label
-                    class="text-xs font-semibold uppercase tracking-wide block mb-1"
-                    style={"color: #{Bond.Tokens.color(:accent_light)}"}
-                  >
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
                     Cost
                   </label>
                   <Bond.Elements.Input.input variant="frosted" class="w-full" placeholder="127.43" />
