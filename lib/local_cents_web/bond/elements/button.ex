@@ -27,23 +27,23 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   end
 
   defp button_class(:primary),
-    do: "font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
+    do: "font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
 
   defp button_class(:outline),
-    do: "font-bold px-3 py-1 text-sm rounded nb-stamp-press"
+    do: "font-bold px-3 py-1 text-sm rounded bond-stamp"
 
   defp button_class(:square),
-    do: "font-bold text-sm rounded nb-stamp-press w-7 h-7 flex items-center justify-center"
+    do: "font-bold text-sm rounded bond-stamp w-7 h-7 flex items-center justify-center"
 
   defp button_style(:primary),
     do:
-      "--sh: var(--color-surface-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
+      "--bond-stamp-shadow: var(--color-surface-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
 
   defp button_style(:outline),
     do:
-      "--sh: var(--color-surface-900); color: var(--color-primary-800); border: 2px solid var(--color-primary-800); background: transparent"
+      "--bond-stamp-shadow: var(--color-surface-900); color: var(--color-primary-800); border: 2px solid var(--color-primary-800); background: transparent"
 
   defp button_style(:square),
     do:
-      "--sh: var(--color-surface-900); color: var(--color-primary-800); border: 2px solid var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
+      "--bond-stamp-shadow: var(--color-surface-900); color: var(--color-primary-800); border: 2px solid var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
 end

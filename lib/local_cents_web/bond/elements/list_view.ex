@@ -1,5 +1,5 @@
 defmodule LocalCentsWeb.Bond.Elements.ListView do
-  @moduledoc "A scrollable, bordered list container for notebook-themed row content."
+  @moduledoc "A scrollable, bordered list container for Bond row content."
 
   use Phoenix.Component
 

@@ -28,7 +28,7 @@ defmodule Storybook.Elements.Checkbox do
         <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
           pill_row — frosted pill with background and hover
         </p>
-        <div class="nb-denim rounded-lg p-3 space-y-1.5">
+        <div class="bond-marble rounded-lg p-3 space-y-1.5">
           <LocalCentsWeb.Bond.Elements.Checkbox.checkbox variant="pill_row">
             <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background: #3f7fd6;" />
             <span class="text-sm text-[#c3d2f0]">Food</span>

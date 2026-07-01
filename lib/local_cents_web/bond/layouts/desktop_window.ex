@@ -1,6 +1,6 @@
 defmodule LocalCentsWeb.Bond.Layouts.DesktopWindow do
   @moduledoc """
-  A macOS-style desktop window chrome with a denim title bar and twill-textured background.
+  A macOS-style desktop window chrome with a marbled title bar and subtly textured background.
   Renders traffic-light buttons and a centered title above slot content.
   """
 
@@ -18,7 +18,7 @@ defmodule LocalCentsWeb.Bond.Layouts.DesktopWindow do
     ~H"""
     <div
       class="rounded-xl overflow-hidden shadow-lg"
-      style="border: 1px solid var(--color-surface-400); box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--color-primary-800) 20%, transparent); --nb-t: var(--color-primary-800); --nb-t-dk: var(--color-primary-900); background-color: var(--color-surface-200); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.30) 0px, rgba(255,255,255,0.30) 1px, transparent 1px, transparent 5px)"
+      style="border: 1px solid var(--color-surface-400); box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--color-primary-800) 20%, transparent); --bond-ink: var(--color-primary-800); --bond-ink-strong: var(--color-primary-900); background-color: var(--color-surface-200); background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.30) 0px, rgba(255,255,255,0.30) 1px, transparent 1px, transparent 5px)"
     >
       <div
         class="relative flex items-center pl-3 pr-4 py-2 select-none"

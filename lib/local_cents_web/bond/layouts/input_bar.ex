@@ -13,8 +13,8 @@ defmodule LocalCentsWeb.Bond.Layouts.InputBar do
   def input_bar(assigns) do
     ~H"""
     <div
-      class="mx-4 rounded-lg px-3 py-2.5 nb-t-bg-soft"
-      style="border: 1px solid var(--color-surface-400); box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-primary-800) 20%, transparent); --nb-t: var(--color-primary-800)"
+      class="mx-4 rounded-lg px-3 py-2.5 bond-ink-bg-soft"
+      style="border: 1px solid var(--color-surface-400); box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-primary-800) 20%, transparent); --bond-ink: var(--color-primary-800)"
     >
       <div class="flex items-end gap-2">
         {render_slot(@leading_content)}

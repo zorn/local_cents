@@ -1,5 +1,5 @@
 defmodule LocalCentsWeb.Bond.Composites.BookCell do
-  @moduledoc "A notebook-themed book row for use inside Bond.Elements.ListView."
+  @moduledoc "A book row for use inside Bond.Elements.ListView."
 
   use Phoenix.Component
   alias LocalCentsWeb.Bond
@@ -19,8 +19,8 @@ defmodule LocalCentsWeb.Bond.Composites.BookCell do
   def book_cell(assigns) do
     ~H"""
     <div
-      class="flex items-center gap-4 px-4 py-4 nb-t-hover-row transition-colors"
-      style="--nb-t: var(--color-primary-800)"
+      class="flex items-center gap-4 px-4 py-4 bond-ink-hover-row transition-colors"
+      style="--bond-ink: var(--color-primary-800)"
       {@rest}
     >
       <div class="flex-1 min-w-0">

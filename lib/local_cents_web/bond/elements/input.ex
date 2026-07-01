@@ -1,6 +1,6 @@
 defmodule LocalCentsWeb.Bond.Elements.Input do
   @moduledoc """
-  A notebook-themed input element.
+  A Bond input element.
 
   Always renders an outer `<div>` wrapper containing an optional label, the
   input element itself, and any validation error messages. This means the
@@ -12,7 +12,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
   The `variant` attr controls the visual style of the input element:
 
   - **`"default"`** — an underline-only style suited for light backgrounds.
-    The bottom border uses the notebook tint accent color.
+    The bottom border uses the ink accent color.
   - **`"frosted"`** — a semi-transparent frosted-glass style for use inside
     dark panel backgrounds (e.g. `Bond.Layouts.SidePanel`).
   - **`type="search"`** — a pill-shaped field with an inset magnifying glass
@@ -23,8 +23,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
 
   Pass `label="My Label"` to render a small uppercase label above the input.
   Omit it (the default) to render no label at all — there is no opt-out attr
-  needed. Label color is derived from the variant: `accent_light` for frosted,
-  `content_secondary` for default.
+  needed. Label color is derived from the variant: `primary-400` for frosted,
+  `surface-600` for default.
 
   ## Errors
 
@@ -152,7 +152,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
           id={@id}
           name={@name}
           value={@value}
-          class="bond-input pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)] bg-surface-50 text-surface-800"
+          class="bond-input pl-7 pr-3 py-1.5 text-sm border bond-ink-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)] bg-surface-50 text-surface-800"
           style="--bond-placeholder: var(--color-surface-400)"
           {@rest}
         />

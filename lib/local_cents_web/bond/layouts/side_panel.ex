@@ -8,7 +8,7 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
 
   - **Dim overlay** (left, flexible width) — a semi-transparent dark wash over whatever content
     sits behind the panel. Clicking it fires the close event.
-  - **Panel** (right, fixed 20rem / `w-80`) — a dark denim-gradient drawer containing a header,
+  - **Panel** (right, fixed 20rem / `w-80`) — a dark marbled drawer containing a header,
     a scrollable body, and an optional footer action row.
 
   ## How it is scoped
@@ -96,7 +96,7 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
       <%!-- Panel — <dialog open> for semantic HTML; non-modal so it stays scoped to the container --%>
       <dialog
         open
-        class="bond-side-panel nb-denim flex flex-col shadow-2xl border-l border-surface-950"
+        class="bond-side-panel bond-marble flex flex-col shadow-2xl border-l border-surface-950"
       >
         <%!-- Header --%>
         <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">

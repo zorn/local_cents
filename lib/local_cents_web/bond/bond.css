@@ -130,8 +130,8 @@
   --color-mac-os-maximize: #28c840;
 }
 
-/* Denim marble composition cover — used for title bars & the edit panel */
-.nb-denim {
+/* Marbled endpaper — a dark, marbled fill for title bars & the edit panel */
+.bond-marble {
   background-color: var(--color-surface-900);
   background-image:
     radial-gradient(ellipse at 18% 32%, rgba(63, 127, 214, 0.28) 0%, transparent 52%),
@@ -139,20 +139,21 @@
     radial-gradient(ellipse at 50% 5%, rgba(34, 51, 92, 0.35) 0%, transparent 58%);
 }
 
-/* Notebook tint utilities — driven by --nb-t / --nb-t-dk, which callers set
-   inline (e.g. `--nb-t: var(--color-primary-800)`). */
-.nb-t-text            { color: var(--nb-t); }
-.nb-t-border          { border-color: var(--nb-t); }
-.nb-t-bg              { background-color: var(--nb-t); }
-.nb-t-bg-soft         { background-color: color-mix(in srgb, var(--nb-t) 12%, transparent); }
-.nb-t-bg-soft-solid   { background-color: color-mix(in srgb, var(--nb-t) 12%, white); }
-.nb-t-bar             { background-color: color-mix(in srgb, var(--nb-t) 70%, transparent); }
-.nb-t-shadow          { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--nb-t) 30%, transparent); }
-.nb-t-hover-row:hover { background-color: color-mix(in srgb, var(--nb-t) 5%, transparent); }
-.nb-t-hover-soft:hover  { background-color: color-mix(in srgb, var(--nb-t) 10%, transparent); }
-.nb-t-hover-solid:hover { background-color: var(--nb-t); color: white; }
-.nb-t-hover-dk:hover    { background-color: var(--nb-t-dk); }
-.nb-t-focus-border:focus { border-color: var(--nb-t); outline: none; }
+/* Ink utilities — apply a per-instance accent ("ink") to paper. Driven by
+   --bond-ink / --bond-ink-strong, which callers set inline
+   (e.g. `--bond-ink: var(--color-primary-800)`). */
+.bond-ink-text            { color: var(--bond-ink); }
+.bond-ink-border          { border-color: var(--bond-ink); }
+.bond-ink-bg              { background-color: var(--bond-ink); }
+.bond-ink-bg-soft         { background-color: color-mix(in srgb, var(--bond-ink) 12%, transparent); }
+.bond-ink-bg-soft-solid   { background-color: color-mix(in srgb, var(--bond-ink) 12%, white); }
+.bond-ink-bar             { background-color: color-mix(in srgb, var(--bond-ink) 70%, transparent); }
+.bond-ink-shadow          { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--bond-ink) 30%, transparent); }
+.bond-ink-hover-row:hover { background-color: color-mix(in srgb, var(--bond-ink) 5%, transparent); }
+.bond-ink-hover-soft:hover  { background-color: color-mix(in srgb, var(--bond-ink) 10%, transparent); }
+.bond-ink-hover-solid:hover { background-color: var(--bond-ink); color: white; }
+.bond-ink-hover-strong:hover    { background-color: var(--bond-ink-strong); }
+.bond-ink-focus-border:focus { border-color: var(--bond-ink); outline: none; }
 
 /* Placeholder color driven by --bond-placeholder CSS variable set inline by Bond.Elements.Input */
 .bond-input::placeholder { color: var(--bond-placeholder); }
@@ -177,24 +178,25 @@ dialog.bond-side-panel {
   overflow: hidden;
 }
 
-/* Stamp-press button interaction: button translates toward its shadow on hover,
-   giving the illusion the shadow is anchored to the page. Set --sh (color),
-   --sh-x (default 2px), and --sh-y (default 3px) on the element. */
-.nb-stamp-press {
-  box-shadow: var(--sh-x, 2px) var(--sh-y, 3px) 0 var(--sh, var(--color-primary-900));
+/* Stamp interaction: the button presses toward its shadow on hover like a
+   rubber stamp, giving the illusion the shadow is anchored to the page. Set
+   --bond-stamp-shadow (color),
+   --bond-stamp-x (default 2px), and --bond-stamp-y (default 3px) on the element. */
+.bond-stamp {
+  box-shadow: var(--bond-stamp-x, 2px) var(--bond-stamp-y, 3px) 0 var(--bond-stamp-shadow, var(--color-primary-900));
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
-.nb-stamp-press:hover {
-  transform: translate(calc(var(--sh-x, 2px) / 2), calc(var(--sh-y, 3px) / 2));
-  box-shadow: calc(var(--sh-x, 2px) / 2) calc(var(--sh-y, 3px) / 2) 0 var(--sh, var(--color-primary-900));
+.bond-stamp:hover {
+  transform: translate(calc(var(--bond-stamp-x, 2px) / 2), calc(var(--bond-stamp-y, 3px) / 2));
+  box-shadow: calc(var(--bond-stamp-x, 2px) / 2) calc(var(--bond-stamp-y, 3px) / 2) 0 var(--bond-stamp-shadow, var(--color-primary-900));
 }
-.nb-stamp-press:active {
-  transform: translate(var(--sh-x, 2px), var(--sh-y, 3px));
+.bond-stamp:active {
+  transform: translate(var(--bond-stamp-x, 2px), var(--bond-stamp-y, 3px));
   box-shadow: none;
 }
 
-/* Graph / grid paper — used for charts & summaries */
-.nb-graph {
+/* Grid paper — used for charts & summaries */
+.bond-grid {
   background-color: var(--color-surface-100);
   background-image:
     linear-gradient(rgba(195, 210, 240, 0.9) 1px, transparent 1px),

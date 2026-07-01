@@ -171,7 +171,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
     end
   end
 
-  defp nb_tag_swatch(label) do
+  defp tag_swatch(label) do
     case label do
       "kids" -> "var(--color-warning-400)"
       "food" -> "var(--color-error-400)"
@@ -182,15 +182,15 @@ defmodule LocalCentsWeb.LibraryDemoLive do
     end
   end
 
-  defp graph_paper_chart_placeholder(assigns) do
+  defp grid_chart_placeholder(assigns) do
     ~H"""
-    <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-surface-200 shadow-md shadow-primary-500/20 px-6 py-5">
+    <div class="mx-4 mt-4 mb-3 bond-grid rounded-lg border border-surface-200 shadow-md shadow-primary-500/20 px-6 py-5">
       <div class="flex items-end gap-2 h-24">
-        <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%"></div>
-        <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%"></div>
-        <div class="flex-1 nb-t-bar rounded-t-sm opacity-75" style="height: 58%"></div>
-        <div class="flex-1 nb-t-bar rounded-t-sm opacity-50" style="height: 21%"></div>
-        <div class="flex-1 nb-t-bar rounded-t-sm opacity-65" style="height: 33%"></div>
+        <div class="flex-1 bond-ink-bar rounded-t-sm opacity-90" style="height: 75%"></div>
+        <div class="flex-1 bond-ink-bar rounded-t-sm opacity-60" style="height: 41%"></div>
+        <div class="flex-1 bond-ink-bar rounded-t-sm opacity-75" style="height: 58%"></div>
+        <div class="flex-1 bond-ink-bar rounded-t-sm opacity-50" style="height: 21%"></div>
+        <div class="flex-1 bond-ink-bar rounded-t-sm opacity-65" style="height: 33%"></div>
       </div>
     </div>
     """
@@ -294,7 +294,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                 <Bond.desktop_window title="Family Expenses">
                   <%!-- Content area (edit panel is relative to this, not the title bar) --%>
                   <div class="relative overflow-hidden">
-                    <.graph_paper_chart_placeholder />
+                    <.grid_chart_placeholder />
                     <%!-- New Expense row --%>
                     <Bond.input_bar>
                       <:leading_content>
@@ -338,7 +338,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                           tags={
                             Enum.map(
                               expense.tags,
-                              &%{label: &1.label, color: nb_tag_swatch(&1.label)}
+                              &%{label: &1.label, color: tag_swatch(&1.label)}
                             )
                           }
                           phx-click="select_expense"
@@ -387,7 +387,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                                 >
                                   <span
                                     class="w-2.5 h-2.5 rounded-full shrink-0"
-                                    style={"background: #{nb_tag_swatch(tag.label)}"}
+                                    style={"background: #{tag_swatch(tag.label)}"}
                                   />
                                   <span class="text-sm text-surface-200">
                                     {tag.label}
@@ -420,20 +420,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </p>
                       <div class="flex items-center gap-2">
                         <button
-                          class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: var(--color-primary-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
+                          class="font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-primary-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
-                          class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
+                          class="font-bold text-sm rounded px-3 py-1 bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-primary-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
-                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
+                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-primary-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
@@ -451,20 +451,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </p>
                       <div class="flex items-center gap-2">
                         <button
-                          class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: var(--color-primary-900); background: var(--color-primary-800); border: 2px solid var(--color-success-600)"
+                          class="font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-primary-900); background: var(--color-primary-800); border: 2px solid var(--color-success-600)"
                         >
                           New Expense
                         </button>
                         <button
-                          class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-success-600); color: var(--color-success-600)"
+                          class="font-bold text-sm rounded px-3 py-1 bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-primary-900); border: 2px solid var(--color-success-600); color: var(--color-success-600)"
                         >
                           Open
                         </button>
                         <button
-                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-success-600); color: var(--color-success-600); background: color-mix(in srgb, var(--color-success-600) 12%, transparent)"
+                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-primary-900); border: 2px solid var(--color-success-600); color: var(--color-success-600); background: color-mix(in srgb, var(--color-success-600) 12%, transparent)"
                         >
                           ?
                         </button>
@@ -482,20 +482,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </p>
                       <div class="flex items-center gap-2">
                         <button
-                          class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: var(--color-surface-900); background: var(--color-primary-600); border: 2px solid var(--color-primary-800)"
+                          class="font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-surface-900); background: var(--color-primary-600); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
-                          class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: var(--color-surface-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
+                          class="font-bold text-sm rounded px-3 py-1 bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-surface-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
-                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: var(--color-surface-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
+                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-surface-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
@@ -513,20 +513,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </p>
                       <div class="flex items-center gap-2">
                         <button
-                          class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: var(--color-warning-700); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
+                          class="font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-warning-700); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
-                          class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: var(--color-warning-700); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
+                          class="font-bold text-sm rounded px-3 py-1 bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-warning-700); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
-                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: var(--color-warning-700); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
+                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-warning-700); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
@@ -544,20 +544,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </p>
                       <div class="flex items-center gap-2">
                         <button
-                          class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: var(--color-secondary-700); background: var(--color-primary-800); border: 2px solid var(--color-success-600)"
+                          class="font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-secondary-700); background: var(--color-primary-800); border: 2px solid var(--color-success-600)"
                         >
                           New Expense
                         </button>
                         <button
-                          class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: var(--color-secondary-700); border: 2px solid var(--color-success-600); color: var(--color-success-600)"
+                          class="font-bold text-sm rounded px-3 py-1 bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-secondary-700); border: 2px solid var(--color-success-600); color: var(--color-success-600)"
                         >
                           Open
                         </button>
                         <button
-                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: var(--color-secondary-700); border: 2px solid var(--color-success-600); color: var(--color-success-600); background: color-mix(in srgb, var(--color-success-600) 12%, transparent)"
+                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-secondary-700); border: 2px solid var(--color-success-600); color: var(--color-success-600); background: color-mix(in srgb, var(--color-success-600) 12%, transparent)"
                         >
                           ?
                         </button>
@@ -574,20 +574,20 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                       </p>
                       <div class="flex items-center gap-2">
                         <button
-                          class="font-bold px-4 py-1.5 text-sm rounded nb-stamp-press"
-                          style="--sh: var(--color-success-600); background: var(--color-tertiary-100); color: var(--color-surface-900); border: 2px solid var(--color-primary-800)"
+                          class="font-bold px-4 py-1.5 text-sm rounded bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-success-600); background: var(--color-tertiary-100); color: var(--color-surface-900); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
-                          class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: var(--color-success-600); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
+                          class="font-bold text-sm rounded px-3 py-1 bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-success-600); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
-                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: var(--color-success-600); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
+                          class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center bond-stamp"
+                          style="--bond-stamp-shadow: var(--color-success-600); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
@@ -599,7 +599,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   </div>
                 </div>
               </div>
-              <%!-- /nb-tint wrapper --%>
+              <%!-- /ink wrapper --%>
             <% true -> %>
           <% end %>
         </div>

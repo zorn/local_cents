@@ -17,8 +17,8 @@ defmodule LocalCentsWeb.Bond.Elements.ActionChip do
   def action_chip(assigns) do
     ~H"""
     <button
-      class="flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors"
-      style="--nb-t: var(--color-primary-800)"
+      class="flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold bond-ink-text bond-ink-hover-soft rounded-full transition-colors"
+      style="--bond-ink: var(--color-primary-800)"
       {@rest}
     >
       {@label}

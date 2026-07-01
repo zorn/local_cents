@@ -1,5 +1,5 @@
 defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
-  @moduledoc "A notebook-themed expense row displaying date, description, tags, and amount."
+  @moduledoc "An expense row displaying date, description, tags, and amount."
 
   use Phoenix.Component
   alias LocalCentsWeb.Bond
@@ -21,8 +21,8 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   def expense_cell(assigns) do
     ~H"""
     <div
-      class="flex items-center gap-4 px-4 py-3 nb-t-hover-row transition-colors cursor-pointer"
-      style="--nb-t: var(--color-primary-800)"
+      class="flex items-center gap-4 px-4 py-3 bond-ink-hover-row transition-colors cursor-pointer"
+      style="--bond-ink: var(--color-primary-800)"
       {@rest}
     >
       <span class="shrink-0 text-sm tabular-nums w-24 text-surface-600">
