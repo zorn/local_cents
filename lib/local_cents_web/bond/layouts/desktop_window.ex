@@ -1,10 +1,11 @@
-defmodule Bond.Layouts.DesktopWindow do
+defmodule LocalCentsWeb.Bond.Layouts.DesktopWindow do
   @moduledoc """
   A macOS-style desktop window chrome with a denim title bar and twill-textured background.
   Renders traffic-light buttons and a centered title above slot content.
   """
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

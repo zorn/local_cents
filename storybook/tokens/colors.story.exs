@@ -1,5 +1,5 @@
 defmodule Storybook.Tokens.Colors do
-  use PhoenixStorybook.Story, :page
+  use LocalCentsWeb.Storybook.Story, :page
 
   def doc,
     do: "Color tokens defined in Bond.Tokens. All Bond components source their colors from here."

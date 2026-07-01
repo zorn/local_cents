@@ -1,7 +1,8 @@
-defmodule Bond.Elements.Button do
+defmodule LocalCentsWeb.Bond.Elements.Button do
   @moduledoc "A stamp-press button with primary, outline, and square variants."
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

@@ -1,10 +1,11 @@
-defmodule Bond.Elements.ActionChip do
+defmodule LocalCentsWeb.Bond.Elements.ActionChip do
   @moduledoc "A compact pill-shaped button with a trailing chevron, used to trigger dropdowns or menus."
 
   use Phoenix.Component
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
+  alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 

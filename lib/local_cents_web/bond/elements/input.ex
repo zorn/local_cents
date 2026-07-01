@@ -1,4 +1,4 @@
-defmodule Bond.Elements.Input do
+defmodule LocalCentsWeb.Bond.Elements.Input do
   @moduledoc """
   A notebook-themed input element.
 
@@ -71,6 +71,7 @@ defmodule Bond.Elements.Input do
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
+  alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 

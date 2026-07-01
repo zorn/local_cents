@@ -1,5 +1,5 @@
 defmodule Storybook.Layouts.ListControls do
-  use PhoenixStorybook.Story, :component
+  use LocalCentsWeb.Storybook.Story, :component
 
   def function, do: &Bond.Layouts.ListControls.list_controls/1
   def render_source, do: :function

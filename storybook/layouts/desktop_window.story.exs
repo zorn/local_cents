@@ -1,5 +1,5 @@
 defmodule Storybook.Layouts.DesktopWindow do
-  use PhoenixStorybook.Story, :component
+  use LocalCentsWeb.Storybook.Story, :component
 
   def function, do: &Bond.Layouts.DesktopWindow.desktop_window/1
   def render_source, do: :function

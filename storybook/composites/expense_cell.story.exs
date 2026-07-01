@@ -1,5 +1,5 @@
 defmodule Storybook.Composites.ExpenseCell do
-  use PhoenixStorybook.Story, :component
+  use LocalCentsWeb.Storybook.Story, :component
 
   def function, do: &Bond.Composites.ExpenseCell.expense_cell/1
   def render_source, do: :function

@@ -1,7 +1,8 @@
-defmodule Bond.Composites.BookCell do
+defmodule LocalCentsWeb.Bond.Composites.BookCell do
   @moduledoc "A notebook-themed book row for use inside Bond.Elements.ListView."
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

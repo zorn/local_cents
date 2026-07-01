@@ -1,5 +1,5 @@
 defmodule Storybook.AboutBondPage do
-  use PhoenixStorybook.Story, :page
+  use LocalCentsWeb.Storybook.Story, :page
 
   def render(assigns) do
     ~H"""

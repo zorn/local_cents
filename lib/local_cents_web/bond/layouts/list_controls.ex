@@ -1,7 +1,8 @@
-defmodule Bond.Layouts.ListControls do
+defmodule LocalCentsWeb.Bond.Layouts.ListControls do
   @moduledoc "A styled horizontal strip for list search, filtering, and sorting controls."
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

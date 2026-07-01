@@ -96,6 +96,7 @@ defmodule LocalCentsWeb do
       import LocalCentsWeb.CoreComponents
 
       # Common modules used in templates
+      alias LocalCentsWeb.Bond
       alias LocalCentsWeb.Layouts
       alias Phoenix.LiveView.JS
 

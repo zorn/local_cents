@@ -1,7 +1,8 @@
-defmodule Bond.Layouts.InputBar do
+defmodule LocalCentsWeb.Bond.Layouts.InputBar do
   @moduledoc "A tinted bar layout with a leading region and a trailing region, arranged side by side."
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

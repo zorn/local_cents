@@ -1,4 +1,4 @@
-defmodule Bond.Layouts.SidePanel do
+defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
   @moduledoc """
   A right-aligned slide-in panel with a dimmed overlay backdrop.
 
@@ -53,6 +53,7 @@ defmodule Bond.Layouts.SidePanel do
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
+  alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 

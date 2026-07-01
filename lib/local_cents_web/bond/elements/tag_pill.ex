@@ -1,7 +1,8 @@
-defmodule Bond.Elements.TagPill do
+defmodule LocalCentsWeb.Bond.Elements.TagPill do
   @moduledoc "A small pill displaying a colored dot swatch and a text label."
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

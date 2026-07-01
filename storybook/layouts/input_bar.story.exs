@@ -1,5 +1,5 @@
 defmodule Storybook.Layouts.InputBar do
-  use PhoenixStorybook.Story, :component
+  use LocalCentsWeb.Storybook.Story, :component
 
   def function, do: &Bond.Layouts.InputBar.input_bar/1
   def render_source, do: :function

@@ -1,4 +1,4 @@
-defmodule Bond.Elements.Checkbox do
+defmodule LocalCentsWeb.Bond.Elements.Checkbox do
   @moduledoc """
   A checkbox element for forms.
 

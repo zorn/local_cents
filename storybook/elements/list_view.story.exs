@@ -1,5 +1,5 @@
 defmodule Storybook.Elements.ListView do
-  use PhoenixStorybook.Story, :component
+  use LocalCentsWeb.Storybook.Story, :component
 
   def function, do: &Bond.Elements.ListView.list_view/1
   def render_source, do: :function

@@ -1,5 +1,5 @@
 defmodule Storybook.Elements.Input do
-  use PhoenixStorybook.Story, :component
+  use LocalCentsWeb.Storybook.Story, :component
 
   def function, do: &Bond.Elements.Input.input/1
   def render_source, do: :function

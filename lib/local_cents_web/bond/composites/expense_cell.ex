@@ -1,7 +1,8 @@
-defmodule Bond.Composites.ExpenseCell do
+defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   @moduledoc "A notebook-themed expense row displaying date, description, tags, and amount."
 
   use Phoenix.Component
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket

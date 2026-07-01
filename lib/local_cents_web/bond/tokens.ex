@@ -1,4 +1,4 @@
-defmodule Bond.Tokens do
+defmodule LocalCentsWeb.Bond.Tokens do
   @moduledoc "Design tokens for the Bond UI system."
 
   @spec color(atom()) :: String.t()

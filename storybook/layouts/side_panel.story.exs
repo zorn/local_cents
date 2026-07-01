@@ -1,5 +1,5 @@
 defmodule Storybook.Layouts.SidePanel do
-  use PhoenixStorybook.Story, :example
+  use LocalCentsWeb.Storybook.Story, :example
 
   def doc, do: "Right-aligned modal panel using the native <dialog> element."
 

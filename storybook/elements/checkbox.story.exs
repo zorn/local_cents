@@ -1,5 +1,5 @@
 defmodule Storybook.Elements.Checkbox do
-  use PhoenixStorybook.Story, :example
+  use LocalCentsWeb.Storybook.Story, :example
 
   def doc,
     do: "Checkbox with a slot-based label — supports plain text or rich markup like swatches."
