@@ -31,40 +31,44 @@ defmodule Storybook.Layouts.SidePanel do
           Default — Escape, backdrop, or × closes
         </p>
         <div
-          class="relative overflow-hidden rounded-lg border bg-surface-sunken border-border-subtle"
+          class="relative overflow-hidden rounded-lg border bg-surface-200 border-surface-200"
           style="height: 380px"
         >
           <div class="p-4">
-            <p class="text-sm mb-3 text-content-secondary">
+            <p class="text-sm mb-3 text-surface-600">
               Background content
             </p>
-            <Bond.Elements.Button.button phx-click="open_normal">
+            <LocalCentsWeb.Bond.Elements.Button.button phx-click="open_normal">
               Edit Expense
-            </Bond.Elements.Button.button>
+            </LocalCentsWeb.Bond.Elements.Button.button>
           </div>
 
           <%= if @open_normal do %>
-            <Bond.Layouts.SidePanel.side_panel
+            <LocalCentsWeb.Bond.Layouts.SidePanel.side_panel
               id="story-panel-normal"
               title="Edit Expense"
               on_close="close_normal"
             >
               <div class="space-y-3">
                 <div>
-                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
                     Description
                   </label>
-                  <Bond.Elements.Input.input
+                  <LocalCentsWeb.Bond.Elements.Input.input
                     variant="frosted"
                     class="w-full"
                     placeholder="Coffee, groceries…"
                   />
                 </div>
                 <div>
-                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
                     Cost
                   </label>
-                  <Bond.Elements.Input.input variant="frosted" class="w-full" placeholder="0.00" />
+                  <LocalCentsWeb.Bond.Elements.Input.input
+                    variant="frosted"
+                    class="w-full"
+                    placeholder="0.00"
+                  />
                 </div>
               </div>
               <:footer>
@@ -75,11 +79,11 @@ defmodule Storybook.Layouts.SidePanel do
                 >
                   Delete
                 </button>
-                <Bond.Elements.Button.button phx-click="close_normal">
+                <LocalCentsWeb.Bond.Elements.Button.button phx-click="close_normal">
                   Save
-                </Bond.Elements.Button.button>
+                </LocalCentsWeb.Bond.Elements.Button.button>
               </:footer>
-            </Bond.Layouts.SidePanel.side_panel>
+            </LocalCentsWeb.Bond.Layouts.SidePanel.side_panel>
           <% end %>
         </div>
       </div>
@@ -90,20 +94,20 @@ defmodule Storybook.Layouts.SidePanel do
           Locked — dirty form guard, only Save dismisses
         </p>
         <div
-          class="relative overflow-hidden rounded-lg border bg-surface-sunken border-border-subtle"
+          class="relative overflow-hidden rounded-lg border bg-surface-200 border-surface-200"
           style="height: 380px"
         >
           <div class="p-4">
-            <p class="text-sm mb-3 text-content-secondary">
+            <p class="text-sm mb-3 text-surface-600">
               Background content
             </p>
-            <Bond.Elements.Button.button phx-click="open_locked">
+            <LocalCentsWeb.Bond.Elements.Button.button phx-click="open_locked">
               Edit Expense
-            </Bond.Elements.Button.button>
+            </LocalCentsWeb.Bond.Elements.Button.button>
           </div>
 
           <%= if @open_locked do %>
-            <Bond.Layouts.SidePanel.side_panel
+            <LocalCentsWeb.Bond.Layouts.SidePanel.side_panel
               id="story-panel-locked"
               title="Edit Expense"
               on_close="close_locked"
@@ -111,20 +115,24 @@ defmodule Storybook.Layouts.SidePanel do
             >
               <div class="space-y-3">
                 <div>
-                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
                     Description
                   </label>
-                  <Bond.Elements.Input.input
+                  <LocalCentsWeb.Bond.Elements.Input.input
                     variant="frosted"
                     class="w-full"
                     placeholder="Whole Foods grocery run"
                   />
                 </div>
                 <div>
-                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-accent-light">
+                  <label class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
                     Cost
                   </label>
-                  <Bond.Elements.Input.input variant="frosted" class="w-full" placeholder="127.43" />
+                  <LocalCentsWeb.Bond.Elements.Input.input
+                    variant="frosted"
+                    class="w-full"
+                    placeholder="127.43"
+                  />
                 </div>
                 <p class="text-xs" style="color: rgba(255,255,255,0.45);">
                   Form has unsaved changes — Escape, backdrop, and × are disabled.
@@ -137,11 +145,11 @@ defmodule Storybook.Layouts.SidePanel do
                 >
                   Delete
                 </button>
-                <Bond.Elements.Button.button phx-click="close_locked">
+                <LocalCentsWeb.Bond.Elements.Button.button phx-click="close_locked">
                   Save
-                </Bond.Elements.Button.button>
+                </LocalCentsWeb.Bond.Elements.Button.button>
               </:footer>
-            </Bond.Layouts.SidePanel.side_panel>
+            </LocalCentsWeb.Bond.Layouts.SidePanel.side_panel>
           <% end %>
         </div>
       </div>

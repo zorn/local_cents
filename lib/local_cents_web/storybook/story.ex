@@ -9,8 +9,20 @@ defmodule LocalCentsWeb.Storybook.Story do
 
       use LocalCentsWeb.Storybook.Story, :component
 
-  Stories can then reference `Bond.Elements.Button.button/1` and friends
-  directly.
+  The alias applies to code in the story module body, so `def function`
+  and similar can reference `Bond.Elements.Button.button/1` and friends
+  directly:
+
+      def function, do: &Bond.Elements.Button.button/1
+
+  It does **not** apply inside variation `slots`/`template` strings. Those
+  are compiled by PhoenixStorybook in a separate context that does not see
+  the alias, so Bond components used as tags there must be fully qualified:
+
+      slots: ["<LocalCentsWeb.Bond.Elements.Button.button>Save</LocalCentsWeb.Bond.Elements.Button.button>"]
+
+  Writing `<Bond.Elements.Button.button>` in a slot string raises
+  `UndefinedFunctionError` at render time.
   """
 
   defmacro __using__(type) do

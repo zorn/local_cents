@@ -12,7 +12,7 @@ defmodule LocalCentsWeb.Bond.Elements.TagPill do
   @spec tag_pill(Socket.assigns()) :: Rendered.t()
   def tag_pill(assigns) do
     ~H"""
-    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface border border-border-subtle text-content">
+    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-50 border border-surface-200 text-surface-800">
       <span class="w-2 h-2 rounded-full shrink-0" style={"background: #{@color}"}></span>
       {@label}
     </span>

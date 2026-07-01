@@ -12,7 +12,7 @@ defmodule Storybook.Layouts.ListControls do
         slots: [
           """
           <:leading_content>
-            <Bond.Elements.Input.input type="search" placeholder="search..." class="flex-1" />
+            <LocalCentsWeb.Bond.Elements.Input.input type="search" placeholder="search..." class="flex-1" />
           </:leading_content>
           """,
           """

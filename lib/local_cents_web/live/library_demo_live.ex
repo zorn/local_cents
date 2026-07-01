@@ -173,18 +173,18 @@ defmodule LocalCentsWeb.LibraryDemoLive do
 
   defp nb_tag_swatch(label) do
     case label do
-      "kids" -> "#e6b53c"
-      "food" -> "#e0796e"
-      "groceries" -> "#3f7fd6"
-      "dining" -> "#6fc59a"
-      "sports" -> "#9b8bd6"
-      _ -> "#8b9fc0"
+      "kids" -> "var(--color-warning-400)"
+      "food" -> "var(--color-error-400)"
+      "groceries" -> "var(--color-primary-500)"
+      "dining" -> "var(--color-success-400)"
+      "sports" -> "var(--color-secondary-400)"
+      _ -> "var(--color-surface-500)"
     end
   end
 
   defp graph_paper_chart_placeholder(assigns) do
     ~H"""
-    <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-[#c3d2f0] shadow-md shadow-[#3f7fd6]/20 px-6 py-5">
+    <div class="mx-4 mt-4 mb-3 nb-graph rounded-lg border border-surface-200 shadow-md shadow-primary-500/20 px-6 py-5">
       <div class="flex items-end gap-2 h-24">
         <div class="flex-1 nb-t-bar rounded-t-sm opacity-90" style="height: 75%"></div>
         <div class="flex-1 nb-t-bar rounded-t-sm opacity-60" style="height: 41%"></div>
@@ -202,9 +202,9 @@ defmodule LocalCentsWeb.LibraryDemoLive do
     <Layouts.app flash={@flash}>
       <div class={[
         "pb-12",
-        @active_style == "warm" && "bg-[#E8E3D8]",
-        @active_style == "dark" && "bg-[#0D1117]",
-        @active_style == "notebook" && "bg-[#eef3fc]"
+        @active_style == "warm" && "bg-tertiary-200",
+        @active_style == "dark" && "bg-surface-950",
+        @active_style == "notebook" && "bg-surface-100"
       ]}>
         <%!-- Style Navigator --%>
         <div class="pt-6 pb-6 flex justify-center">
@@ -374,7 +374,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                             value={@selected_expense.amount}
                           />
                           <div>
-                            <label class="text-xs font-semibold text-[#6ca0ea] uppercase tracking-wide block mb-2 px-1">
+                            <label class="text-xs font-semibold text-primary-400 uppercase tracking-wide block mb-2 px-1">
                               Tags
                             </label>
                             <div class="space-y-1.5">
@@ -389,7 +389,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                                     class="w-2.5 h-2.5 rounded-full shrink-0"
                                     style={"background: #{nb_tag_swatch(tag.label)}"}
                                   />
-                                  <span class="text-sm text-[#c3d2f0]">
+                                  <span class="text-sm text-surface-200">
                                     {tag.label}
                                   </span>
                                 </Bond.checkbox>
@@ -398,7 +398,7 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                           </div>
                         </div>
                         <:footer>
-                          <button class="text-sm font-bold text-[#e0796e] hover:text-[#f0958b] transition-colors">
+                          <button class="text-sm font-bold text-error-400 hover:text-error-300 transition-colors">
                             Delete
                           </button>
                           <Bond.button>Save</Bond.button>
@@ -408,190 +408,191 @@ defmodule LocalCentsWeb.LibraryDemoLive do
                   </div>
                 </Bond.desktop_window>
                 <%!-- Button Design Lab — B5 Press Variations --%>
-                <div class="bg-white/70 rounded-xl border border-[#c3d2f0] p-6 shadow-sm">
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-[#6980b0] mb-5">
+                <div class="bg-white/70 rounded-xl border border-surface-200 p-6 shadow-sm">
+                  <p class="text-[10px] font-bold uppercase tracking-widest text-surface-600 mb-5">
                     Press Button · Color Variations
                   </p>
                   <div class="grid grid-cols-3 gap-x-6 gap-y-7">
                     <%!-- P1 — Classic (reference) --%>
                     <div class="space-y-2.5">
-                      <p class="text-xs font-bold text-[#22335c]">
-                        P1 · Classic <span class="font-normal text-[#6980b0]">reference</span>
+                      <p class="text-xs font-bold text-surface-800">
+                        P1 · Classic <span class="font-normal text-surface-600">reference</span>
                       </p>
                       <div class="flex items-center gap-2">
                         <button
                           class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: #1b3a9a; background: #1e40af; border: 2px solid #1e40af"
+                          style="--sh: var(--color-primary-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
                           class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: #1b3a9a; border: 2px solid #1e40af; color: #1e40af"
+                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
                           class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: #1b3a9a; border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)"
+                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
                       </div>
-                      <p class="text-[10px] text-[#6980b0] leading-snug">
+                      <p class="text-[10px] text-surface-600 leading-snug">
                         Fill, border, and shadow all drawn from one sapphire tint. The reference point.
                       </p>
                     </div>
 
                     <%!-- P2 — Emerald Ring --%>
                     <div class="space-y-2.5">
-                      <p class="text-xs font-bold text-[#22335c]">
+                      <p class="text-xs font-bold text-surface-800">
                         P2 · Emerald Ring
-                        <span class="font-normal text-[#6980b0]">border contrast</span>
+                        <span class="font-normal text-surface-600">border contrast</span>
                       </p>
                       <div class="flex items-center gap-2">
                         <button
                           class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: #1b3a9a; background: #1e40af; border: 2px solid #059669"
+                          style="--sh: var(--color-primary-900); background: var(--color-primary-800); border: 2px solid var(--color-success-600)"
                         >
                           New Expense
                         </button>
                         <button
                           class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: #1b3a9a; border: 2px solid #059669; color: #059669"
+                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-success-600); color: var(--color-success-600)"
                         >
                           Open
                         </button>
                         <button
                           class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: #1b3a9a; border: 2px solid #059669; color: #059669; background: color-mix(in srgb, #059669 12%, transparent)"
+                          style="--sh: var(--color-primary-900); border: 2px solid var(--color-success-600); color: var(--color-success-600); background: color-mix(in srgb, var(--color-success-600) 12%, transparent)"
                         >
                           ?
                         </button>
                       </div>
-                      <p class="text-[10px] text-[#6980b0] leading-snug">
+                      <p class="text-[10px] text-surface-600 leading-snug">
                         Sapphire fill, emerald border, dark sapphire shadow. The ring reads as a distinct accent layer from a separate hue family.
                       </p>
                     </div>
 
                     <%!-- P3 — Lifted Fill --%>
                     <div class="space-y-2.5">
-                      <p class="text-xs font-bold text-[#22335c]">
-                        P3 · Lifted Fill <span class="font-normal text-[#6980b0]">fill contrast</span>
+                      <p class="text-xs font-bold text-surface-800">
+                        P3 · Lifted Fill
+                        <span class="font-normal text-surface-600">fill contrast</span>
                       </p>
                       <div class="flex items-center gap-2">
                         <button
                           class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: #1e293b; background: #3060d8; border: 2px solid #1e40af"
+                          style="--sh: var(--color-surface-900); background: var(--color-primary-600); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
                           class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: #1e293b; border: 2px solid #1e40af; color: #1e40af"
+                          style="--sh: var(--color-surface-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
                           class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: #1e293b; border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)"
+                          style="--sh: var(--color-surface-900); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
                       </div>
-                      <p class="text-[10px] text-[#6980b0] leading-snug">
+                      <p class="text-[10px] text-surface-600 leading-snug">
                         Fill is one step lighter than classic; border and shadow stay classic. The darker frame visibly wraps the lighter fill.
                       </p>
                     </div>
 
                     <%!-- P4 — Amber Shadow --%>
                     <div class="space-y-2.5">
-                      <p class="text-xs font-bold text-[#22335c]">
+                      <p class="text-xs font-bold text-surface-800">
                         P4 · Amber Shadow
-                        <span class="font-normal text-[#6980b0]">shadow contrast</span>
+                        <span class="font-normal text-surface-600">shadow contrast</span>
                       </p>
                       <div class="flex items-center gap-2">
                         <button
                           class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: #b45309; background: #1e40af; border: 2px solid #1e40af"
+                          style="--sh: var(--color-warning-700); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
                           class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: #b45309; border: 2px solid #1e40af; color: #1e40af"
+                          style="--sh: var(--color-warning-700); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
                           class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: #b45309; border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)"
+                          style="--sh: var(--color-warning-700); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
                       </div>
-                      <p class="text-[10px] text-[#6980b0] leading-snug">
+                      <p class="text-[10px] text-surface-600 leading-snug">
                         Border matches fill but the offset shadow shifts to amber. The button reads cool; the depth cue reads warm — a subtle surprise on press.
                       </p>
                     </div>
 
                     <%!-- P5 — Full Split --%>
                     <div class="space-y-2.5">
-                      <p class="text-xs font-bold text-[#22335c]">
+                      <p class="text-xs font-bold text-surface-800">
                         P5 · Full Split
-                        <span class="font-normal text-[#6980b0]">fill / border / shadow</span>
+                        <span class="font-normal text-surface-600">fill / border / shadow</span>
                       </p>
                       <div class="flex items-center gap-2">
                         <button
                           class="font-bold px-4 py-1.5 text-sm text-white rounded nb-stamp-press"
-                          style="--sh: #c2410c; background: #1e40af; border: 2px solid #059669"
+                          style="--sh: var(--color-secondary-700); background: var(--color-primary-800); border: 2px solid var(--color-success-600)"
                         >
                           New Expense
                         </button>
                         <button
                           class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: #c2410c; border: 2px solid #059669; color: #059669"
+                          style="--sh: var(--color-secondary-700); border: 2px solid var(--color-success-600); color: var(--color-success-600)"
                         >
                           Open
                         </button>
                         <button
                           class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: #c2410c; border: 2px solid #059669; color: #059669; background: color-mix(in srgb, #059669 12%, transparent)"
+                          style="--sh: var(--color-secondary-700); border: 2px solid var(--color-success-600); color: var(--color-success-600); background: color-mix(in srgb, var(--color-success-600) 12%, transparent)"
                         >
                           ?
                         </button>
                       </div>
-                      <p class="text-[10px] text-[#6980b0] leading-snug">
+                      <p class="text-[10px] text-surface-600 leading-snug">
                         Sapphire fill · emerald border · orange-red shadow. Every visual layer speaks a different hue — loud but compositionally rich.
                       </p>
                     </div>
 
                     <%!-- P6 — Ivory Press --%>
                     <div class="space-y-2.5">
-                      <p class="text-xs font-bold text-[#22335c]">
-                        P6 · Ivory Press <span class="font-normal text-[#6980b0]">light fill</span>
+                      <p class="text-xs font-bold text-surface-800">
+                        P6 · Ivory Press <span class="font-normal text-surface-600">light fill</span>
                       </p>
                       <div class="flex items-center gap-2">
                         <button
                           class="font-bold px-4 py-1.5 text-sm rounded nb-stamp-press"
-                          style="--sh: #059669; background: #f5f2e8; color: #1e2d4d; border: 2px solid #1e40af"
+                          style="--sh: var(--color-success-600); background: var(--color-tertiary-100); color: var(--color-surface-900); border: 2px solid var(--color-primary-800)"
                         >
                           New Expense
                         </button>
                         <button
                           class="font-bold text-sm rounded px-3 py-1 nb-stamp-press"
-                          style="--sh: #059669; border: 2px solid #1e40af; color: #1e40af"
+                          style="--sh: var(--color-success-600); border: 2px solid var(--color-primary-800); color: var(--color-primary-800)"
                         >
                           Open
                         </button>
                         <button
                           class="w-7 h-7 rounded text-sm font-bold flex items-center justify-center nb-stamp-press"
-                          style="--sh: #059669; border: 2px solid #1e40af; color: #1e40af; background: color-mix(in srgb, #1e40af 12%, transparent)"
+                          style="--sh: var(--color-success-600); border: 2px solid var(--color-primary-800); color: var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
                         >
                           ?
                         </button>
                       </div>
-                      <p class="text-[10px] text-[#6980b0] leading-snug">
+                      <p class="text-[10px] text-surface-600 leading-snug">
                         Warm ivory fill, sapphire border, emerald shadow. Feels like a rubber stamp pressed onto notepaper — the green undercut reads as ink pooling.
                       </p>
                     </div>

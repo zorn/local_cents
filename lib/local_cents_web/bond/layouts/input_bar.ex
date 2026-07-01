@@ -14,7 +14,7 @@ defmodule LocalCentsWeb.Bond.Layouts.InputBar do
     ~H"""
     <div
       class="mx-4 rounded-lg px-3 py-2.5 nb-t-bg-soft"
-      style="border: 1px solid var(--color-border); box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-accent) 20%, transparent); --nb-t: var(--color-accent)"
+      style="border: 1px solid var(--color-surface-400); box-shadow: 0 4px 6px -1px color-mix(in srgb, var(--color-primary-800) 20%, transparent); --nb-t: var(--color-primary-800)"
     >
       <div class="flex items-end gap-2">
         {render_slot(@leading_content)}

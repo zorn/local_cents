@@ -37,13 +37,13 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
 
   defp button_style(:primary),
     do:
-      "--sh: var(--color-button-shadow); background: var(--color-accent); border: 2px solid var(--color-accent)"
+      "--sh: var(--color-surface-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
 
   defp button_style(:outline),
     do:
-      "--sh: var(--color-button-shadow); color: var(--color-accent); border: 2px solid var(--color-accent); background: transparent"
+      "--sh: var(--color-surface-900); color: var(--color-primary-800); border: 2px solid var(--color-primary-800); background: transparent"
 
   defp button_style(:square),
     do:
-      "--sh: var(--color-button-shadow); color: var(--color-accent); border: 2px solid var(--color-accent); background: color-mix(in srgb, var(--color-accent) 12%, transparent)"
+      "--sh: var(--color-surface-900); color: var(--color-primary-800); border: 2px solid var(--color-primary-800); background: color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
 end

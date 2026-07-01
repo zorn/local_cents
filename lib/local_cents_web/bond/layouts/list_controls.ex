@@ -14,7 +14,7 @@ defmodule LocalCentsWeb.Bond.Layouts.ListControls do
     ~H"""
     <div
       class="px-3 py-2.5 nb-t-bg-soft"
-      style="--nb-t: var(--color-accent)"
+      style="--nb-t: var(--color-primary-800)"
     >
       <div class="flex items-center gap-2">
         {render_slot(@leading_content)}

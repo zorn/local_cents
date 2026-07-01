@@ -90,13 +90,13 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
       <div
         class="flex-1"
         phx-click={if !@locked, do: @on_close}
-        style="background: color-mix(in srgb, var(--color-title-bar-border) 50%, transparent)"
+        style="background: color-mix(in srgb, var(--color-surface-950) 50%, transparent)"
       >
       </div>
       <%!-- Panel — <dialog open> for semantic HTML; non-modal so it stays scoped to the container --%>
       <dialog
         open
-        class="bond-side-panel nb-denim flex flex-col shadow-2xl border-l border-title-bar-border"
+        class="bond-side-panel nb-denim flex flex-col shadow-2xl border-l border-surface-950"
       >
         <%!-- Header --%>
         <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
@@ -105,7 +105,7 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
             phx-click={if !@locked, do: @on_close}
             class={[
               "transition-colors",
-              if(@locked, do: "text-content-secondary", else: "text-accent-light")
+              if(@locked, do: "text-surface-600", else: "text-primary-400")
             ]}
           >
             <.icon name="hero-x-mark" class="w-5 h-5" />

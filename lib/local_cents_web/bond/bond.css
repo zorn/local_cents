@@ -1,32 +1,130 @@
 /* Bond component styles — imported by app.css and storybook.css */
 
-/* Bond color tokens. Names describe purpose, not hue. Tailwind generates both
-   the `--color-*` CSS variables and matching utilities (`text-content`,
-   `bg-surface`, `border-border-subtle`, …). Components reference the utilities
-   where a single color property is set, and `var(--color-*)` inline for
-   CSS-variable injection and composite styles. This is the single source of
-   truth for Bond colors. */
-@theme {
-  --color-accent: #1e40af;
-  --color-accent-dark: #1b3a9a;
-  --color-accent-light: #6ca0ea;
-  --color-button-shadow: #1e293b;
+/* Bond color palette — Skeleton-style numbered ramps.
 
-  --color-content: #22335c;
-  --color-content-secondary: #6980b0;
-  --color-content-placeholder: #a0b4d0;
+   Each family is a 50→950 scale (50 = lightest, 950 = darkest). Tailwind
+   generates both the `--color-*` CSS variables and matching utilities
+   (`text-surface-800`, `bg-primary-700`, `border-surface-200`, …).
+   `*-contrast-*` tokens give a readable text color to place on top of a fill
+   of the same shade.
 
-  --color-border: #a8c0e0;
-  --color-border-subtle: #c3d2f0;
-  --color-surface: #ffffff;
-  --color-surface-sunken: #cce0f5;
-  --color-surface-frosted: #b8d0ee;
+   Families:
+     surface   — blue-tinted neutral; the app backbone (bg, text, borders)
+     primary   — brand blue; interactive/emphasis
+     secondary — terracotta; warm accent
+     tertiary  — kraft/paper; warm neutral
+     success   — emerald; positive amounts, confirmations
+     warning   — amber; cautions
+     error     — red; destructive, negative amounts
 
-  --color-positive-currency: #3f9d6c;
+   Components reference the utilities where a single color property is set, and
+   `var(--color-*)` inline for CSS-variable injection and composite styles.
+   This is the single source of truth for Bond colors.
 
-  --color-title-bar-background: #1e2d4d;
-  --color-title-bar-border: #0d1a35;
+   `static` forces Tailwind to emit every token as a CSS variable even when no
+   utility references it, so `var(--color-*)` works in inline styles (e.g. the
+   storybook swatches) and all ramp shades stay available. */
+@theme static {
+  /* ---- surface: blue-tinted neutral (backbone) ---- */
+  --color-surface-50:  #ffffff;
+  --color-surface-100: #eef3fc;
+  --color-surface-200: #cce0f5;
+  --color-surface-300: #b8d0ee;
+  --color-surface-400: #a8c0e0;
+  --color-surface-500: #8ba6cd;
+  --color-surface-600: #6980b0;
+  --color-surface-700: #45577f;
+  --color-surface-800: #22335c;
+  --color-surface-900: #1e2d4d;
+  --color-surface-950: #0d1a35;
+  --color-surface-contrast-50:  #22335c; /* dark text on light surfaces */
+  --color-surface-contrast-900: #ffffff; /* light text on dark surfaces */
 
+  /* ---- primary: brand blue ---- */
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+  --color-primary-contrast-500: #ffffff;
+
+  /* ---- secondary: terracotta ---- */
+  --color-secondary-50:  #fff7ed;
+  --color-secondary-100: #ffedd5;
+  --color-secondary-200: #fed7aa;
+  --color-secondary-300: #fdba74;
+  --color-secondary-400: #fb923c;
+  --color-secondary-500: #f97316;
+  --color-secondary-600: #ea580c;
+  --color-secondary-700: #c2410c;
+  --color-secondary-800: #9a3412;
+  --color-secondary-900: #7c2d12;
+  --color-secondary-950: #431407;
+  --color-secondary-contrast-500: #ffffff;
+
+  /* ---- tertiary: kraft / paper ---- */
+  --color-tertiary-50:  #faf7f0;
+  --color-tertiary-100: #f3ede1;
+  --color-tertiary-200: #e8ddca;
+  --color-tertiary-300: #ddccb0;
+  --color-tertiary-400: #c5b89a;
+  --color-tertiary-500: #b8a88a;
+  --color-tertiary-600: #a08a6a;
+  --color-tertiary-700: #8c7557;
+  --color-tertiary-800: #6b5544;
+  --color-tertiary-900: #4a3a2c;
+  --color-tertiary-950: #2a1f14;
+  --color-tertiary-contrast-500: #2a1f14;
+
+  /* ---- success: emerald ---- */
+  --color-success-50:  #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+  --color-success-950: #022c22;
+  --color-success-contrast-500: #ffffff;
+
+  /* ---- warning: amber ---- */
+  --color-warning-50:  #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+  --color-warning-contrast-500: #451a03;
+
+  /* ---- error: red ---- */
+  --color-error-50:  #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+  --color-error-950: #450a0a;
+  --color-error-contrast-500: #ffffff;
+
+  /* ---- chrome: platform-literal window controls (not part of the palette) ---- */
   --color-mac-os-close: #ff5f57;
   --color-mac-os-minimize: #febc2e;
   --color-mac-os-maximize: #28c840;
@@ -34,20 +132,15 @@
 
 /* Denim marble composition cover — used for title bars & the edit panel */
 .nb-denim {
-  background-color: #1e2d4d;
+  background-color: var(--color-surface-900);
   background-image:
     radial-gradient(ellipse at 18% 32%, rgba(63, 127, 214, 0.28) 0%, transparent 52%),
     radial-gradient(ellipse at 78% 72%, rgba(20, 35, 75, 0.65) 0%, transparent 44%),
     radial-gradient(ellipse at 50% 5%, rgba(34, 51, 92, 0.35) 0%, transparent 58%);
 }
 
-/* Notebook tint color system — set on parent wrapper, consumed by children */
-.nb-tint-sky      { --nb-t: #3f7fd6; --nb-t-dk: #2d6bc4; }
-.nb-tint-ocean    { --nb-t: #2563eb; --nb-t-dk: #1d4ed8; }
-.nb-tint-cobalt   { --nb-t: #1d4ed8; --nb-t-dk: #1a44c4; }
-.nb-tint-sapphire { --nb-t: #1e40af; --nb-t-dk: #1b3a9a; }
-.nb-tint-ink      { --nb-t: #1e3a6e; --nb-t-dk: #162d55; }
-
+/* Notebook tint utilities — driven by --nb-t / --nb-t-dk, which callers set
+   inline (e.g. `--nb-t: var(--color-primary-800)`). */
 .nb-t-text            { color: var(--nb-t); }
 .nb-t-border          { border-color: var(--nb-t); }
 .nb-t-bg              { background-color: var(--nb-t); }
@@ -88,141 +181,21 @@ dialog.bond-side-panel {
    giving the illusion the shadow is anchored to the page. Set --sh (color),
    --sh-x (default 2px), and --sh-y (default 3px) on the element. */
 .nb-stamp-press {
-  box-shadow: var(--sh-x, 2px) var(--sh-y, 3px) 0 var(--sh, #1b3a9a);
+  box-shadow: var(--sh-x, 2px) var(--sh-y, 3px) 0 var(--sh, var(--color-primary-900));
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 .nb-stamp-press:hover {
   transform: translate(calc(var(--sh-x, 2px) / 2), calc(var(--sh-y, 3px) / 2));
-  box-shadow: calc(var(--sh-x, 2px) / 2) calc(var(--sh-y, 3px) / 2) 0 var(--sh, #1b3a9a);
+  box-shadow: calc(var(--sh-x, 2px) / 2) calc(var(--sh-y, 3px) / 2) 0 var(--sh, var(--color-primary-900));
 }
 .nb-stamp-press:active {
   transform: translate(var(--sh-x, 2px), var(--sh-y, 3px));
   box-shadow: none;
 }
 
-/* ===== Notebook Style Textures ===== */
-
-/* College-ruled paper — used for book/expense lists */
-/* NOTE: currently unused — kept for the notebook texture set */
-.nb-ruled {
-  background-color: #fafcff;
-  background-image:
-    linear-gradient(to right, rgba(231, 163, 171, 0.55) 0px, rgba(231, 163, 171, 0.55) 1.5px, transparent 1.5px),
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 27px,
-      rgba(195, 210, 240, 0.85) 27px,
-      rgba(195, 210, 240, 0.85) 28px
-    );
-  background-position: 56px 0, 0 8px;
-}
-
-/* Shadow dissolves into an ink bleed glow */
-/* NOTE: currently unused — kept for the notebook texture set */
-.nb-stamp-bloom {
-  transition: box-shadow 0.22s ease;
-}
-.nb-stamp-bloom:hover {
-  box-shadow: 2px 5px 14px color-mix(in srgb, var(--nb-t) 55%, transparent) !important;
-}
-
-/* Diagonal hatch overlay — adds woven texture to any fill */
-/* NOTE: currently unused — kept for the notebook texture set */
-.nb-stamp-hatch {
-  background-image: repeating-linear-gradient(
-    -55deg,
-    rgba(255,255,255,0.07) 0px, rgba(255,255,255,0.07) 1px,
-    transparent 1px, transparent 5px
-  );
-}
-
-/* Library window texture options — twill family */
-/* NOTE: currently unused — kept for the notebook texture set */
-
-/* 1px line, 9px gap — barely there */
-.nb-tex-bare {
-  background-color: #d8eaf8;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,0.30) 0px,
-    rgba(255,255,255,0.30) 1px,
-    transparent 1px,
-    transparent 9px
-  );
-}
-
-/* 1px line, 5px gap — delicate */
-.nb-tex-light {
-  background-color: #cce0f5;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,0.30) 0px,
-    rgba(255,255,255,0.30) 1px,
-    transparent 1px,
-    transparent 5px
-  );
-}
-
-/* 2px line, 7px gap — the one you liked */
-.nb-tex-mid {
-  background-color: #c2d6ee;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,0.22) 0px,
-    rgba(255,255,255,0.22) 2px,
-    transparent 2px,
-    transparent 7px
-  );
-}
-
-/* 2px line, 4px gap — tighter repeat */
-.nb-tex-dense {
-  background-color: #bad0ea;
-  background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255,255,255,0.22) 0px,
-    rgba(255,255,255,0.22) 2px,
-    transparent 2px,
-    transparent 4px
-  );
-}
-
-/* 2px line at 60° — more upright lean */
-.nb-tex-steep {
-  background-color: #c2d6ee;
-  background-image: repeating-linear-gradient(
-    60deg,
-    rgba(255,255,255,0.22) 0px,
-    rgba(255,255,255,0.22) 2px,
-    transparent 2px,
-    transparent 7px
-  );
-}
-
-/* Cross-diagonal — herringbone diamond */
-.nb-tex-herring {
-  background-color: #bfd0e8;
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      rgba(255,255,255,0.20) 0px,
-      rgba(255,255,255,0.20) 2px,
-      transparent 2px,
-      transparent 8px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      rgba(255,255,255,0.15) 0px,
-      rgba(255,255,255,0.15) 2px,
-      transparent 2px,
-      transparent 8px
-    );
-}
-
 /* Graph / grid paper — used for charts & summaries */
 .nb-graph {
-  background-color: #eef3fc;
+  background-color: var(--color-surface-100);
   background-image:
     linear-gradient(rgba(195, 210, 240, 0.9) 1px, transparent 1px),
     linear-gradient(90deg, rgba(195, 210, 240, 0.9) 1px, transparent 1px),

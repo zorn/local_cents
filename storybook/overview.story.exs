@@ -77,7 +77,7 @@ defmodule Storybook.AboutBondPage do
       <h2>Design tokens</h2>
       <p>
         Colors are defined as Tailwind theme tokens in <code>bond.css</code> and referenced
-        throughout the component library via utility classes (<code>text-content</code>, <code>bg-surface</code>, …) and <code>var(--color-*)</code>. The Tokens section
+        throughout the component library via utility classes (<code>text-surface-800</code>, <code>bg-surface-50</code>, …) and <code>var(--color-*)</code>. The Tokens section
         of this storybook documents the available palette.
       </p>
     </section>

@@ -12,7 +12,7 @@ defmodule Storybook.Layouts.InputBar do
         slots: [
           """
           <:leading_content>
-            <Bond.Elements.Input.input
+            <LocalCentsWeb.Bond.Elements.Input.input
               placeholder="coffee 4.75 or netflix 22.99 yesterday"
               class="flex-1"
             />
@@ -20,7 +20,7 @@ defmodule Storybook.Layouts.InputBar do
           """,
           """
           <:trailing_content>
-            <Bond.Elements.Button.button>New Expense</Bond.Elements.Button.button>
+            <LocalCentsWeb.Bond.Elements.Button.button>New Expense</LocalCentsWeb.Bond.Elements.Button.button>
           </:trailing_content>
           """
         ]
@@ -31,7 +31,7 @@ defmodule Storybook.Layouts.InputBar do
         slots: [
           """
           <:leading_content>
-            <Bond.Elements.Input.input
+            <LocalCentsWeb.Bond.Elements.Input.input
               placeholder="Add an item..."
               class="flex-1"
             />
@@ -39,7 +39,7 @@ defmodule Storybook.Layouts.InputBar do
           """,
           """
           <:trailing_content>
-            <Bond.Elements.Button.button>Add</Bond.Elements.Button.button>
+            <LocalCentsWeb.Bond.Elements.Button.button>Add</LocalCentsWeb.Bond.Elements.Button.button>
           </:trailing_content>
           """
         ]

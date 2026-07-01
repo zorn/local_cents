@@ -79,7 +79,7 @@ defmodule LocalCentsWeb.Bond.Elements.Checkbox do
 
   defp input_class("pill_row"),
     do:
-      "w-4 h-4 rounded border-white/30 bg-white/10 text-[#3f7fd6] focus:ring-[#3f7fd6] focus:ring-offset-0"
+      "w-4 h-4 rounded border-white/30 bg-white/10 text-primary-500 focus:ring-primary-500 focus:ring-offset-0"
 
   defp input_class(_),
     do: "w-4 h-4 rounded"

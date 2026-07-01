@@ -20,14 +20,14 @@ defmodule LocalCentsWeb.Bond.Composites.BookCell do
     ~H"""
     <div
       class="flex items-center gap-4 px-4 py-4 nb-t-hover-row transition-colors"
-      style="--nb-t: var(--color-accent)"
+      style="--nb-t: var(--color-primary-800)"
       {@rest}
     >
       <div class="flex-1 min-w-0">
-        <p class="text-base font-semibold leading-snug text-content">
+        <p class="text-base font-semibold leading-snug text-surface-800">
           {@name}
         </p>
-        <p class="text-xs mt-0.5 text-content-secondary">
+        <p class="text-xs mt-0.5 text-surface-600">
           Last Updated: {@last_updated}
         </p>
       </div>

@@ -18,7 +18,7 @@ defmodule LocalCentsWeb.Bond.Elements.ActionChip do
     ~H"""
     <button
       class="flex items-center gap-1 px-2.5 py-1.5 text-sm font-semibold nb-t-text nb-t-hover-soft rounded-full transition-colors"
-      style="--nb-t: var(--color-accent)"
+      style="--nb-t: var(--color-primary-800)"
       {@rest}
     >
       {@label}

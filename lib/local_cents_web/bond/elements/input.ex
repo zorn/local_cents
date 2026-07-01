@@ -144,7 +144,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     <div class={@class}>
       <.input_label label={@label} id={@id} variant={@variant} />
       <div class="relative w-full">
-        <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-content-secondary">
+        <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-surface-600">
           <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
         </div>
         <input
@@ -152,8 +152,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
           id={@id}
           name={@name}
           value={@value}
-          class="bond-input pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)] bg-surface text-content"
-          style="--bond-placeholder: var(--color-content-placeholder)"
+          class="bond-input pl-7 pr-3 py-1.5 text-sm border nb-t-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)] bg-surface-50 text-surface-800"
+          style="--bond-placeholder: var(--color-surface-400)"
           {@rest}
         />
       </div>
@@ -171,8 +171,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)] text-content border-accent-light bg-surface-frosted"
-        style="--bond-placeholder: var(--color-content-placeholder)"
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)] text-surface-800 border-primary-400 bg-surface-300"
+        style="--bond-placeholder: var(--color-surface-400)"
         {@rest}
       />
       <.input_errors errors={@errors} />
@@ -189,8 +189,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none text-content border-accent bg-surface"
-        style="--bond-placeholder: var(--color-content-placeholder)"
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none text-surface-800 border-primary-800 bg-surface-50"
+        style="--bond-placeholder: var(--color-surface-400)"
         {@rest}
       />
       <.input_errors errors={@errors} />
@@ -215,15 +215,15 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     <p
       :for={msg <- @errors}
       class="mt-1 text-xs flex items-center gap-1"
-      style="color: #e0796e;"
+      style="color: var(--color-error-400);"
     >
       {msg}
     </p>
     """
   end
 
-  defp label_color_class("frosted"), do: "text-accent-light"
-  defp label_color_class(_), do: "text-content-secondary"
+  defp label_color_class("frosted"), do: "text-primary-400"
+  defp label_color_class(_), do: "text-surface-600"
 
   defp translate_error({msg, opts}) do
     case opts[:count] do

@@ -16,11 +16,11 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     >
       <div class="relative flex items-center pl-3 pr-4 py-2 bg-gray-100 border-b border-gray-200 select-none">
         <div class="flex items-center gap-2 z-10">
-          <button class="w-3 h-3 rounded-full bg-[#FF5F57] hover:brightness-90 transition-all border border-black/10 shadow-sm">
+          <button class="w-3 h-3 rounded-full bg-mac-os-close hover:brightness-90 transition-all border border-black/10 shadow-sm">
           </button>
-          <button class="w-3 h-3 rounded-full bg-[#FEBC2E] hover:brightness-90 transition-all border border-black/10 shadow-sm">
+          <button class="w-3 h-3 rounded-full bg-mac-os-minimize hover:brightness-90 transition-all border border-black/10 shadow-sm">
           </button>
-          <button class="w-3 h-3 rounded-full bg-[#28C840] hover:brightness-90 transition-all border border-black/10 shadow-sm">
+          <button class="w-3 h-3 rounded-full bg-mac-os-maximize hover:brightness-90 transition-all border border-black/10 shadow-sm">
           </button>
         </div>
         <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-500 pointer-events-none">
@@ -64,11 +64,11 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     >
       <div class="relative flex items-center pl-3 pr-4 py-2 bg-gray-100 border-b border-gray-200 select-none">
         <div class="flex items-center gap-2 z-10">
-          <button class="w-3 h-3 rounded-full bg-[#FF5F57] hover:brightness-90 transition-all border border-black/10 shadow-sm">
+          <button class="w-3 h-3 rounded-full bg-mac-os-close hover:brightness-90 transition-all border border-black/10 shadow-sm">
           </button>
-          <button class="w-3 h-3 rounded-full bg-[#FEBC2E] hover:brightness-90 transition-all border border-black/10 shadow-sm">
+          <button class="w-3 h-3 rounded-full bg-mac-os-minimize hover:brightness-90 transition-all border border-black/10 shadow-sm">
           </button>
-          <button class="w-3 h-3 rounded-full bg-[#28C840] hover:brightness-90 transition-all border border-black/10 shadow-sm">
+          <button class="w-3 h-3 rounded-full bg-mac-os-maximize hover:brightness-90 transition-all border border-black/10 shadow-sm">
           </button>
         </div>
         <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-500 pointer-events-none">
@@ -254,43 +254,43 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     <%!-- Warm Library Window --%>
     <div
       id="warm-library-window"
-      class="bg-[#F6F1E8] rounded-xl shadow-lg border border-[#C5B89A] overflow-hidden"
+      class="bg-tertiary-100 rounded-xl shadow-lg border border-tertiary-400 overflow-hidden"
     >
-      <div class="relative flex items-center pl-3 pr-4 py-2 bg-[#EBE4D8] border-b border-[#C5B89A] select-none">
+      <div class="relative flex items-center pl-3 pr-4 py-2 bg-tertiary-200 border-b border-tertiary-400 select-none">
         <div class="flex items-center gap-2 z-10">
-          <button class="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/10"></button>
-          <button class="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/10"></button>
-          <button class="w-3 h-3 rounded-full bg-[#28C840] border border-black/10"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-close border border-black/10"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-minimize border border-black/10"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-maximize border border-black/10"></button>
         </div>
-        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#6B5544] pointer-events-none">
+        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-tertiary-800 pointer-events-none">
           Library
         </span>
       </div>
-      <div class="m-4 border border-[#C5B89A] bg-[#FAF7F0] rounded overflow-hidden">
+      <div class="m-4 border border-tertiary-400 bg-tertiary-50 rounded overflow-hidden">
         <div class="overflow-y-auto" style="min-height: 220px; max-height: 320px;">
           <%= for book <- @books do %>
-            <div class="flex items-center gap-4 px-4 py-4 bg-[#FAF7F0] border-b border-[#DDD5C5] hover:bg-[#F0E8DB] transition-colors">
+            <div class="flex items-center gap-4 px-4 py-4 bg-tertiary-50 border-b border-tertiary-300 hover:bg-tertiary-100 transition-colors">
               <div class="flex-1 min-w-0">
-                <p class="text-base font-semibold text-[#2A1F14] leading-snug">
+                <p class="text-base font-semibold text-tertiary-950 leading-snug">
                   {book.name}
                 </p>
-                <p class="text-xs text-[#8C7557] mt-0.5">
+                <p class="text-xs text-tertiary-700 mt-0.5">
                   Last Updated: {book.last_updated}
                 </p>
               </div>
-              <button class="shrink-0 px-3 py-1 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors">
+              <button class="shrink-0 px-3 py-1 text-sm border border-secondary-600 rounded text-secondary-600 hover:bg-secondary-600/10 font-medium transition-colors">
                 Open
               </button>
             </div>
           <% end %>
-          <div class="h-16 bg-[#F0E8DB]"></div>
+          <div class="h-16 bg-tertiary-100"></div>
         </div>
       </div>
-      <div class="flex items-center justify-between px-4 py-4 border-t border-[#C5B89A] bg-[#EBE4D8]">
-        <button class="px-3 py-1 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors">
+      <div class="flex items-center justify-between px-4 py-4 border-t border-tertiary-400 bg-tertiary-200">
+        <button class="px-3 py-1 text-sm border border-secondary-600 rounded text-secondary-600 hover:bg-secondary-600/10 font-medium transition-colors">
           New Book
         </button>
-        <button class="w-7 h-7 rounded-full border border-[#C4622D] flex items-center justify-center text-[#C4622D] hover:bg-[#C4622D]/10 text-sm font-semibold transition-colors leading-none">
+        <button class="w-7 h-7 rounded-full border border-secondary-600 flex items-center justify-center text-secondary-600 hover:bg-secondary-600/10 text-sm font-semibold transition-colors leading-none">
           ?
         </button>
       </div>
@@ -299,93 +299,99 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     <%!-- Warm Document Window --%>
     <div
       id="warm-document-window"
-      class="relative bg-[#F6F1E8] rounded-xl shadow-lg border border-[#C5B89A] overflow-hidden"
+      class="relative bg-tertiary-100 rounded-xl shadow-lg border border-tertiary-400 overflow-hidden"
     >
-      <div class="relative flex items-center pl-3 pr-4 py-2 bg-[#EBE4D8] border-b border-[#C5B89A] select-none">
+      <div class="relative flex items-center pl-3 pr-4 py-2 bg-tertiary-200 border-b border-tertiary-400 select-none">
         <div class="flex items-center gap-2 z-10">
-          <button class="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/10"></button>
-          <button class="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/10"></button>
-          <button class="w-3 h-3 rounded-full bg-[#28C840] border border-black/10"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-close border border-black/10"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-minimize border border-black/10"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-maximize border border-black/10"></button>
         </div>
-        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#6B5544] pointer-events-none">
+        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-tertiary-800 pointer-events-none">
           Family Expenses
         </span>
       </div>
       <%!-- Warm charts: horizontal category breakdown --%>
-      <div class="m-4 bg-[#E8E1D3] rounded-lg border border-[#C5B89A] px-6 py-5">
-        <p class="text-xs font-bold uppercase tracking-widest text-[#8C7557] mb-4">
+      <div class="m-4 bg-tertiary-200 rounded-lg border border-tertiary-400 px-6 py-5">
+        <p class="text-xs font-bold uppercase tracking-widest text-tertiary-700 mb-4">
           Spending by Category
         </p>
         <div class="space-y-3">
           <div class="flex items-center gap-3">
-            <span class="text-xs text-[#8C7557] w-20 text-right shrink-0">Food</span>
-            <div class="flex-1 bg-[#F6F1E8] rounded-full h-2">
-              <div class="bg-[#C4622D] rounded-full h-2" style="width: 68%"></div>
+            <span class="text-xs text-tertiary-700 w-20 text-right shrink-0">Food</span>
+            <div class="flex-1 bg-tertiary-100 rounded-full h-2">
+              <div class="bg-secondary-600 rounded-full h-2" style="width: 68%"></div>
             </div>
-            <span class="text-xs font-semibold text-[#2A1F14] w-16 text-right shrink-0">$247.89</span>
+            <span class="text-xs font-semibold text-tertiary-950 w-16 text-right shrink-0">
+              $247.89
+            </span>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-xs text-[#8C7557] w-20 text-right shrink-0">Sports</span>
-            <div class="flex-1 bg-[#F6F1E8] rounded-full h-2">
-              <div class="bg-[#C4622D]/70 rounded-full h-2" style="width: 35%"></div>
+            <span class="text-xs text-tertiary-700 w-20 text-right shrink-0">Sports</span>
+            <div class="flex-1 bg-tertiary-100 rounded-full h-2">
+              <div class="bg-secondary-600/70 rounded-full h-2" style="width: 35%"></div>
             </div>
-            <span class="text-xs font-semibold text-[#2A1F14] w-16 text-right shrink-0">$135.00</span>
+            <span class="text-xs font-semibold text-tertiary-950 w-16 text-right shrink-0">
+              $135.00
+            </span>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-xs text-[#8C7557] w-20 text-right shrink-0">Kids</span>
-            <div class="flex-1 bg-[#F6F1E8] rounded-full h-2">
-              <div class="bg-[#C4622D]/50 rounded-full h-2" style="width: 22%"></div>
+            <span class="text-xs text-tertiary-700 w-20 text-right shrink-0">Kids</span>
+            <div class="flex-1 bg-tertiary-100 rounded-full h-2">
+              <div class="bg-secondary-600/50 rounded-full h-2" style="width: 22%"></div>
             </div>
-            <span class="text-xs font-semibold text-[#2A1F14] w-16 text-right shrink-0">$67.50</span>
+            <span class="text-xs font-semibold text-tertiary-950 w-16 text-right shrink-0">
+              $67.50
+            </span>
           </div>
         </div>
       </div>
       <%!-- Warm expense table --%>
-      <div class="mx-4 mb-4 border border-[#C5B89A] rounded-lg overflow-hidden">
-        <div class="px-3 py-2.5 border-b border-[#C5B89A] bg-[#EEE8DA]">
+      <div class="mx-4 mb-4 border border-tertiary-400 rounded-lg overflow-hidden">
+        <div class="px-3 py-2.5 border-b border-tertiary-400 bg-tertiary-100">
           <%= if @show_new_expense do %>
             <div class="flex items-center gap-2">
               <input
                 id="warm-new-expense-input"
                 type="text"
                 autofocus
-                class="flex-1 px-3 py-1.5 text-sm border border-[#C5B89A] rounded bg-[#FAF7F0] text-[#2A1F14] focus:outline-none focus:ring-2 focus:ring-[#C4622D]/40 focus:border-[#C4622D] placeholder-[#B8A88A]"
+                class="flex-1 px-3 py-1.5 text-sm border border-tertiary-400 rounded bg-tertiary-50 text-tertiary-950 focus:outline-none focus:ring-2 focus:ring-secondary-600/40 focus:border-secondary-600 placeholder-tertiary-500"
               />
               <button
                 id="warm-new-expense-toggle-btn"
                 phx-click="toggle_new_expense"
-                class="shrink-0 px-3 py-1.5 text-sm border border-[#C4622D] rounded text-[#C4622D] hover:bg-[#C4622D]/10 font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm border border-secondary-600 rounded text-secondary-600 hover:bg-secondary-600/10 font-medium transition-colors"
               >
                 New Expense
               </button>
             </div>
-            <p class="mt-1.5 text-xs text-[#8C7557] pl-0.5">
+            <p class="mt-1.5 text-xs text-tertiary-700 pl-0.5">
               Type a phrase like "coffee 4.75" or "netflix 22.99 yesterday"
             </p>
           <% else %>
             <div class="flex items-center gap-2">
               <div class="relative">
                 <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
-                  <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#8C7557]" />
+                  <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-tertiary-700" />
                 </div>
                 <input
                   id="warm-expense-search-input"
                   type="text"
                   placeholder="search"
-                  class="pl-7 pr-3 py-1.5 text-sm border border-[#C5B89A] rounded-full bg-[#FAF7F0] text-[#2A1F14] placeholder-[#B8A88A] focus:outline-none focus:ring-1 focus:ring-[#C4622D]/50 w-44"
+                  class="pl-7 pr-3 py-1.5 text-sm border border-tertiary-400 rounded-full bg-tertiary-50 text-tertiary-950 placeholder-tertiary-500 focus:outline-none focus:ring-1 focus:ring-secondary-600/50 w-44"
                 />
               </div>
-              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-[#6B5544] hover:bg-[#DDD5C5] rounded transition-colors">
+              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-tertiary-800 hover:bg-tertiary-300 rounded transition-colors">
                 Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
               </button>
-              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-[#6B5544] hover:bg-[#DDD5C5] rounded transition-colors">
+              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-tertiary-800 hover:bg-tertiary-300 rounded transition-colors">
                 ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
               </button>
               <div class="flex-1"></div>
               <button
                 id="warm-expense-new-btn"
                 phx-click="toggle_new_expense"
-                class="shrink-0 px-3 py-1.5 text-sm bg-[#C4622D] hover:bg-[#A8501E] text-white rounded font-medium transition-colors shadow-sm"
+                class="shrink-0 px-3 py-1.5 text-sm bg-secondary-600 hover:bg-secondary-800 text-white rounded font-medium transition-colors shadow-sm"
               >
                 New Expense
               </button>
@@ -397,12 +403,12 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             id={"warm-expense-row-#{expense.id}"}
             phx-click="select_expense"
             phx-value-id={expense.id}
-            class="flex items-center gap-4 px-4 py-3.5 border-b border-[#E4DBD0] hover:bg-[#F0E8DB] transition-colors cursor-pointer"
+            class="flex items-center gap-4 px-4 py-3.5 border-b border-tertiary-200 hover:bg-tertiary-100 transition-colors cursor-pointer"
           >
-            <span class="shrink-0 text-sm text-[#8C7557] tabular-nums w-24">
+            <span class="shrink-0 text-sm text-tertiary-700 tabular-nums w-24">
               {expense.date}
             </span>
-            <span class="flex-1 text-sm font-medium text-[#2A1F14]">
+            <span class="flex-1 text-sm font-medium text-tertiary-950">
               {expense.description}
             </span>
             <div class="flex items-center gap-1.5">
@@ -415,59 +421,59 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                 </span>
               <% end %>
             </div>
-            <span class="shrink-0 text-sm font-semibold text-[#C4622D] tabular-nums w-16 text-right">
+            <span class="shrink-0 text-sm font-semibold text-secondary-600 tabular-nums w-16 text-right">
               {expense.amount}
             </span>
           </div>
         <% end %>
-        <div class="h-12 bg-[#FAF7F0]"></div>
+        <div class="h-12 bg-tertiary-50"></div>
       </div>
       <%!-- Warm edit panel --%>
       <%= if @selected_expense do %>
         <div id="warm-expense-edit-panel" class="absolute inset-0 flex">
-          <div class="flex-1 bg-[#2A1F14]/40" phx-click="close_expense"></div>
-          <div class="w-80 bg-[#EBE4D8] border-l border-[#C5B89A] flex flex-col shadow-xl">
+          <div class="flex-1 bg-tertiary-950/40" phx-click="close_expense"></div>
+          <div class="w-80 bg-tertiary-200 border-l border-tertiary-400 flex flex-col shadow-xl">
             <div class="flex justify-end px-5 pt-5">
               <button
                 phx-click="close_expense"
-                class="text-[#8C7557] hover:text-[#2A1F14] transition-colors"
+                class="text-tertiary-700 hover:text-tertiary-950 transition-colors"
               >
                 <.icon name="hero-x-mark" class="w-6 h-6" />
               </button>
             </div>
             <div class="px-6 pt-2 pb-4 flex-1 space-y-5 overflow-y-auto">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-widest text-[#8C7557] mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-widest text-tertiary-700 mb-1.5">
                   Date
                 </label>
                 <input
                   type="date"
                   value={to_date_input(@selected_expense.date)}
-                  class="w-full px-3 py-2 text-sm border border-[#C5B89A] rounded bg-[#FAF7F0] text-[#2A1F14] focus:outline-none focus:ring-2 focus:ring-[#C4622D]/40 focus:border-[#C4622D]"
+                  class="w-full px-3 py-2 text-sm border border-tertiary-400 rounded bg-tertiary-50 text-tertiary-950 focus:outline-none focus:ring-2 focus:ring-secondary-600/40 focus:border-secondary-600"
                 />
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-widest text-[#8C7557] mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-widest text-tertiary-700 mb-1.5">
                   Description
                 </label>
                 <input
                   type="text"
                   value={@selected_expense.description}
-                  class="w-full px-3 py-2 text-sm border border-[#C5B89A] rounded bg-[#FAF7F0] text-[#2A1F14] focus:outline-none focus:ring-2 focus:ring-[#C4622D]/40 focus:border-[#C4622D]"
+                  class="w-full px-3 py-2 text-sm border border-tertiary-400 rounded bg-tertiary-50 text-tertiary-950 focus:outline-none focus:ring-2 focus:ring-secondary-600/40 focus:border-secondary-600"
                 />
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-widest text-[#8C7557] mb-1.5">
+                <label class="block text-xs font-bold uppercase tracking-widest text-tertiary-700 mb-1.5">
                   Cost
                 </label>
                 <input
                   type="text"
                   value={@selected_expense.amount}
-                  class="w-full px-3 py-2 text-sm border border-[#C5B89A] rounded bg-[#FAF7F0] text-[#2A1F14] focus:outline-none focus:ring-2 focus:ring-[#C4622D]/40 focus:border-[#C4622D]"
+                  class="w-full px-3 py-2 text-sm border border-tertiary-400 rounded bg-tertiary-50 text-tertiary-950 focus:outline-none focus:ring-2 focus:ring-secondary-600/40 focus:border-secondary-600"
                 />
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-widest text-[#8C7557] mb-2.5">
+                <label class="block text-xs font-bold uppercase tracking-widest text-tertiary-700 mb-2.5">
                   Tags
                 </label>
                 <div class="space-y-2.5">
@@ -476,7 +482,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                       <input
                         type="checkbox"
                         checked={Enum.any?(@selected_expense.tags, &(&1.label == tag.label))}
-                        class="w-4 h-4 rounded border-[#C5B89A] text-[#C4622D] focus:ring-[#C4622D]"
+                        class="w-4 h-4 rounded border-tertiary-400 text-secondary-600 focus:ring-secondary-600"
                       />
                       <span class={[
                         "px-2.5 py-0.5 text-xs font-medium rounded-full",
@@ -489,11 +495,11 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                 </div>
               </div>
             </div>
-            <div class="flex items-center justify-between px-6 py-4 border-t border-[#C5B89A] bg-[#E5DDD0]">
+            <div class="flex items-center justify-between px-6 py-4 border-t border-tertiary-400 bg-tertiary-200">
               <button class="text-sm font-medium text-red-700 hover:text-red-900 transition-colors">
                 Delete
               </button>
-              <button class="px-5 py-2 text-sm font-semibold text-white bg-[#C4622D] hover:bg-[#A8501E] rounded transition-colors shadow-sm">
+              <button class="px-5 py-2 text-sm font-semibold text-white bg-secondary-600 hover:bg-secondary-800 rounded transition-colors shadow-sm">
                 Save
               </button>
             </div>
@@ -510,43 +516,43 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     <%!-- Dark Library Window --%>
     <div
       id="dark-library-window"
-      class="bg-[#161B22] rounded-2xl border border-[#30363D] overflow-hidden shadow-2xl shadow-black/50"
+      class="bg-surface-950 rounded-2xl border border-surface-800 overflow-hidden shadow-2xl shadow-black/50"
     >
-      <div class="relative flex items-center pl-3 pr-4 py-2 bg-[#0D1117] border-b border-[#30363D] select-none">
+      <div class="relative flex items-center pl-3 pr-4 py-2 bg-surface-950 border-b border-surface-800 select-none">
         <div class="flex items-center gap-2 z-10">
-          <button class="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/20"></button>
-          <button class="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/20"></button>
-          <button class="w-3 h-3 rounded-full bg-[#28C840] border border-black/20"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-close border border-black/20"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-minimize border border-black/20"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-maximize border border-black/20"></button>
         </div>
-        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#8B949E] pointer-events-none">
+        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-surface-500 pointer-events-none">
           Library
         </span>
       </div>
-      <div class="m-4 border border-[#21262D] bg-[#0D1117] rounded overflow-hidden">
+      <div class="m-4 border border-surface-900 bg-surface-950 rounded overflow-hidden">
         <div class="overflow-y-auto" style="min-height: 220px; max-height: 320px;">
           <%= for book <- @books do %>
-            <div class="flex items-center gap-4 px-4 py-4 border-b border-[#21262D] hover:bg-[#1C2130] transition-colors">
+            <div class="flex items-center gap-4 px-4 py-4 border-b border-surface-900 hover:bg-surface-900 transition-colors">
               <div class="flex-1 min-w-0">
-                <p class="text-base font-semibold text-[#E6EDF3] leading-snug">
+                <p class="text-base font-semibold text-surface-100 leading-snug">
                   {book.name}
                 </p>
-                <p class="text-xs text-[#6E7681] mt-0.5">
+                <p class="text-xs text-surface-600 mt-0.5">
                   Last Updated: {book.last_updated}
                 </p>
               </div>
-              <button class="shrink-0 px-3 py-1 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] font-medium transition-colors">
+              <button class="shrink-0 px-3 py-1 text-sm border border-surface-700 rounded bg-surface-900 hover:bg-surface-800 text-surface-300 font-medium transition-colors">
                 Open
               </button>
             </div>
           <% end %>
-          <div class="h-16 bg-[#0D1117]"></div>
+          <div class="h-16 bg-surface-950"></div>
         </div>
       </div>
-      <div class="flex items-center justify-between px-4 py-4 border-t border-[#30363D] bg-[#0D1117]">
-        <button class="px-3 py-1 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] transition-colors">
+      <div class="flex items-center justify-between px-4 py-4 border-t border-surface-800 bg-surface-950">
+        <button class="px-3 py-1 text-sm border border-surface-700 rounded bg-surface-900 hover:bg-surface-800 text-surface-300 transition-colors">
           New Book
         </button>
-        <button class="w-7 h-7 rounded-full border border-[#444C56] flex items-center justify-center text-[#8B949E] hover:bg-[#21262D] text-sm font-semibold transition-colors leading-none">
+        <button class="w-7 h-7 rounded-full border border-surface-700 flex items-center justify-center text-surface-500 hover:bg-surface-900 text-sm font-semibold transition-colors leading-none">
           ?
         </button>
       </div>
@@ -555,21 +561,21 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
     <%!-- Dark Document Window --%>
     <div
       id="dark-document-window"
-      class="relative bg-[#161B22] rounded-2xl border border-[#30363D] overflow-hidden shadow-2xl shadow-black/50"
+      class="relative bg-surface-950 rounded-2xl border border-surface-800 overflow-hidden shadow-2xl shadow-black/50"
     >
-      <div class="relative flex items-center pl-3 pr-4 py-2 bg-[#0D1117] border-b border-[#30363D] select-none">
+      <div class="relative flex items-center pl-3 pr-4 py-2 bg-surface-950 border-b border-surface-800 select-none">
         <div class="flex items-center gap-2 z-10">
-          <button class="w-3 h-3 rounded-full bg-[#FF5F57] border border-black/20"></button>
-          <button class="w-3 h-3 rounded-full bg-[#FEBC2E] border border-black/20"></button>
-          <button class="w-3 h-3 rounded-full bg-[#28C840] border border-black/20"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-close border border-black/20"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-minimize border border-black/20"></button>
+          <button class="w-3 h-3 rounded-full bg-mac-os-maximize border border-black/20"></button>
         </div>
-        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-[#8B949E] pointer-events-none">
+        <span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-surface-500 pointer-events-none">
           Family Expenses
         </span>
       </div>
       <%!-- Dark charts: vertical bars --%>
-      <div class="m-4 bg-[#0D1117] rounded-lg border border-[#21262D] px-6 py-5">
-        <p class="text-xs font-mono uppercase tracking-widest text-[#6E7681] mb-4">
+      <div class="m-4 bg-surface-950 rounded-lg border border-surface-900 px-6 py-5">
+        <p class="text-xs font-mono uppercase tracking-widest text-surface-600 mb-4">
           Spending Overview
         </p>
         <div class="grid grid-cols-3 gap-6 h-24">
@@ -594,44 +600,44 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
         </div>
       </div>
       <%!-- Dark expense table --%>
-      <div class="mx-4 mb-4 border border-[#30363D] rounded-lg overflow-hidden">
-        <div class="px-3 py-2.5 border-b border-[#30363D] bg-[#0D1117]">
+      <div class="mx-4 mb-4 border border-surface-800 rounded-lg overflow-hidden">
+        <div class="px-3 py-2.5 border-b border-surface-800 bg-surface-950">
           <%= if @show_new_expense do %>
             <div class="flex items-center gap-2">
               <input
                 id="dark-new-expense-input"
                 type="text"
                 autofocus
-                class="flex-1 px-3 py-1.5 text-sm border border-[#444C56] rounded bg-[#0D1117] text-[#E6EDF3] focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 placeholder-[#6E7681]"
+                class="flex-1 px-3 py-1.5 text-sm border border-surface-700 rounded bg-surface-950 text-surface-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 placeholder-surface-600"
               />
               <button
                 id="dark-new-expense-toggle-btn"
                 phx-click="toggle_new_expense"
-                class="shrink-0 px-3 py-1.5 text-sm border border-[#444C56] rounded bg-[#21262D] hover:bg-[#2D333B] text-[#C9D1D9] font-medium transition-colors"
+                class="shrink-0 px-3 py-1.5 text-sm border border-surface-700 rounded bg-surface-900 hover:bg-surface-800 text-surface-300 font-medium transition-colors"
               >
                 New Expense
               </button>
             </div>
-            <p class="mt-1.5 text-xs text-[#6E7681] pl-0.5">
+            <p class="mt-1.5 text-xs text-surface-600 pl-0.5">
               Type a phrase like "coffee 4.75" or "netflix 22.99 yesterday"
             </p>
           <% else %>
             <div class="flex items-center gap-2">
               <div class="relative">
                 <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
-                  <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-[#6E7681]" />
+                  <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5 text-surface-600" />
                 </div>
                 <input
                   id="dark-expense-search-input"
                   type="text"
                   placeholder="search"
-                  class="pl-7 pr-3 py-1.5 text-sm border border-[#444C56] rounded-full bg-[#0D1117] text-[#C9D1D9] placeholder-[#6E7681] focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44"
+                  class="pl-7 pr-3 py-1.5 text-sm border border-surface-700 rounded-full bg-surface-950 text-surface-300 placeholder-surface-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44"
                 />
               </div>
-              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] rounded transition-colors">
+              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-surface-500 hover:text-surface-100 hover:bg-surface-900 rounded transition-colors">
                 Tags <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
               </button>
-              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-[#8B949E] hover:text-[#E6EDF3] hover:bg-[#21262D] rounded transition-colors">
+              <button class="flex items-center gap-1 px-2.5 py-1.5 text-sm text-surface-500 hover:text-surface-100 hover:bg-surface-900 rounded transition-colors">
                 ↕ Newest <.icon name="hero-chevron-down" class="w-3 h-3 mt-px" />
               </button>
               <div class="flex-1"></div>
@@ -650,12 +656,12 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             id={"dark-expense-row-#{expense.id}"}
             phx-click="select_expense"
             phx-value-id={expense.id}
-            class="flex items-center gap-4 px-4 py-3.5 border-b border-[#21262D] hover:bg-[#1C2130] transition-colors cursor-pointer"
+            class="flex items-center gap-4 px-4 py-3.5 border-b border-surface-900 hover:bg-surface-900 transition-colors cursor-pointer"
           >
-            <span class="shrink-0 text-sm text-[#6E7681] tabular-nums font-mono w-24">
+            <span class="shrink-0 text-sm text-surface-600 tabular-nums font-mono w-24">
               {expense.date}
             </span>
-            <span class="flex-1 text-sm font-medium text-[#E6EDF3]">
+            <span class="flex-1 text-sm font-medium text-surface-100">
               {expense.description}
             </span>
             <div class="flex items-center gap-1.5">
@@ -673,54 +679,54 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
             </span>
           </div>
         <% end %>
-        <div class="h-12 bg-[#161B22]"></div>
+        <div class="h-12 bg-surface-950"></div>
       </div>
       <%!-- Dark edit panel --%>
       <%= if @selected_expense do %>
         <div id="dark-expense-edit-panel" class="absolute inset-0 flex">
           <div class="flex-1 bg-black/60" phx-click="close_expense"></div>
-          <div class="w-80 bg-[#0D1117] border-l border-[#30363D] flex flex-col shadow-2xl">
+          <div class="w-80 bg-surface-950 border-l border-surface-800 flex flex-col shadow-2xl">
             <div class="flex justify-end px-5 pt-5">
               <button
                 phx-click="close_expense"
-                class="text-[#6E7681] hover:text-[#E6EDF3] transition-colors"
+                class="text-surface-600 hover:text-surface-100 transition-colors"
               >
                 <.icon name="hero-x-mark" class="w-6 h-6" />
               </button>
             </div>
             <div class="px-6 pt-2 pb-4 flex-1 space-y-5 overflow-y-auto">
               <div>
-                <label class="block text-xs font-mono uppercase tracking-widest text-[#6E7681] mb-1.5">
+                <label class="block text-xs font-mono uppercase tracking-widest text-surface-600 mb-1.5">
                   Date
                 </label>
                 <input
                   type="date"
                   value={to_date_input(@selected_expense.date)}
-                  class="w-full px-3 py-2 text-sm border border-[#444C56] rounded bg-[#161B22] text-[#E6EDF3] focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  class="w-full px-3 py-2 text-sm border border-surface-700 rounded bg-surface-950 text-surface-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
               <div>
-                <label class="block text-xs font-mono uppercase tracking-widest text-[#6E7681] mb-1.5">
+                <label class="block text-xs font-mono uppercase tracking-widest text-surface-600 mb-1.5">
                   Description
                 </label>
                 <input
                   type="text"
                   value={@selected_expense.description}
-                  class="w-full px-3 py-2 text-sm border border-[#444C56] rounded bg-[#161B22] text-[#E6EDF3] focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  class="w-full px-3 py-2 text-sm border border-surface-700 rounded bg-surface-950 text-surface-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
               <div>
-                <label class="block text-xs font-mono uppercase tracking-widest text-[#6E7681] mb-1.5">
+                <label class="block text-xs font-mono uppercase tracking-widest text-surface-600 mb-1.5">
                   Cost
                 </label>
                 <input
                   type="text"
                   value={@selected_expense.amount}
-                  class="w-full px-3 py-2 text-sm border border-[#444C56] rounded bg-[#161B22] text-[#E6EDF3] focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  class="w-full px-3 py-2 text-sm border border-surface-700 rounded bg-surface-950 text-surface-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
               <div>
-                <label class="block text-xs font-mono uppercase tracking-widest text-[#6E7681] mb-2.5">
+                <label class="block text-xs font-mono uppercase tracking-widest text-surface-600 mb-2.5">
                   Tags
                 </label>
                 <div class="space-y-2.5">
@@ -729,7 +735,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                       <input
                         type="checkbox"
                         checked={Enum.any?(@selected_expense.tags, &(&1.label == tag.label))}
-                        class="w-4 h-4 rounded border-[#444C56] bg-[#161B22] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-[#0D1117]"
+                        class="w-4 h-4 rounded border-surface-700 bg-surface-950 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-surface-950"
                       />
                       <span class={[
                         "px-2.5 py-0.5 text-xs font-medium rounded-full",
@@ -742,7 +748,7 @@ defmodule LocalCentsWeb.LibraryDemoComponents do
                 </div>
               </div>
             </div>
-            <div class="flex items-center justify-between px-6 py-4 border-t border-[#30363D] bg-[#0D1117]">
+            <div class="flex items-center justify-between px-6 py-4 border-t border-surface-800 bg-surface-950">
               <button class="text-sm font-medium text-red-400 hover:text-red-300 transition-colors">
                 Delete
               </button>
