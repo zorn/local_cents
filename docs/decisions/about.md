@@ -14,6 +14,8 @@ Generally, decision documents should be considered immutable, but if you feel th
 
 Contributors to LocalCents are encouraged to generate decision documents alongside or following significant code changes. You can find a reference template in the repo and consult existing documents for format examples.
 
+Decision files are named with a three-digit sequential prefix that increments by one in creation order, followed by a short kebab-case slug (e.g. `001-which-automerge-rust-library.md`). To add a decision, take the next number after the highest existing one.
+
 For more on the practice of writing decisions (also known as architecture decision records in other circles) see [this GitHub repo][adr].
 
 [adr]: https://github.com/joelparkerhenderson/architecture-decision-record
