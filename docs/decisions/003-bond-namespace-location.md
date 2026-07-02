@@ -79,7 +79,8 @@ Supporting choices:
   rename. That is an accepted, deliberate consequence of the decision above.
 - Consolidating the CSS fixed a latent bug: Bond styles that were defined only
   in `app.css` now render correctly in the standalone storybook build.
-- Several notebook-texture classes (`.nb-ruled`, `.nb-stamp-bloom`,
-  `.nb-stamp-hatch`, `.nb-tex-*`, `.nb-graph`) are currently **unused**. They
-  were moved into `bond.css` (not deleted) and marked with `NOTE: currently
-  unused` comments — candidates for later pruning.
+- At the time of this move, several notebook-texture classes (`.nb-ruled`,
+  `.nb-stamp-bloom`, `.nb-stamp-hatch`, `.nb-tex-*`, `.nb-graph`) were unused
+  and were carried into `bond.css` as pruning candidates. They have since been
+  renamed to the stationery vocabulary (`bond-*`) and the genuinely unused ones
+  pruned, so those exact class names no longer exist.
