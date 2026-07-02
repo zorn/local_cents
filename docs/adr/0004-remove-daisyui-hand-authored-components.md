@@ -50,7 +50,7 @@ DaisyUI wiring from `app.css`, `storybook.css`, the layouts, and `home_live.ex`
 Because we were no longer using DaisyUI, we needed our own place for reusable
 components — so we created **Bond**. The name is a nod to bond paper, and the
 design leans into a paper/stationery theme. Bond lives inside the web layer (see
-[003](003-bond-namespace-location.md) for where it sits in the module tree). Its
+[0003](0003-bond-namespace-location.md) for where it sits in the module tree). Its
 specifics — the component taxonomy, color tokens, and theming — are documented
 in the storybook overview and evolve alongside the code, so they are
 intentionally not pinned down here.

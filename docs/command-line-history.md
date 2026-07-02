@@ -2,6 +2,12 @@
 
 A place to record generator or other prompts used to create notable files.
 
+## July 2, 2026
+
+Installed a set of Claude Code agent skills. The skills and their install instructions are recorded in this gist:
+
+https://gist.github.com/zorn/e5996736f32117bed583d3055c1441d9
+
 ## June 5, 2026
 
 Ran `mix phx.gen.storybook` as part of:

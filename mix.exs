@@ -91,15 +91,24 @@ defmodule LocalCents.MixProject do
   defp extras do
     [
       "README.md",
-      "docs/ubiquitous-language.md",
+      "CONTEXT.md",
+      "docs/ui-language.md",
+      "docs/software-terms.md",
       "docs/module-boundaries.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
-      "docs/decisions/about.md",
-      "docs/decisions/001-which-automerge-rust-library.md",
-      "docs/decisions/002-expense-attributes.md",
-      "docs/decisions/003-bond-namespace-location.md",
-      "docs/decisions/004-remove-daisyui-hand-authored-components.md"
+      "docs/proposals/mvp.md",
+      "docs/adr/about.md",
+      "docs/adr/0001-which-automerge-rust-library.md",
+      "docs/adr/0002-expense-attributes.md",
+      "docs/adr/0003-bond-namespace-location.md",
+      "docs/adr/0004-remove-daisyui-hand-authored-components.md",
+      "docs/adr/0005-categories-not-tags.md",
+      "docs/adr/0006-multi-window-desktop-shell.md",
+      "docs/adr/0007-book-runtime-and-persistence.md",
+      "docs/adr/0008-mvp-expense-shape.md",
+      "docs/adr/0009-book-file-format.md",
+      "docs/adr/0010-cost-as-decimal-string.md"
     ]
   end
 
@@ -108,8 +117,9 @@ defmodule LocalCents.MixProject do
   defp groups_for_extras do
     [
       Guides:
-        ~r{docs/(ubiquitous-language|module-boundaries|command-line-history|breadboard-demo)\.md},
-      Decisions: ~r{docs/decisions/}
+        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|command-line-history|breadboard-demo))\.md},
+      Proposals: ~r{docs/proposals/},
+      Decisions: ~r{docs/adr/}
     ]
   end
 

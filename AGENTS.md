@@ -97,6 +97,20 @@ Do **not** add a separate IPC mechanism (e.g., Tauri commands, custom TCP socket
 - Do **not** add Tauri commands (`#[tauri::command]`) for data work that can be done in Phoenix/LiveView.
 - The `SECRET_KEY_BASE` in `lib.rs` is a hardcoded placeholder suitable only for local desktop use — it is not a production web deployment.
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (`zorn/local_cents`) via the `gh` CLI; external PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the default triage vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (`CONTEXT.md` glossary + `docs/adr/` at the repo root). See `docs/agents/domain.md`.
+
 <!-- usage-rules-start -->
 <!-- igniter-start -->
 ## igniter usage

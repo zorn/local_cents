@@ -37,13 +37,15 @@ Since the end goal is a cross-platform binary along with the ability to run the 
 
 ### Phase One Goals
 
+> **Note:** This section describes the broader Phase One *vision*. The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See [the MVP proposal](docs/proposals/mvp.md) for the exact in-scope build and what is deferred.
+
 The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
 
 Aside: Deploying a [Tauri iOS app](https://tauri.app/start/prerequisites/#ios) requires CocoaPods, and since that is [a dead technology](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), I am not going to use it.
 
 Data synchronization in phase one will have some hard-coded assumptions. We expect a desktop app to be running with a document, the ability to push that document to the web server, and a web version of the app that can edit the document using (mostly) the same UI experience. Automerge will be responsible for keeping the documents in sync and resolving conflicts. When a conflict needs to be manually resolved, the UI will need to address this job to be done, presenting an intuitive, easy-to-use user experience. Designing a good experience here will be one of the main challenges to solve.
 
-The core domain of phase one is expense tracking. I envision the ability to manually create/edit and delete expenses. I'd like to have tags for each so we can group by to totaling, and then some visualization of how money is being spent over time. Longer term, I think there is some value in letting people drag and drop in their credit card statements to do more automated creation and reconciliation, but we will keep things basic to get started. Much later, I could see the app evolving to provide some level of budgeting and goal tracking, but again -- that will come in time.
+The core domain of phase one is expense tracking. I envision the ability to manually create/edit and delete expenses. I'd like each expense to have a single category so we can group by category and total each group without double-counting. Visualizing how money is spent over time is planned for a later phase. Longer term, I think there is some value in letting people drag and drop in their credit card statements to do more automated creation and reconciliation, but we will keep things basic to get started. Much later, I could see the app evolving to provide some level of budgeting and goal tracking, but again -- that will come in time.
 
 ## How to launch the project for local development
 
