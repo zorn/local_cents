@@ -59,7 +59,7 @@ defmodule Storybook.AboutBondPage do
       <ul>
         <li>
           <strong>DesktopWindow</strong>
-          — the outermost chrome for a desktop-style window with a title bar (used primarly for demos)
+          — the outermost chrome for a desktop-style window with a title bar (used primarily for demos)
         </li>
         <li>
           <strong>InputBar</strong>
