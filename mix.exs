@@ -135,6 +135,10 @@ defmodule LocalCents.MixProject do
       # which cuts down on repetition in test setups.
       {:tiny_maps, "~> 3.0", only: :test, runtime: false},
 
+      # For high-level, browser-like feature tests that read as user flows
+      # (`visit/2`, `click_button/2`, `fill_in/3`, `assert_has/3`).
+      {:phoenix_test, "~> 0.11.1", only: :test, runtime: false},
+
       # For code logic style and enforcement.
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
