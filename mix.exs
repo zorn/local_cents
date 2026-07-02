@@ -10,6 +10,7 @@ defmodule LocalCents.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
+      usage_rules: usage_rules(),
       # `:boundary` MUST come before `Mix.compilers()`. It installs a compile
       # tracer and an after-compile hook to check cross-boundary calls; if it
       # runs after the Elixir compiler the tracer is never active, so it
@@ -106,7 +107,8 @@ defmodule LocalCents.MixProject do
   # (README, API Reference) stays ungrouped at the top.
   defp groups_for_extras do
     [
-      Guides: ~r{docs/(ubiquitous-language|module-boundaries|command-line-history|breadboard-demo)\.md},
+      Guides:
+        ~r{docs/(ubiquitous-language|module-boundaries|command-line-history|breadboard-demo)\.md},
       Decisions: ~r{docs/decisions/}
     ]
   end
@@ -185,6 +187,11 @@ defmodule LocalCents.MixProject do
       # igniter.*` tasks. A dev/test-only tool; not part of the production build.
       {:igniter, "~> 0.8", only: [:dev, :test]},
 
+      # Aggregates dependencies' `usage-rules.md` files into our AGENTS.md so the
+      # rules a library ships for AI agents surface in our agent context. Run
+      # `mix usage_rules.sync` after changing the config below. See usage_rules/0.
+      {:usage_rules, "~> 1.0", only: [:dev]},
+
       # For test-driven development.
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
 
@@ -253,6 +260,19 @@ defmodule LocalCents.MixProject do
 
       # The HTTP server that runs the Phoenix endpoint.
       {:bandit, "~> 1.5"}
+    ]
+  end
+
+  # Configures `mix usage_rules.sync`, which aggregates the `usage-rules.md`
+  # files that dependencies ship for AI agents into a managed section of
+  # AGENTS.md (our CLAUDE.md is a symlink to it). We use link ("jump-out") mode
+  # so AGENTS.md gets a pointer to each dependency's rules rather than inlining
+  # the full text, keeping the file lean. `:all` auto-discovers every dependency
+  # that provides usage rules, so newly added libraries surface on the next sync.
+  defp usage_rules do
+    [
+      file: "AGENTS.md",
+      usage_rules: {:all, link: :markdown}
     ]
   end
 
