@@ -39,8 +39,11 @@ defmodule Storybook.Tokens.Colors do
         CSS variable and utility classes for each shade, so components reference them via
         utilities like <code>text-surface-800</code>
         or <code>bg-primary-700</code>, and via <code>var(--color-*)</code>
-        inline for composite styles. A <code>*-contrast-500</code>
-        token per family gives a readable text color for placing on top of that family's fill.
+        inline for composite styles. Most families also define a <code>*-contrast-500</code>
+        token — a readable text color for placing on top of that family's mid fill — while <code>surface</code>, which spans light and dark backgrounds, defines
+        <code>surface-contrast-50</code>
+        and <code>surface-contrast-900</code>
+        instead.
       </p>
     </section>
 
