@@ -1,0 +1,209 @@
+/* Bond component styles — imported by app.css and storybook.css */
+
+/* Bond color palette — Skeleton-style numbered ramps.
+
+   Each family is a 50→950 scale (50 = lightest, 950 = darkest). Tailwind
+   generates both the `--color-*` CSS variables and matching utilities
+   (`text-surface-800`, `bg-primary-700`, `border-surface-200`, …).
+   `*-contrast-*` tokens give a readable text color to place on top of a fill
+   of the same shade.
+
+   Families:
+     surface   — blue-tinted neutral; the app backbone (bg, text, borders)
+     primary   — brand blue; interactive/emphasis
+     secondary — terracotta; warm accent
+     tertiary  — kraft/paper; warm neutral
+     success   — emerald; positive amounts, confirmations
+     warning   — amber; cautions
+     error     — red; destructive, negative amounts
+
+   Components reference the utilities where a single color property is set, and
+   `var(--color-*)` inline for CSS-variable injection and composite styles.
+   This is the single source of truth for Bond colors.
+
+   `static` forces Tailwind to emit every token as a CSS variable even when no
+   utility references it, so `var(--color-*)` works in inline styles (e.g. the
+   storybook swatches) and all ramp shades stay available. */
+@theme static {
+  /* ---- surface: blue-tinted neutral (backbone) ---- */
+  --color-surface-50:  #ffffff;
+  --color-surface-100: #eef3fc;
+  --color-surface-200: #cce0f5;
+  --color-surface-300: #b8d0ee;
+  --color-surface-400: #a8c0e0;
+  --color-surface-500: #8ba6cd;
+  --color-surface-600: #6980b0;
+  --color-surface-700: #45577f;
+  --color-surface-800: #22335c;
+  --color-surface-900: #1e2d4d;
+  --color-surface-950: #0d1a35;
+  --color-surface-contrast-50:  #22335c; /* dark text on light surfaces */
+  --color-surface-contrast-900: #ffffff; /* light text on dark surfaces */
+
+  /* ---- primary: brand blue ---- */
+  --color-primary-50:  #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+  --color-primary-contrast-500: #ffffff;
+
+  /* ---- secondary: terracotta ---- */
+  --color-secondary-50:  #fff7ed;
+  --color-secondary-100: #ffedd5;
+  --color-secondary-200: #fed7aa;
+  --color-secondary-300: #fdba74;
+  --color-secondary-400: #fb923c;
+  --color-secondary-500: #f97316;
+  --color-secondary-600: #ea580c;
+  --color-secondary-700: #c2410c;
+  --color-secondary-800: #9a3412;
+  --color-secondary-900: #7c2d12;
+  --color-secondary-950: #431407;
+  --color-secondary-contrast-500: #ffffff;
+
+  /* ---- tertiary: kraft / paper ---- */
+  --color-tertiary-50:  #faf7f0;
+  --color-tertiary-100: #f3ede1;
+  --color-tertiary-200: #e8ddca;
+  --color-tertiary-300: #ddccb0;
+  --color-tertiary-400: #c5b89a;
+  --color-tertiary-500: #b8a88a;
+  --color-tertiary-600: #a08a6a;
+  --color-tertiary-700: #8c7557;
+  --color-tertiary-800: #6b5544;
+  --color-tertiary-900: #4a3a2c;
+  --color-tertiary-950: #2a1f14;
+  --color-tertiary-contrast-500: #2a1f14;
+
+  /* ---- success: emerald ---- */
+  --color-success-50:  #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+  --color-success-950: #022c22;
+  --color-success-contrast-500: #ffffff;
+
+  /* ---- warning: amber ---- */
+  --color-warning-50:  #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+  --color-warning-950: #451a03;
+  --color-warning-contrast-500: #451a03;
+
+  /* ---- error: red ---- */
+  --color-error-50:  #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+  --color-error-950: #450a0a;
+  --color-error-contrast-500: #ffffff;
+
+  /* ---- chrome: platform-literal window controls (not part of the palette) ---- */
+  --color-mac-os-close: #ff5f57;
+  --color-mac-os-minimize: #febc2e;
+  --color-mac-os-maximize: #28c840;
+}
+
+/* Marbled endpaper — a dark, marbled fill for title bars & the edit panel */
+.bond-marble {
+  background-color: var(--color-surface-900);
+  background-image:
+    radial-gradient(ellipse at 18% 32%, rgba(63, 127, 214, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 72%, rgba(20, 35, 75, 0.65) 0%, transparent 44%),
+    radial-gradient(ellipse at 50% 5%, rgba(34, 51, 92, 0.35) 0%, transparent 58%);
+}
+
+/* Ink utilities — apply a per-instance accent ("ink") to paper. Driven by
+   --bond-ink / --bond-ink-strong, which callers set inline
+   (e.g. `--bond-ink: var(--color-primary-800)`). */
+.bond-ink-text            { color: var(--bond-ink); }
+.bond-ink-border          { border-color: var(--bond-ink); }
+.bond-ink-bg              { background-color: var(--bond-ink); }
+.bond-ink-bg-soft         { background-color: color-mix(in srgb, var(--bond-ink) 12%, transparent); }
+.bond-ink-bar             { background-color: color-mix(in srgb, var(--bond-ink) 70%, transparent); }
+.bond-ink-hover-row:hover { background-color: color-mix(in srgb, var(--bond-ink) 5%, transparent); }
+.bond-ink-hover-soft:hover  { background-color: color-mix(in srgb, var(--bond-ink) 10%, transparent); }
+
+/* Placeholder color driven by --bond-placeholder CSS variable set inline by Bond.Elements.Input */
+.bond-input::placeholder { color: var(--bond-placeholder); }
+
+/* Focus ring driven by the --bond-focus-ring CSS variable set inline by
+   Bond.Elements.Input. Each variant supplies its own token-derived ring;
+   inputs that set no variable get no ring. */
+.bond-input:focus { box-shadow: var(--bond-focus-ring, none); }
+
+/* Tint the native search clear button to match the accent color.
+   Scoped to .bond-input so non-Bond search fields are left untouched. */
+.bond-input[type="search"]::-webkit-search-cancel-button {
+  filter: invert(27%) sepia(82%) saturate(800%) hue-rotate(207deg) brightness(90%);
+  cursor: pointer;
+}
+
+/* Non-modal <dialog open> used as a flex child inside the panel wrapper.
+   Resets browser UA defaults (position: absolute, padding, border, background)
+   so it behaves like a normal block element in the flex row. */
+dialog.bond-side-panel {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: none;
+  width: 20rem;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Stamp interaction: the button presses toward its shadow on hover like a
+   rubber stamp, giving the illusion the shadow is anchored to the page. Set
+   --bond-stamp-shadow (color),
+   --bond-stamp-x (default 2px), and --bond-stamp-y (default 3px) on the element. */
+.bond-stamp {
+  box-shadow: var(--bond-stamp-x, 2px) var(--bond-stamp-y, 3px) 0 var(--bond-stamp-shadow, var(--color-primary-900));
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.bond-stamp:hover {
+  transform: translate(calc(var(--bond-stamp-x, 2px) / 2), calc(var(--bond-stamp-y, 3px) / 2));
+  box-shadow: calc(var(--bond-stamp-x, 2px) / 2) calc(var(--bond-stamp-y, 3px) / 2) 0 var(--bond-stamp-shadow, var(--color-primary-900));
+}
+.bond-stamp:active {
+  transform: translate(var(--bond-stamp-x, 2px), var(--bond-stamp-y, 3px));
+  box-shadow: none;
+}
+
+/* Grid paper — used for charts & summaries */
+.bond-grid {
+  background-color: var(--color-surface-100);
+  background-image:
+    linear-gradient(rgba(195, 210, 240, 0.9) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(195, 210, 240, 0.9) 1px, transparent 1px),
+    linear-gradient(rgba(195, 210, 240, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(195, 210, 240, 0.35) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+  background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+}

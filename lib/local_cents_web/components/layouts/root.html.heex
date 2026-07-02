@@ -11,23 +11,24 @@
     <script nonce={@csp_nonce}>
       (() => {
         const setTheme = (theme) => {
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           if (theme === "system") {
             localStorage.removeItem("phx:theme");
             document.documentElement.removeAttribute("data-theme");
+            document.documentElement.classList.toggle("dark", prefersDark);
           } else {
             localStorage.setItem("phx:theme", theme);
             document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.classList.toggle("dark", theme === "dark");
           }
         };
-        if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
-        }
+        setTheme(localStorage.getItem("phx:theme") || "system");
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
       })();
     </script>
   </head>
-  <body class="local-cents">
+  <body class="bg-white dark:bg-gray-950 text-gray-900 dark:text-white antialiased transition-colors duration-300">
     {@inner_content}
   </body>
 </html>

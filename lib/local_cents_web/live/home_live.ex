@@ -12,7 +12,12 @@ defmodule LocalCentsWeb.HomeLive do
     <div class="flex items-center justify-between m-4">
       <div class="flex items-center gap-2">
         <span>Count: <span class="font-mono">{@count}</span></span>
-        <button phx-click="inc" class="btn btn-sm btn-outline">+</button>
+        <button
+          phx-click="inc"
+          class="px-2 py-1 text-sm font-medium border border-gray-300 rounded hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-800 transition-colors"
+        >
+          +
+        </button>
       </div>
     </div>
     """
