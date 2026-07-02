@@ -17,12 +17,8 @@ defmodule Storybook.Layouts.ListControls do
           """,
           """
           <:trailing_content>
-            <button style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.875rem; font-weight: 600; border-radius: 9999px;">
-              Tags
-            </button>
-            <button style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; font-size: 0.875rem; font-weight: 600; border-radius: 9999px;">
-              ↕ Newest
-            </button>
+            <LocalCentsWeb.Bond.Elements.ActionChip.action_chip label="Tags" />
+            <LocalCentsWeb.Bond.Elements.ActionChip.action_chip label="Newest" />
           </:trailing_content>
           """
         ]
