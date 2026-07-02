@@ -158,8 +158,9 @@
    inputs that set no variable get no ring. */
 .bond-input:focus { box-shadow: var(--bond-focus-ring, none); }
 
-/* Tint the native search clear button to match the accent color */
-input[type="search"]::-webkit-search-cancel-button {
+/* Tint the native search clear button to match the accent color.
+   Scoped to .bond-input so non-Bond search fields are left untouched. */
+.bond-input[type="search"]::-webkit-search-cancel-button {
   filter: invert(27%) sepia(82%) saturate(800%) hue-rotate(207deg) brightness(90%);
   cursor: pointer;
 }
