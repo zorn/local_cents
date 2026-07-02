@@ -74,10 +74,15 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
-  # FIXME: Maybe accept a known list of atoms.
   attr :type, :string,
     default: "text",
-    doc: "HTML input type; \"search\" renders a pill field with a magnifying glass icon"
+    values:
+      ~w(text search email password number tel url date datetime-local month week time color),
+    doc: """
+    HTML input type for the single-line field. "search" renders a pill field
+    with a magnifying glass icon. "checkbox" is intentionally excluded — use
+    Bond.Elements.Checkbox instead.
+    """
 
   attr :variant, :string,
     default: "default",
