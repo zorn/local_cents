@@ -195,7 +195,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
         class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none text-surface-800 border-primary-800 bg-surface-50"
-        style="--bond-placeholder: var(--color-surface-400)"
+        style="--bond-placeholder: var(--color-surface-400); --bond-focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-800) 15%, transparent)"
         {@rest}
       />
       <.input_errors errors={@errors} />
