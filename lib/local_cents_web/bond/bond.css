@@ -146,17 +146,17 @@
 .bond-ink-border          { border-color: var(--bond-ink); }
 .bond-ink-bg              { background-color: var(--bond-ink); }
 .bond-ink-bg-soft         { background-color: color-mix(in srgb, var(--bond-ink) 12%, transparent); }
-.bond-ink-bg-soft-solid   { background-color: color-mix(in srgb, var(--bond-ink) 12%, white); }
 .bond-ink-bar             { background-color: color-mix(in srgb, var(--bond-ink) 70%, transparent); }
-.bond-ink-shadow          { box-shadow: 0 1px 2px 0 color-mix(in srgb, var(--bond-ink) 30%, transparent); }
 .bond-ink-hover-row:hover { background-color: color-mix(in srgb, var(--bond-ink) 5%, transparent); }
 .bond-ink-hover-soft:hover  { background-color: color-mix(in srgb, var(--bond-ink) 10%, transparent); }
-.bond-ink-hover-solid:hover { background-color: var(--bond-ink); color: white; }
-.bond-ink-hover-strong:hover    { background-color: var(--bond-ink-strong); }
-.bond-ink-focus-border:focus { border-color: var(--bond-ink); outline: none; }
 
 /* Placeholder color driven by --bond-placeholder CSS variable set inline by Bond.Elements.Input */
 .bond-input::placeholder { color: var(--bond-placeholder); }
+
+/* Focus ring driven by the --bond-focus-ring CSS variable set inline by
+   Bond.Elements.Input. Each variant supplies its own token-derived ring;
+   inputs that set no variable get no ring. */
+.bond-input:focus { box-shadow: var(--bond-focus-ring, none); }
 
 /* Tint the native search clear button to match the accent color */
 input[type="search"]::-webkit-search-cancel-button {
