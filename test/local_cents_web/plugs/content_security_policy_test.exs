@@ -49,12 +49,12 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
   end
 
   describe "browser pipeline integration" do
-    test "includes CSP header on browser requests", %{conn: conn} do
+    test "includes CSP header on browser requests", ~M{conn} do
       conn = get(conn, ~p"/")
       assert get_resp_header(conn, "content-security-policy") != []
     end
 
-    test "nonce in CSP header matches the nonce attribute on the inline script tag", %{conn: conn} do
+    test "nonce in CSP header matches the nonce attribute on the inline script tag", ~M{conn} do
       conn = get(conn, ~p"/")
       [csp] = get_resp_header(conn, "content-security-policy")
       [_, nonce] = Regex.run(~r/'nonce-([A-Za-z0-9+\/=]+)'/, csp)

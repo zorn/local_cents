@@ -131,6 +131,10 @@ defmodule LocalCents.MixProject do
       # For test-driven development.
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
 
+      # For the `~M` sigil map shorthand (e.g. `~M{conn}` for `%{conn: conn}`),
+      # which cuts down on repetition in test setups.
+      {:tiny_maps, "~> 3.0", only: :test, runtime: false},
+
       # For code logic style and enforcement.
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
@@ -144,13 +148,15 @@ defmodule LocalCents.MixProject do
       # To help with Tauri integration
       {:elixirkit, github: "livebook-dev/elixirkit"},
 
-      # Unorganized
+      # The Phoenix web framework and LiveView, plus dev/test companions.
       {:phoenix, "~> 1.8.7"},
       {:phoenix_html, "~> 4.1"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.1.0"},
-      {:lazy_html, ">= 0.1.0", only: :test},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:lazy_html, ">= 0.1.0", only: :test},
+
+      # For building and serving front-end assets.
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
       {:heroicons,
@@ -160,13 +166,27 @@ defmodule LocalCents.MixProject do
        app: false,
        compile: false,
        depth: 1},
+
+      # For composing and sending email.
       {:swoosh, "~> 1.16"},
+
+      # The preferred HTTP client for the app.
       {:req, "~> 0.5"},
+
+      # For collecting and reporting runtime metrics.
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
+
+      # For internationalization and localization.
       {:gettext, "~> 1.0"},
+
+      # For JSON encoding and decoding.
       {:jason, "~> 1.2"},
+
+      # For clustering nodes via DNS.
       {:dns_cluster, "~> 0.2.0"},
+
+      # The HTTP server that runs the Phoenix endpoint.
       {:bandit, "~> 1.5"}
     ]
   end
