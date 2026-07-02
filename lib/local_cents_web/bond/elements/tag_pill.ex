@@ -7,7 +7,10 @@ defmodule LocalCentsWeb.Bond.Elements.TagPill do
   alias Phoenix.LiveView.Socket
 
   attr :label, :string, required: true, doc: "The tag label text"
-  attr :color, :string, required: true, doc: "Hex color for the dot swatch"
+
+  attr :color, :string,
+    required: true,
+    doc: "Any valid CSS color value for the dot swatch (hex, rgb(), or a var(--color-*) token)"
 
   @spec tag_pill(Socket.assigns()) :: Rendered.t()
   def tag_pill(assigns) do
