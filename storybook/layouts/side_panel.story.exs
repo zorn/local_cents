@@ -73,8 +73,7 @@ defmodule Storybook.Layouts.SidePanel do
               </div>
               <:footer>
                 <button
-                  class="text-sm font-bold transition-colors"
-                  style="color: #e0796e;"
+                  class="text-sm font-bold transition-colors text-error-400"
                   phx-click="close_normal"
                 >
                   Delete
@@ -139,10 +138,7 @@ defmodule Storybook.Layouts.SidePanel do
                 </p>
               </div>
               <:footer>
-                <button
-                  class="text-sm font-bold transition-colors"
-                  style="color: rgba(224,121,110,0.4);"
-                >
+                <button class="text-sm font-bold transition-colors text-error-400/40">
                   Delete
                 </button>
                 <LocalCentsWeb.Bond.Elements.Button.button phx-click="close_locked">
