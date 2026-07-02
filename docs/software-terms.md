@@ -1,41 +1,12 @@
-# Ubiquitous Language
+# Software Terms
+
+Modeling vocabulary we use when building LocalCents. These are general
+software / domain-driven-design concepts rather than domain nouns — for the
+project's domain glossary see [CONTEXT.md](../CONTEXT.md).
 
 The name of the application is `LocalCents`, no space. When represented inside Elixir this is atomized as `:local_cents`.
 
-## Domain Terms
-
-### Tracking (Bounded Context)
-
-* **Book** -- The document that all other main domain entities live inside. As
-  the app is starting out we will be recording expenses only for the most part
-  but in time we hope to expand towards income and other financial data.
-* **Expense** -- A financial transaction that represents money the user has spent.
-
-## UI Terms
-
-We want to take care when presenting terminology inside the user interface. We want to choose our terms with intent and consistency.
-
-### Creating things
-
-Following a macOS norm, we use the term **"New"** when initiating a blank top-level entity from a main menu or a button (e.g., "New Book", "New Expense"). If the creation process requires a form, we then use the term **Create** for a submit-like button label as it is an appropriate and user friendly action verb.
-
-If you are appending a sub-item to an existing entity for example a Tag or an Attachment you can use the verb **Add** (e.g., "Add Tag", "Add Attachment"). These sub-items are part of the identity of the parent Expense, so if you add a new tag then the Expense is considered updated.
-
-### Editing things
-
-Use **"Edit"** to label the action of opening an entity for modification. 
-
-### Deleting things
-
-Use **"Delete"** for permanent removal of an entity. Use **"Remove"** only when detaching an item from a collection without destroying it (e.g., removing a tag from an expense).
-
-### Acting on things
-
-Use **"Open"** when referencing the action of opening a Book in its document window.
-
-## Software Terms
-
-### Structs, Values, and Entities 
+## Structs, Values, and Entities 
 
 * **Struct** -- When we need to represent a complex domain concept that Elixir
   primitives can not represent, we often lean on [Elixir Structs] and [Ecto
@@ -56,7 +27,7 @@ Use **"Open"** when referencing the action of opening a Book in its document win
 [Elixir Structs]: https://hexdocs.pm/elixir/main/structs.html
 [Ecto Schemas]: https://hexdocs.pm/ecto/Ecto.html#module-schema
 
-#### An example: Is an `Address` an entity or a value object? It depends.
+### An example: Is an `Address` an entity or a value object? It depends.
 
 Whether or not any domain concept should consider an entity or a value object
 depends entirely on its usage. An example from [Domain-Driven Design]:
