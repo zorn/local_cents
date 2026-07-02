@@ -16,3 +16,16 @@ hope to expand towards income and other financial data.
 
 **Expense**:
 A financial transaction that represents money the user has spent.
+
+**Category**:
+A classification of an Expense that answers "what kind of spending is this?" An
+Expense has _at most one_ Category and may have none — quick entry never blocks on
+assigning one. Because an Expense carries at most one Category, expenses can be
+grouped and summed without double-counting. (A future many-per-Expense label — a
+_tag_ — is a different concept and is out of scope for the MVP.)
+
+**Uncategorized**:
+Not a Category entity, but the computed bucket of Expenses that have no Category.
+It always appears as a row in group-by / totals views so category totals reconcile
+to the grand total, and it doubles as the worklist of Expenses that still need a
+Category.
