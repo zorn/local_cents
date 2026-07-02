@@ -13,6 +13,11 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
     Visual style — :primary (filled blue), :outline (bordered), :square (small fixed-size square)
     """
 
+  attr :type, :string,
+    default: "button",
+    doc:
+      ~s(The button's `type` attribute; defaults to "button" so it never accidentally submits a form)
+
   attr :rest, :global, doc: "HTML attributes passed through to the button element"
 
   slot :inner_block, required: true, doc: "Button label or character"
@@ -20,7 +25,7 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   @spec button(Socket.assigns()) :: Rendered.t()
   def button(assigns) do
     ~H"""
-    <button class={button_class(@variant)} style={button_style(@variant)} {@rest}>
+    <button type={@type} class={button_class(@variant)} style={button_style(@variant)} {@rest}>
       {render_slot(@inner_block)}
     </button>
     """
