@@ -11,6 +11,10 @@ live in [`CONTEXT.md`](../../CONTEXT.md) (the glossary) and in the ADRs under
 [`docs/adr/`](../adr/), which each section links to. Where this document and an ADR
 disagree, the ADR wins.
 
+Implementation is tracked in the Wayfinder map
+[#58](https://github.com/zorn/local_cents/issues/58), where the in-scope build is
+carved into dependency-ordered sub-issues.
+
 ## The MVP's single job
 
 > A person can **reliably capture and review** their household (and side-hustle)

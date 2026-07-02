@@ -37,6 +37,8 @@ Since the end goal is a cross-platform binary along with the ability to run the 
 
 ### Phase One Goals
 
+> **Note:** This section describes the broader Phase One *vision*. The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See [the MVP proposal](docs/proposals/mvp.md) for the exact in-scope build and what is deferred.
+
 The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
 
 Aside: Deploying a [Tauri iOS app](https://tauri.app/start/prerequisites/#ios) requires CocoaPods, and since that is [a dead technology](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), I am not going to use it.
