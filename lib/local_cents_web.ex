@@ -18,6 +18,13 @@ defmodule LocalCentsWeb do
   those modules here.
   """
 
+  # The web boundary. It may call the core and the domain contexts through
+  # their public APIs, but nothing outside may reach into web internals — only
+  # the process-tree entry points (Endpoint, Telemetry) are exported.
+  use Boundary,
+    deps: [LocalCents, LocalCents.Tracking],
+    exports: [Endpoint, Telemetry]
+
   @spec static_paths() :: [String.t()]
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 

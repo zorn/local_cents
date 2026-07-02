@@ -1,4 +1,4 @@
-# Remove DaisyUI and Create the Bond Component Library
+# Replace DaisyUI with Bond
 
 ## Problem Statement
 

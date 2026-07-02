@@ -10,6 +10,9 @@ config :local_cents, LocalCentsWeb.Endpoint,
 # In test we don't send emails
 config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 
+# The endpoint PhoenixTest drives when running feature tests.
+config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
+
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 

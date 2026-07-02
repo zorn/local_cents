@@ -28,6 +28,9 @@ defmodule LocalCentsWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import LocalCentsWeb.ConnCase
+
+      # The `~M` sigil for map shorthand, e.g. `~M{conn}` for `%{conn: conn}`.
+      import TinyMaps
     end
   end
 

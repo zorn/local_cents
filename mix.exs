@@ -10,7 +10,14 @@ defmodule LocalCents.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      usage_rules: usage_rules(),
+      # `:boundary` MUST come before `Mix.compilers()`. It installs a compile
+      # tracer and an after-compile hook to check cross-boundary calls; if it
+      # runs after the Elixir compiler the tracer is never active, so it
+      # silently builds an empty view — no violations are caught and
+      # `mix boundary.spec` prints nothing. See lib/local_cents.ex and the
+      # context modules for the boundary definitions themselves.
+      compilers: [:boundary, :phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
 
       # Docs
@@ -22,6 +29,14 @@ defmodule LocalCents.MixProject do
         main: "readme",
         extras: extras(),
         groups_for_extras: groups_for_extras(),
+        groups_for_modules: groups_for_modules(),
+        nest_modules_by_prefix: nest_modules_by_prefix(),
+        # The module-boundaries guide names the `Storybook` boundary shim, which
+        # is a hidden (`@moduledoc false`) no-op module. Tell ExDoc not to try to
+        # autolink it (which would warn).
+        skip_code_autolink_to: [
+          "Storybook"
+        ],
         assets: %{"docs/images" => "images"},
         before_closing_head_tag: &before_closing_head_tag/1,
         before_closing_body_tag: &before_closing_body_tag/1
@@ -77,16 +92,56 @@ defmodule LocalCents.MixProject do
     [
       "README.md",
       "docs/ubiquitous-language.md",
+      "docs/module-boundaries.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
       "docs/decisions/about.md",
-      "docs/decisions/1-which-automerge-rust-library.md"
+      "docs/decisions/001-which-automerge-rust-library.md",
+      "docs/decisions/002-expense-attributes.md",
+      "docs/decisions/003-bond-namespace-location.md",
+      "docs/decisions/004-remove-daisyui-hand-authored-components.md"
     ]
   end
 
+  # Groups the "Pages" (extras) in the docs sidebar. Anything not matched here
+  # (README, API Reference) stays ungrouped at the top.
   defp groups_for_extras do
     [
-      Decisions: ~r/docs\/decisions\/[^\/]+\.md/
+      Guides:
+        ~r{docs/(ubiquitous-language|module-boundaries|command-line-history|breadboard-demo)\.md},
+      Decisions: ~r{docs/decisions/}
+    ]
+  end
+
+  # Groups the "Modules" in the docs sidebar. Order matters: a module lands in
+  # the first group it matches, so more specific groups come before the general
+  # `Web` catch-all.
+  defp groups_for_modules do
+    [
+      Core: [
+        LocalCents,
+        LocalCents.Application,
+        LocalCents.Mailer
+      ],
+      Tracking: [~r/^LocalCents\.Tracking/],
+      "Bond Components": [~r/^LocalCentsWeb\.Bond/],
+      Storybook: [~r/^Storybook/, ~r/^LocalCentsWeb\.Storybook/],
+      Web: [~r/^LocalCentsWeb/]
+    ]
+  end
+
+  # Nests deeply-namespaced modules under a common prefix in the sidebar, so the
+  # visible label is just the trailing part (e.g. `LocalCentsWeb.Bond.Elements.Button`
+  # displays as `Button`). This keeps long names from being truncated. ExDoc uses
+  # the longest matching prefix for each module.
+  defp nest_modules_by_prefix do
+    [
+      LocalCents.Tracking,
+      LocalCentsWeb.Bond.Composites,
+      LocalCentsWeb.Bond.Elements,
+      LocalCentsWeb.Bond.Layouts,
+      LocalCentsWeb.Plugs,
+      LocalCentsWeb.Storybook
     ]
   end
 
@@ -128,12 +183,33 @@ defmodule LocalCents.MixProject do
       # For documentation generation.
       {:ex_doc, "~> 0.4", only: :dev, runtime: false, warn_if_outdated: true},
 
+      # For installing/configuring packages and code refactoring via `mix
+      # igniter.*` tasks. A dev/test-only tool; not part of the production build.
+      {:igniter, "~> 0.8", only: [:dev, :test]},
+
+      # Aggregates dependencies' `usage-rules.md` files into our AGENTS.md so the
+      # rules a library ships for AI agents surface in our agent context. Run
+      # `mix usage_rules.sync` after changing the config below. See usage_rules/0.
+      {:usage_rules, "~> 1.0", only: [:dev]},
+
       # For test-driven development.
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+
+      # For the `~M` sigil map shorthand (e.g. `~M{conn}` for `%{conn: conn}`),
+      # which cuts down on repetition in test setups.
+      {:tiny_maps, "~> 3.0", only: :test, runtime: false},
+
+      # For high-level, browser-like feature tests that read as user flows
+      # (`visit/2`, `click_button/2`, `fill_in/3`, `assert_has/3`).
+      {:phoenix_test, "~> 0.11.1", only: :test, runtime: false},
 
       # For code logic style and enforcement.
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+
+      # For enforcing domain-context isolation at compile time — each context
+      # exposes a public API boundary and keeps its internals private.
+      {:boundary, "~> 0.10.4", runtime: false},
 
       # For security scans.
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
@@ -144,13 +220,15 @@ defmodule LocalCents.MixProject do
       # To help with Tauri integration
       {:elixirkit, github: "livebook-dev/elixirkit"},
 
-      # Unorganized
+      # The Phoenix web framework and LiveView, plus dev/test companions.
       {:phoenix, "~> 1.8.7"},
       {:phoenix_html, "~> 4.1"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.1.0"},
-      {:lazy_html, ">= 0.1.0", only: :test},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:lazy_html, ">= 0.1.0", only: :test},
+
+      # For building and serving front-end assets.
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
       {:heroicons,
@@ -160,14 +238,41 @@ defmodule LocalCents.MixProject do
        app: false,
        compile: false,
        depth: 1},
+
+      # For composing and sending email.
       {:swoosh, "~> 1.16"},
+
+      # The preferred HTTP client for the app.
       {:req, "~> 0.5"},
+
+      # For collecting and reporting runtime metrics.
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
+
+      # For internationalization and localization.
       {:gettext, "~> 1.0"},
+
+      # For JSON encoding and decoding.
       {:jason, "~> 1.2"},
+
+      # For clustering nodes via DNS.
       {:dns_cluster, "~> 0.2.0"},
+
+      # The HTTP server that runs the Phoenix endpoint.
       {:bandit, "~> 1.5"}
+    ]
+  end
+
+  # Configures `mix usage_rules.sync`, which aggregates the `usage-rules.md`
+  # files that dependencies ship for AI agents into a managed section of
+  # AGENTS.md (our CLAUDE.md is a symlink to it). We use link ("jump-out") mode
+  # so AGENTS.md gets a pointer to each dependency's rules rather than inlining
+  # the full text, keeping the file lean. `:all` auto-discovers every dependency
+  # that provides usage rules, so newly added libraries surface on the next sync.
+  defp usage_rules do
+    [
+      file: "AGENTS.md",
+      usage_rules: {:all, link: :markdown}
     ]
   end
 
