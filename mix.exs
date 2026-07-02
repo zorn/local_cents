@@ -181,6 +181,10 @@ defmodule LocalCents.MixProject do
       # For documentation generation.
       {:ex_doc, "~> 0.4", only: :dev, runtime: false, warn_if_outdated: true},
 
+      # For installing/configuring packages and code refactoring via `mix
+      # igniter.*` tasks. A dev/test-only tool; not part of the production build.
+      {:igniter, "~> 0.8", only: [:dev, :test]},
+
       # For test-driven development.
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
 
