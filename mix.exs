@@ -10,7 +10,13 @@ defmodule LocalCents.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      compilers: [:phoenix_live_view] ++ Mix.compilers(),
+      # `:boundary` MUST come before `Mix.compilers()`. It installs a compile
+      # tracer and an after-compile hook to check cross-boundary calls; if it
+      # runs after the Elixir compiler the tracer is never active, so it
+      # silently builds an empty view — no violations are caught and
+      # `mix boundary.spec` prints nothing. See lib/local_cents.ex and the
+      # context modules for the boundary definitions themselves.
+      compilers: [:boundary, :phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
 
       # Docs
@@ -22,6 +28,12 @@ defmodule LocalCents.MixProject do
         main: "readme",
         extras: extras(),
         groups_for_extras: groups_for_extras(),
+        # The module-boundaries guide names the `Storybook` boundary shim, which
+        # is a hidden (`@moduledoc false`) no-op module. Tell ExDoc not to try to
+        # autolink it (which would warn).
+        skip_code_autolink_to: [
+          "Storybook"
+        ],
         assets: %{"docs/images" => "images"},
         before_closing_head_tag: &before_closing_head_tag/1,
         before_closing_body_tag: &before_closing_body_tag/1
@@ -77,10 +89,14 @@ defmodule LocalCents.MixProject do
     [
       "README.md",
       "docs/ubiquitous-language.md",
+      "docs/module-boundaries.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
       "docs/decisions/about.md",
-      "docs/decisions/1-which-automerge-rust-library.md"
+      "docs/decisions/001-which-automerge-rust-library.md",
+      "docs/decisions/002-expense-attributes.md",
+      "docs/decisions/003-bond-namespace-location.md",
+      "docs/decisions/004-remove-daisyui-hand-authored-components.md"
     ]
   end
 
@@ -142,6 +158,10 @@ defmodule LocalCents.MixProject do
       # For code logic style and enforcement.
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+
+      # For enforcing domain-context isolation at compile time — each context
+      # exposes a public API boundary and keeps its internals private.
+      {:boundary, "~> 0.10.4", runtime: false},
 
       # For security scans.
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},

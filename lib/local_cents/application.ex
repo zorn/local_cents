@@ -1,7 +1,53 @@
 defmodule LocalCents.Application do
+  @moduledoc """
+  The OTP application entry point — it builds and starts the supervision tree.
+
+  LocalCents runs as a single Phoenix instance that a [Tauri](https://tauri.app)
+  native shell spawns and drives (see the `README` and the project's Tauri notes
+  for the bigger picture). This module is where that process tree is assembled.
+
+  ## Supervised children
+
+  Started under a `:one_for_one` supervisor, in order:
+
+    * `LocalCentsWeb.Telemetry` — metrics and instrumentation.
+    * `DNSCluster` — inert here. It ships in the `phx.new` scaffold for
+      multi-instance node clustering, but LocalCents is a single-instance desktop
+      app, so `DNS_CLUSTER_QUERY` is never set and it starts as a no-op.
+    * `Phoenix.PubSub` — in-app process messaging.
+    * `ElixirKit.PubSub` — the TCP bridge to the Rust/Tauri side. This is the one
+      IPC channel between Elixir and native code.
+    * `LocalCentsWeb.Endpoint` — the Phoenix HTTP endpoint.
+    * A one-off `Task` that sends the `"ready"` handshake (see below).
+
+  ## Tauri vs. standalone startup
+
+  Startup branches on the `ELIXIRKIT_PUBSUB` environment variable:
+
+    * **Launched by Tauri** — the native shell sets `ELIXIRKIT_PUBSUB` to the
+      address it is listening on. `ElixirKit.PubSub` connects to it, and once the
+      tree is up the startup `Task` broadcasts `"ready"` on the `"messages"`
+      channel so Tauri knows it can open the WebView window.
+    * **Standalone (`mix phx.server`, tests)** — the variable is unset, so
+      `ElixirKit.PubSub` starts with `connect: :ignore` (a no-op) and no `"ready"`
+      message is sent. This lets us develop and test the Phoenix side in complete
+      isolation from the native shell.
+
+  ## Boundary
+
+  This module is promoted to a top-level `Boundary` so it may depend on both the
+  core (`LocalCents`) and the web layer (`LocalCentsWeb`) to wire everything
+  together, without creating a dependency cycle between those two. See
+  [Module Boundaries](module-boundaries.html).
+  """
+
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
-  @moduledoc false
+
+  # Promoted to a top-level boundary so it can depend on both the core and the
+  # web layer to wire up the supervision tree, without creating a dependency
+  # cycle between `LocalCents` and `LocalCentsWeb`.
+  use Boundary, top_level?: true, deps: [LocalCents, LocalCentsWeb]
 
   use Application
 

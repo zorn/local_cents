@@ -1,7 +1,18 @@
 defmodule LocalCents.Tracking do
   @moduledoc """
   Provides functions for creating `Book` documents and the managing the `Expense` entries within books.
+
+  This module is the public API for the tracking context. Call sites must go
+  through it — the internal implementation (e.g. `ExAutomerge`) is not exported
+  and may not be called from outside this boundary. Only the `Book` and
+  `Expense` data structs are exported, since they are the context's contract.
   """
+
+  # The tracking context boundary. It is a top-level boundary (a peer of the
+  # core and web layers rather than nested inside `LocalCents`) so that other
+  # layers can depend on the context directly. It exports only the data structs
+  # that make up its API contract; the implementation modules stay private.
+  use Boundary, top_level?: true, deps: [], exports: [Book, Expense]
 
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.ExAutomerge
