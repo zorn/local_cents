@@ -51,8 +51,9 @@ call).
 A boundary's root module (e.g. `LocalCents.Tracking`) is **always** callable from
 a boundary that depends on it — that is the public API. `exports` only adds
 *additional* modules to the public surface, which is why we export the `Book` and
-`Expense` data structs (they are part of the contract passed across the boundary)
-but not `ExAutomerge` (the implementation).
+`Expense` data types (they are part of the contract passed across the boundary)
+but not `ExAutomerge` (the implementation). `Expense` is a struct; `Book` is an
+opaque `binary()` type (a serialized Automerge document).
 
 ### How the layers relate
 
@@ -94,7 +95,7 @@ dependency cycle between `LocalCents` and `LocalCentsWeb`.
 graph TD
     subgraph tracking["LocalCents.Tracking boundary"]
         API["LocalCents.Tracking<br/><b>public API</b>"]
-        Book["Book<br/><small>exported struct</small>"]
+        Book["Book<br/><small>exported type (binary)</small>"]
         Expense["Expense<br/><small>exported struct</small>"]
         ExAutomerge["ExAutomerge<br/><b>private impl</b>"]
 
@@ -113,8 +114,8 @@ graph TD
     class ExAutomerge bad;
 ```
 
-`LocalCentsWeb` may call `LocalCents.Tracking` and use the `Book`/`Expense`
-structs, but calling `LocalCents.Tracking.ExAutomerge` directly is a boundary
+`LocalCentsWeb` may call `LocalCents.Tracking` and use the `Book` and `Expense`
+types, but calling `LocalCents.Tracking.ExAutomerge` directly is a boundary
 violation.
 
 ## Demo: make a violation appear
@@ -202,7 +203,7 @@ When you introduce a new domain context, follow the `Tracking` pattern:
    ```
 
 4. Keep implementation modules unexported. Only the API module and the data
-   structs that cross the boundary belong in `exports`.
+   types (structs or type aliases) that cross the boundary belong in `exports`.
 
 ## Useful commands
 

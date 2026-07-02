@@ -15,8 +15,9 @@ defmodule LocalCents.Tracking.ExAutomerge do
   `ex_automerge` crate (see `native/ex_automerge`). An Automerge document is
   represented on the Elixir side as an **opaque binary** — the serialized bytes of
   the CRDT. We never inspect or build these bytes in Elixir; we pass them back into
-  the NIFs. `LocalCents.Tracking` wraps that binary in a `LocalCents.Tracking.Book`
-  struct so the rest of the app deals in domain terms rather than raw bytes.
+  the NIFs. `LocalCents.Tracking` names that binary type `LocalCents.Tracking.Book`
+  (whose `t()` is just `binary()`) so the rest of the app refers to it in domain
+  terms rather than as raw bytes.
 
   Because the document is a CRDT, two independently edited copies can be combined
   with `merge/2` without conflicts, which is the foundation for future
