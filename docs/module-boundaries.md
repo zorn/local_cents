@@ -216,3 +216,21 @@ mix boundary.find_external_deps
 # Generate Graphviz .dot files visualizing the boundaries.
 mix boundary.visualize
 ```
+
+## Troubleshooting
+
+**`unknown module X is listed as an export`** — if your editor or an
+incremental compile flags an exported module (e.g. `LocalCents.Tracking.Book`)
+as unknown, even though it plainly exists, this is a
+[known Boundary quirk](https://github.com/sasa1977/boundary/issues/72) with
+incremental compilation: when only the boundary file recompiles, Boundary can
+check its `exports:` against a partial view of the app's modules. A full,
+clean compile always resolves it:
+
+```console
+mix clean && mix compile
+```
+
+Restarting your editor's Elixir language server does the same. CI avoids the
+issue by building `_build` from scratch (see the `cache-key` note in
+`.github/actions/elixir-setup/action.yaml`).
