@@ -41,9 +41,4 @@ defmodule LocalCents.Tracking do
   def merge(left_book, right_book) do
     ExAutomerge.merge(left_book, right_book)
   end
-
-  # TEMP: probe whether editing a boundary file re-triggers the CI incremental
-  # boundary false-positive against the Boundary-aware v2 cache. Revert after.
-  @spec temp_ci_probe() :: :ok
-  def temp_ci_probe, do: :ok
 end
