@@ -1,5 +1,12 @@
 # Decision Name
 
+<!--
+Keep this title short — aim for 30 characters or fewer. It is used verbatim as
+the entry in the generated docs' navigation sidebar, which truncates longer
+titles with an ellipsis. Prefer a concise noun phrase (e.g. "Automerge Rust
+Library") over a full sentence.
+-->
+
 ## Problem Statement
 
 Describe the problem, change, or issue that is motivating this change.

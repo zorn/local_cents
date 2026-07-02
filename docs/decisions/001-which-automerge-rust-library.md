@@ -1,4 +1,4 @@
-# Which Automerge Rust Library to Use
+# Automerge Rust Library
 
 ## Problem Statement
 
