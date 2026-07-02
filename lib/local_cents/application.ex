@@ -11,6 +11,13 @@ defmodule LocalCents.Application do
 
     children = [
       LocalCentsWeb.Telemetry,
+
+      # DNSCluster ships in the `phx.new` scaffold to enable one-env-var node
+      # clustering for multi-instance web deploys (e.g. Fly.io, Kubernetes). We
+      # don't use it: LocalCents is a single-instance Tauri desktop app with no
+      # clustering story. `DNS_CLUSTER_QUERY` is never set, so `query:` falls
+      # back to `:ignore` and this child starts as a no-op. We keep it in place
+      # for `phx.new` parity and in case a networked mode ever wants it.
       {DNSCluster, query: Application.get_env(:local_cents, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: LocalCents.PubSub},
 
