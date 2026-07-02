@@ -151,9 +151,9 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
           type="search"
           id={@id}
           name={@name}
-          value={@value}
-          class="bond-input pl-7 pr-3 py-1.5 text-sm border bond-ink-border rounded-full focus:outline-none w-full transition-shadow focus:[box-shadow:0_0_0_4px_rgba(30,64,175,0.12)] bg-surface-50 text-surface-800"
-          style="--bond-placeholder: var(--color-surface-400)"
+          value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+          class="bond-input pl-7 pr-3 py-1.5 text-sm border bond-ink-border rounded-full focus:outline-none w-full transition-shadow bg-surface-50 text-surface-800"
+          style="--bond-placeholder: var(--color-surface-400); --bond-focus-ring: 0 0 0 4px color-mix(in srgb, var(--color-primary-800) 12%, transparent)"
           {@rest}
         />
       </div>
@@ -171,8 +171,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         id={@id}
         name={@name}
         value={Phoenix.HTML.Form.normalize_value(@type, @value)}
-        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none focus:[box-shadow:0_0_0_3px_rgba(108,160,234,0.35)] text-surface-800 border-primary-400 bg-surface-300"
-        style="--bond-placeholder: var(--color-surface-400)"
+        class="bond-input w-full px-3 py-1.5 text-sm border-b-2 rounded-sm transition-shadow focus:outline-none text-surface-800 border-primary-400 bg-surface-300"
+        style="--bond-placeholder: var(--color-surface-400); --bond-focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-400) 35%, transparent)"
         {@rest}
       />
       <.input_errors errors={@errors} />
