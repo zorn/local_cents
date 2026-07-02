@@ -28,6 +28,8 @@ defmodule LocalCents.MixProject do
         main: "readme",
         extras: extras(),
         groups_for_extras: groups_for_extras(),
+        groups_for_modules: groups_for_modules(),
+        nest_modules_by_prefix: nest_modules_by_prefix(),
         # The module-boundaries guide names the `Storybook` boundary shim, which
         # is a hidden (`@moduledoc false`) no-op module. Tell ExDoc not to try to
         # autolink it (which would warn).
@@ -100,9 +102,44 @@ defmodule LocalCents.MixProject do
     ]
   end
 
+  # Groups the "Pages" (extras) in the docs sidebar. Anything not matched here
+  # (README, API Reference) stays ungrouped at the top.
   defp groups_for_extras do
     [
-      Decisions: ~r/docs\/decisions\/[^\/]+\.md/
+      Guides: ~r{docs/(ubiquitous-language|module-boundaries|command-line-history|breadboard-demo)\.md},
+      Decisions: ~r{docs/decisions/}
+    ]
+  end
+
+  # Groups the "Modules" in the docs sidebar. Order matters: a module lands in
+  # the first group it matches, so more specific groups come before the general
+  # `Web` catch-all.
+  defp groups_for_modules do
+    [
+      Core: [
+        LocalCents,
+        LocalCents.Application,
+        LocalCents.Mailer
+      ],
+      Tracking: [~r/^LocalCents\.Tracking/],
+      "Bond Components": [~r/^LocalCentsWeb\.Bond/],
+      Storybook: [~r/^Storybook/, ~r/^LocalCentsWeb\.Storybook/],
+      Web: [~r/^LocalCentsWeb/]
+    ]
+  end
+
+  # Nests deeply-namespaced modules under a common prefix in the sidebar, so the
+  # visible label is just the trailing part (e.g. `LocalCentsWeb.Bond.Elements.Button`
+  # displays as `Button`). This keeps long names from being truncated. ExDoc uses
+  # the longest matching prefix for each module.
+  defp nest_modules_by_prefix do
+    [
+      LocalCents.Tracking,
+      LocalCentsWeb.Bond.Composites,
+      LocalCentsWeb.Bond.Elements,
+      LocalCentsWeb.Bond.Layouts,
+      LocalCentsWeb.Plugs,
+      LocalCentsWeb.Storybook
     ]
   end
 
