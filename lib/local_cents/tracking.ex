@@ -35,6 +35,8 @@ defmodule LocalCents.Tracking do
   alias LocalCents.Tracking.ExAutomerge
   alias LocalCents.Tracking.Expense
 
+  require Logger
+
   @doc """
   Creates a new, empty Book named `name`, persists it, and starts its runtime
   process. Returns the `Book`.
@@ -78,9 +80,22 @@ defmodule LocalCents.Tracking do
   """
   @spec list_books() :: [Book.t()]
   def list_books do
-    for id <- BookStore.list_ids(), {:ok, doc} <- [BookStore.load(id)] do
-      %Book{id: id, name: ExAutomerge.document_name(doc)}
+    BookStore.list_ids()
+    |> Enum.map(&read_book/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  # Reads one Book's identity, tolerating a file that cannot be read or is not a
+  # valid Book document, so a single bad `.lcbook` never blanks the whole library.
+  defp read_book(id) do
+    case BookStore.load(id) do
+      {:ok, doc} -> %Book{id: id, name: ExAutomerge.document_name(doc)}
+      {:error, _reason} -> nil
     end
+  rescue
+    ArgumentError ->
+      Logger.warning("Skipping unreadable book file #{inspect(id)} (not a valid Book document)")
+      nil
   end
 
   @doc """
@@ -109,7 +124,7 @@ defmodule LocalCents.Tracking do
   Returns `{:error, reason}` if persisting the change fails.
   """
   @spec add_expense(String.t(), Expense.t()) :: :ok | {:error, term()}
-  def add_expense(id, %Expense{description: description, amount: amount}) do
+  def add_expense(id, %Expense{description: description, amount: amount}) when is_binary(id) do
     BookServer.add_expense(id, description, amount)
   end
 

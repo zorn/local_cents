@@ -29,6 +29,15 @@ defmodule LocalCents.Tracking.BookStoreTest do
     test "load/1 returns an error for an unknown id" do
       assert {:error, :enoent} = BookStore.load(BookStore.generate_id())
     end
+
+    test "overwriting is atomic and leaves no temporary file behind", %{books_dir: dir} do
+      id = BookStore.generate_id()
+      :ok = BookStore.save(id, "first")
+      :ok = BookStore.save(id, "second")
+
+      assert {:ok, "second"} = BookStore.load(id)
+      assert Path.wildcard(Path.join(dir, "*.tmp")) == []
+    end
   end
 
   describe "list_ids/0" do

@@ -6,7 +6,6 @@ defmodule LocalCents.Tracking.BookServerTest do
 
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
-  alias LocalCents.Tracking.BookStore
 
   setup :with_temp_books_dir
 
@@ -20,15 +19,19 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert id == book.id
   end
 
-  test "a failed persist returns an error, keeps state, and does not broadcast" do
+  test "a failed persist returns an error, keeps state, and does not broadcast", %{books_dir: dir} do
     {:ok, book} = Tracking.create_book("Family")
     :ok = Tracking.subscribe(book.id)
 
-    # Make the .lcbook file unwritable so the next save fails (non-root).
-    File.chmod!(BookStore.path(book.id), 0o444)
+    # Make the books directory read-only so the atomic write (temp file + rename)
+    # cannot create its temp file (non-root).
+    File.chmod!(dir, 0o555)
 
     assert {:error, _reason} =
              Tracking.add_expense(book.id, %Tracking.Expense{description: "Coffee", amount: 500})
+
+    # Restore write access so the temp-dir cleanup can remove the directory.
+    File.chmod!(dir, 0o755)
 
     # Persist-then-commit: the in-memory document was not updated, no broadcast fired,
     # and the server stayed alive rather than crashing and losing the change.

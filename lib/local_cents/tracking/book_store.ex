@@ -58,13 +58,24 @@ defmodule LocalCents.Tracking.BookStore do
 
   @doc """
   Writes the document `bytes` for `id` to its `.lcbook` file.
+
+  Writes to a temporary file and atomically renames it into place, so a crash or
+  power loss mid-write leaves the previous `.lcbook` intact rather than a truncated,
+  unreadable file. A leftover `.tmp` from an interrupted write is ignored by
+  `list_ids/0` (which only matches `*.lcbook`).
   """
   @spec save(String.t(), binary()) :: :ok | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
-  # The path comes from `path/1`, which raises unless `id` is a single safe path
+  # Paths derive from `path/1`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
+  # (`File.rename/2` is not a traversal sink sobelow checks.)
   def save(id, bytes) when is_binary(id) and is_binary(bytes) do
-    File.write(path(id), bytes)
+    final = path(id)
+    tmp = final <> ".tmp"
+
+    with :ok <- File.write(tmp, bytes) do
+      File.rename(tmp, final)
+    end
   end
 
   @doc """

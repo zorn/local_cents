@@ -83,15 +83,17 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc "Appends an expense, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
   @spec add_expense(String.t(), String.t(), integer()) :: :ok | {:error, term()}
-  def add_expense(id, description, amount) do
+  def add_expense(id, description, amount) when is_binary(id) do
     GenServer.call(via(id), {:add_expense, description, amount})
   end
 
   @doc "Renames the Book, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
   @spec rename(String.t(), String.t()) :: :ok | {:error, term()}
-  def rename(id, new_name), do: GenServer.call(via(id), {:rename, new_name})
+  def rename(id, new_name) when is_binary(id) do
+    GenServer.call(via(id), {:rename, new_name})
+  end
 
-  @doc "Persists a final time and stops the process."
+  @doc "Stops the process. The document is already persisted after every change."
   @spec close(String.t()) :: :ok
   def close(id), do: GenServer.stop(via(id))
 
@@ -124,14 +126,6 @@ defmodule LocalCents.Tracking.BookServer do
 
   def handle_call({:rename, new_name}, _from, state) do
     commit(state, ExAutomerge.rename(state.doc, new_name))
-  end
-
-  # A resident process still persists on every change; `terminate/2` is a
-  # best-effort final save for the explicit-close path.
-  @impl GenServer
-  def terminate(_reason, state) do
-    BookStore.save(state.id, state.doc)
-    :ok
   end
 
   # Persist first, commit to memory second: the new document is adopted (and

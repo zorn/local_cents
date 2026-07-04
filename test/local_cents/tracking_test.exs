@@ -77,6 +77,21 @@ defmodule LocalCents.TrackingTest do
       by_id = Map.new(Tracking.list_books(), &{&1.id, &1.name})
       assert by_id == %{a.id => "Family", b.id => "Business"}
     end
+
+    test "skips a file that is not a valid Book document", %{books_dir: dir} do
+      {:ok, book} = Tracking.create_book("Family")
+      # A readable .lcbook file that is not a valid Automerge/Book document must
+      # not blank the whole library.
+      File.write!(Path.join(dir, "bad00000-0000-4000-8000-000000000000.lcbook"), "garbage")
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert [%Book{id: id, name: "Family"}] = Tracking.list_books()
+          assert id == book.id
+        end)
+
+      assert log =~ "Skipping unreadable book file"
+    end
   end
 
   describe "open_book/1 and close_book/1" do
