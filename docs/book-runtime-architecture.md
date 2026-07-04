@@ -27,19 +27,19 @@ Book, on demand.
 
 ```mermaid
 graph TD
-    App["LocalCents.Application<br/><small>Supervisor · :one_for_one</small>"]
+    App["LocalCents.Application<br/><small>Supervisor, :one_for_one</small>"]
 
     Tel["LocalCentsWeb.Telemetry"]
     PS["Phoenix.PubSub<br/><small>name: LocalCents.PubSub</small>"]
     EK["ElixirKit.PubSub<br/><small>Rust/Tauri bridge</small>"]
     EP["LocalCentsWeb.Endpoint"]
 
-    TS["LocalCents.Tracking.Supervisor<br/><small>Supervisor · :one_for_one</small>"]
-    Reg["LocalCents.Tracking.BookRegistry<br/><small>Registry · :unique</small>"]
-    DS["LocalCents.Tracking.BookSupervisor<br/><small>DynamicSupervisor · :one_for_one</small>"]
+    TS["LocalCents.Tracking.Supervisor<br/><small>Supervisor, :one_for_one</small>"]
+    Reg["LocalCents.Tracking.BookRegistry<br/><small>Registry, :unique</small>"]
+    DS["LocalCents.Tracking.BookSupervisor<br/><small>DynamicSupervisor, :one_for_one</small>"]
 
-    BS1["BookServer<br/><small>label {:book_server, id-a}</small>"]
-    BS2["BookServer<br/><small>label {:book_server, id-b}</small>"]
+    BS1["BookServer<br/><small>one open Book</small>"]
+    BS2["BookServer<br/><small>one open Book</small>"]
 
     App --> Tel
     App --> PS
@@ -50,11 +50,11 @@ graph TD
     TS --> Reg
     TS --> DS
 
-    DS -. started on open .-> BS1
-    DS -. started on open .-> BS2
+    DS -.->|started on open| BS1
+    DS -.->|started on open| BS2
 
-    BS1 -. registers id → pid .-> Reg
-    BS2 -. registers id → pid .-> Reg
+    BS1 -.->|registers id| Reg
+    BS2 -.->|registers id| Reg
 ```
 
 > The `BookServer` children are **transient at the tree level**: none exist until a
@@ -79,29 +79,29 @@ Automerge document (`ExAutomerge`) and the file (`BookStore`).
 
 ```mermaid
 graph LR
-    LV["LiveView<br/><small>(a viewer)</small>"]
+    LV["LiveView<br/><small>a viewer</small>"]
     API["LocalCents.Tracking<br/><small>public API</small>"]
     BSrv["BookServer<br/><small>owns the document</small>"]
-    Auto["ExAutomerge<br/><small>Rust NIF · CRDT ops</small>"]
+    Auto["ExAutomerge<br/><small>Rust NIF, CRDT ops</small>"]
     Store["BookStore<br/><small>.lcbook file I/O</small>"]
-    PS["Phoenix.PubSub<br/><small>topic book:&lt;id&gt;</small>"]
+    PS["Phoenix.PubSub<br/><small>topic book:ID</small>"]
 
-    LV -- "command (add/rename)" --> API
-    API -- "GenServer.call" --> BSrv
-    BSrv -- "apply change" --> Auto
-    BSrv -- "persist" --> Store
-    BSrv -- "broadcast {:book_updated, id}" --> PS
-    PS -- "re-render" --> LV
+    LV -->|command| API
+    API -->|GenServer.call| BSrv
+    BSrv -->|apply change| Auto
+    BSrv -->|persist| Store
+    BSrv -->|broadcast| PS
+    PS -->|re-render| LV
 ```
 
 ### Sequence: adding an expense
 
 ```mermaid
 sequenceDiagram
-    participant LV as LiveView (viewer)
+    participant LV as LiveView viewer
     participant T as LocalCents.Tracking
-    participant BS as BookServer (id)
-    participant EA as ExAutomerge (NIF)
+    participant BS as BookServer
+    participant EA as ExAutomerge NIF
     participant St as BookStore
     participant PS as Phoenix.PubSub
 
@@ -128,7 +128,7 @@ otherwise the dynamic supervisor starts one, which loads the document from disk.
 sequenceDiagram
     participant T as LocalCents.Tracking
     participant DS as BookSupervisor
-    participant BS as BookServer (id)
+    participant BS as BookServer
     participant St as BookStore
 
     T->>DS: start_child({BookServer, id})
@@ -178,9 +178,9 @@ application shuts down.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Resident: open_book / create_book
-    Resident --> Resident: command → persist → broadcast
-    Resident --> [*]: close_book (final persist, stop)
+    [*] --> Resident: open_book or create_book
+    Resident --> Resident: command, persist, broadcast
+    Resident --> [*]: close_book, then stop
 ```
 
 ADR 0007 ultimately calls for the process to persist once more and stop when the
