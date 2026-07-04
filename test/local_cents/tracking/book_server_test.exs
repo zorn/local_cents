@@ -40,6 +40,21 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert BookServer.alive?(book.id)
   end
 
+  test "a command with an out-of-range amount errors without crashing the server" do
+    {:ok, book} = Tracking.create_book("Family")
+    over_i64 = 9_223_372_036_854_775_807 + 1
+
+    assert {:error, _reason} =
+             Tracking.add_expense(book.id, %Tracking.Expense{
+               description: "Over",
+               amount: over_i64
+             })
+
+    # The badarg was caught: the server is still alive and holds no expense.
+    assert BookServer.alive?(book.id)
+    assert Tracking.list_expenses(book.id) == []
+  end
+
   test "close_book stops the server for good and it is not restarted" do
     # Regression guard: with the default :permanent restart, the DynamicSupervisor
     # would resurrect a just-closed BookServer (defeating close/1). :transient must

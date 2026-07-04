@@ -34,10 +34,10 @@ fn to_badarg<E>(_: E) -> rustler::Error {
 }
 
 #[rustler::nif]
-fn new_document<'a>(env: Env<'a>, name: String) -> Binary<'a> {
+fn new_document<'a>(env: Env<'a>, name: String) -> Result<Binary<'a>, rustler::Error> {
     let mut doc = AutoCommit::new();
-    reconcile(&mut doc, &BookDoc::empty(name)).expect("reconcile empty BookDoc");
-    binary_from_bytes(env, &doc.save())
+    reconcile(&mut doc, &BookDoc::empty(name)).map_err(to_badarg)?;
+    Ok(binary_from_bytes(env, &doc.save()))
 }
 
 #[rustler::nif]

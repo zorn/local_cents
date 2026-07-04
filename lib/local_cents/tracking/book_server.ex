@@ -121,11 +121,20 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   def handle_call({:add_expense, description, amount}, _from, state) do
-    commit(state, ExAutomerge.add_expense(state.doc, description, amount))
+    change(state, fn doc -> ExAutomerge.add_expense(doc, description, amount) end)
   end
 
   def handle_call({:rename, new_name}, _from, state) do
-    commit(state, ExAutomerge.rename(state.doc, new_name))
+    change(state, fn doc -> ExAutomerge.rename(doc, new_name) end)
+  end
+
+  # Applies a document transform, then persists-then-commits. A NIF badarg (e.g. an
+  # amount outside i64 range) raises `ArgumentError`; catch it so a bad command
+  # returns an error to the caller instead of crashing the process and losing it.
+  defp change(state, transform) do
+    commit(state, transform.(state.doc))
+  rescue
+    e in ArgumentError -> {:reply, {:error, e}, state}
   end
 
   # Persist first, commit to memory second: the new document is adopted (and

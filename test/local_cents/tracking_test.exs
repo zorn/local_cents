@@ -52,6 +52,15 @@ defmodule LocalCents.TrackingTest do
       assert %Expense{description: "Lunch", amount: 1200} in expenses
       assert %Expense{description: "Bus", amount: 250} in expenses
     end
+
+    test "returns {:error, :not_open} when the book's process is not running" do
+      id = "11111111-1111-4111-8111-111111111111"
+
+      assert {:error, :not_open} =
+               Tracking.add_expense(id, %Expense{description: "Coffee", amount: 500})
+
+      assert {:error, :not_open} = Tracking.rename_book(id, "New Name")
+    end
   end
 
   describe "rename_book/2" do

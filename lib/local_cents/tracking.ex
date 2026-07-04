@@ -48,6 +48,12 @@ defmodule LocalCents.Tracking do
     with :ok <- BookStore.save(id, ExAutomerge.new_document(name)),
          {:ok, _pid} <- BookServer.ensure_started(id) do
       {:ok, %Book{id: id, name: name}}
+    else
+      {:error, reason} ->
+        # If the process failed to start after the file was written, remove it so a
+        # phantom Book doesn't linger in `list_books/0`. (A no-op if save failed.)
+        BookStore.delete(id)
+        {:error, reason}
     end
   end
 
@@ -70,6 +76,10 @@ defmodule LocalCents.Tracking do
   def close_book(id) when is_binary(id) do
     if BookServer.alive?(id), do: BookServer.close(id)
     :ok
+  catch
+    # The server can die between alive?/1 and close/1; GenServer.stop then exits
+    # :noproc. Closing an already-gone Book is still success.
+    :exit, _ -> :ok
   end
 
   @doc """
@@ -89,8 +99,12 @@ defmodule LocalCents.Tracking do
   # valid Book document, so a single bad `.lcbook` never blanks the whole library.
   defp read_book(id) do
     case BookStore.load(id) do
-      {:ok, doc} -> %Book{id: id, name: ExAutomerge.document_name(doc)}
-      {:error, _reason} -> nil
+      {:ok, doc} ->
+        %Book{id: id, name: ExAutomerge.document_name(doc)}
+
+      {:error, reason} ->
+        Logger.warning("Skipping unreadable book file #{inspect(id)}: #{inspect(reason)}")
+        nil
     end
   rescue
     ArgumentError ->
@@ -109,23 +123,29 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
-  Renames an open Book. The process must be running (`open_book/1`).
+  Renames an open Book.
 
-  Returns `{:error, reason}` if persisting the change fails.
+  Returns `{:error, :not_open}` if the Book's process is not running
+  (`open_book/1`), or `{:error, reason}` if persisting the change fails.
   """
   @spec rename_book(String.t(), String.t()) :: :ok | {:error, term()}
   def rename_book(id, new_name) when is_binary(id) and is_binary(new_name) do
     BookServer.rename(id, new_name)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
   end
 
   @doc """
-  Adds an expense to an open Book. The process must be running (`open_book/1`).
+  Adds an expense to an open Book.
 
-  Returns `{:error, reason}` if persisting the change fails.
+  Returns `{:error, :not_open}` if the Book's process is not running
+  (`open_book/1`), or `{:error, reason}` if persisting the change fails.
   """
   @spec add_expense(String.t(), Expense.t()) :: :ok | {:error, term()}
   def add_expense(id, %Expense{description: description, amount: amount}) when is_binary(id) do
     BookServer.add_expense(id, description, amount)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
   end
 
   @doc """
