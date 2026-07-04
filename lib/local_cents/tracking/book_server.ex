@@ -4,11 +4,14 @@ defmodule LocalCents.Tracking.BookServer do
   document for a single *open* Book and is the single source of truth for it (see
   [ADR 0007](0007-book-runtime-and-persistence.html)).
 
-  Every command (add expense, rename) is applied to the in-memory document, then
-  persisted through `LocalCents.Tracking.BookStore`, then **broadcast** on the
-  Book's `Phoenix.PubSub` topic so that any subscribed LiveView re-renders. Book
-  state deliberately never lives in a LiveView socket, which is what lets several
-  viewers share one Book without divergence (needed for the future web version).
+  Every command (add expense, rename) computes the new document, **persists it
+  through `LocalCents.Tracking.BookStore` first, and only then commits it to memory
+  and broadcasts** on the Book's `Phoenix.PubSub` topic so that any subscribed
+  LiveView re-renders. If the write fails the in-memory state is left untouched and
+  the error is returned to the caller, so a failed save never silently loses a
+  change. Book state deliberately never lives in a LiveView socket, which is what
+  lets several viewers share one Book without divergence (needed for the future web
+  version).
 
   Processes are registered by Book id in `LocalCents.Tracking.BookRegistry` and
   started under `LocalCents.Tracking.BookSupervisor`.
@@ -78,14 +81,14 @@ defmodule LocalCents.Tracking.BookServer do
   @spec list_expenses(String.t()) :: [map()]
   def list_expenses(id), do: GenServer.call(via(id), :list_expenses)
 
-  @doc "Appends an expense, persists, and broadcasts."
-  @spec add_expense(String.t(), String.t(), integer()) :: :ok
+  @doc "Appends an expense, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
+  @spec add_expense(String.t(), String.t(), integer()) :: :ok | {:error, term()}
   def add_expense(id, description, amount) do
     GenServer.call(via(id), {:add_expense, description, amount})
   end
 
-  @doc "Renames the Book, persists, and broadcasts."
-  @spec rename(String.t(), String.t()) :: :ok
+  @doc "Renames the Book, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
+  @spec rename(String.t(), String.t()) :: :ok | {:error, term()}
   def rename(id, new_name), do: GenServer.call(via(id), {:rename, new_name})
 
   @doc "Persists a final time and stops the process."
@@ -116,13 +119,11 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   def handle_call({:add_expense, description, amount}, _from, state) do
-    doc = ExAutomerge.add_expense(state.doc, description, amount)
-    {:reply, :ok, persist_and_broadcast(%{state | doc: doc})}
+    commit(state, ExAutomerge.add_expense(state.doc, description, amount))
   end
 
   def handle_call({:rename, new_name}, _from, state) do
-    doc = ExAutomerge.rename(state.doc, new_name)
-    {:reply, :ok, persist_and_broadcast(%{state | doc: doc})}
+    commit(state, ExAutomerge.rename(state.doc, new_name))
   end
 
   # A resident process still persists on every change; `terminate/2` is a
@@ -133,10 +134,19 @@ defmodule LocalCents.Tracking.BookServer do
     :ok
   end
 
-  defp persist_and_broadcast(state) do
-    :ok = BookStore.save(state.id, state.doc)
-    Phoenix.PubSub.broadcast(LocalCents.PubSub, topic(state.id), {:book_updated, state.id})
-    state
+  # Persist first, commit to memory second: the new document is adopted (and
+  # subscribers notified) only if it reached disk. A failed write — e.g. a full
+  # disk — leaves the in-memory state untouched and returns the error to the
+  # caller, rather than crashing and losing the change on restart.
+  defp commit(state, new_doc) do
+    case BookStore.save(state.id, new_doc) do
+      :ok ->
+        Phoenix.PubSub.broadcast(LocalCents.PubSub, topic(state.id), {:book_updated, state.id})
+        {:reply, :ok, %{state | doc: new_doc}}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @doc "The `Phoenix.PubSub` topic a subscriber listens on for a Book's changes."

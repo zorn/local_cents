@@ -6,6 +6,7 @@ defmodule LocalCents.Tracking.BookServerTest do
 
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
+  alias LocalCents.Tracking.BookStore
 
   setup :with_temp_books_dir
 
@@ -17,6 +18,23 @@ defmodule LocalCents.Tracking.BookServerTest do
 
     assert_receive {:book_updated, id}
     assert id == book.id
+  end
+
+  test "a failed persist returns an error, keeps state, and does not broadcast" do
+    {:ok, book} = Tracking.create_book("Family")
+    :ok = Tracking.subscribe(book.id)
+
+    # Make the .lcbook file unwritable so the next save fails (non-root).
+    File.chmod!(BookStore.path(book.id), 0o444)
+
+    assert {:error, _reason} =
+             Tracking.add_expense(book.id, %Tracking.Expense{description: "Coffee", amount: 500})
+
+    # Persist-then-commit: the in-memory document was not updated, no broadcast fired,
+    # and the server stayed alive rather than crashing and losing the change.
+    refute_receive {:book_updated, _}
+    assert Tracking.list_expenses(book.id) == []
+    assert BookServer.alive?(book.id)
   end
 
   test "close_book stops the server for good and it is not restarted" do

@@ -95,16 +95,20 @@ defmodule LocalCents.Tracking do
 
   @doc """
   Renames an open Book. The process must be running (`open_book/1`).
+
+  Returns `{:error, reason}` if persisting the change fails.
   """
-  @spec rename_book(String.t(), String.t()) :: :ok
+  @spec rename_book(String.t(), String.t()) :: :ok | {:error, term()}
   def rename_book(id, new_name) when is_binary(id) and is_binary(new_name) do
     BookServer.rename(id, new_name)
   end
 
   @doc """
   Adds an expense to an open Book. The process must be running (`open_book/1`).
+
+  Returns `{:error, reason}` if persisting the change fails.
   """
-  @spec add_expense(String.t(), Expense.t()) :: :ok
+  @spec add_expense(String.t(), Expense.t()) :: :ok | {:error, term()}
   def add_expense(id, %Expense{description: description, amount: amount}) do
     BookServer.add_expense(id, description, amount)
   end

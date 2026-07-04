@@ -35,9 +35,10 @@ defmodule LocalCents.Application do
 
   ## Boundary
 
-  This module is promoted to a top-level `Boundary` so it may depend on both the
-  core (`LocalCents`) and the web layer (`LocalCentsWeb`) to wire everything
-  together, without creating a dependency cycle between those two. See
+  This module is promoted to a top-level `Boundary` so it can depend on the other
+  top-level boundaries it wires into the supervision tree — the web layer
+  (`LocalCentsWeb`) and the tracking context (`LocalCents.Tracking`) — without
+  those layers having to depend on each other. See
   [Module Boundaries](module-boundaries.html).
   """
 

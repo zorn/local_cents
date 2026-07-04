@@ -14,9 +14,11 @@ A Book is persisted as a single Automerge document in a `.lcbook` file. While a 
 is **open**, one `LocalCents.Tracking.BookServer` process holds that document in
 memory and is the *single source of truth* for it. LiveViews never hold Book state;
 they **subscribe** to the Book over `Phoenix.PubSub` and send **commands** to its
-process. The process applies each change, persists it, and **broadcasts** so every
-subscriber re-renders. This is what lets several viewers share one Book without
-divergence — the property the future web version needs.
+process. The process **persists each change first and, only once it is on disk,
+commits it in memory and broadcasts** so every subscriber re-renders; a failed write
+is returned to the caller rather than silently dropped. This is what lets several
+viewers share one Book without divergence — the property the future web version
+needs.
 
 ## Supervision tree
 
@@ -110,13 +112,21 @@ sequenceDiagram
     T->>BS: GenServer.call({:add_expense, desc, amount})
     BS->>EA: add_expense(doc, desc, amount)
     EA-->>BS: new document bytes
-    BS->>St: save(id, bytes) writes ID.lcbook
-    St-->>BS: :ok
-    BS->>PS: broadcast(book:ID, {:book_updated, id})
-    BS-->>T: :ok
-    T-->>LV: :ok
-    PS-->>LV: {:book_updated, id}
-    Note over LV: re-reads via list_expenses(id) and re-renders
+    BS->>St: save(id, new bytes)
+    alt write succeeds (persist-then-commit)
+        St-->>BS: :ok
+        BS->>BS: commit new doc to state
+        BS->>PS: broadcast(book:ID, {:book_updated, id})
+        BS-->>T: :ok
+        T-->>LV: :ok
+        PS-->>LV: {:book_updated, id}
+        Note over LV: re-reads via list_expenses(id) and re-renders
+    else write fails
+        St-->>BS: {:error, reason}
+        Note over BS: state unchanged, no broadcast
+        BS-->>T: {:error, reason}
+        T-->>LV: {:error, reason}
+    end
 ```
 
 ### Sequence: opening (or creating) a Book
