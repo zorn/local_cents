@@ -52,3 +52,19 @@ not query into the CRDT with SQL.
   expected to need dedicated performance testing and possibly incremental
   persistence (append changes rather than rewrite the whole document). Flagged now
   so the concern is on record; not work for the MVP.
+
+## Interim implementation note (MVP)
+
+The runtime landed in #59 with the following choices for the items left open above:
+
+- **Supervision / registry:** a `LocalCents.Tracking.Supervisor` owns a unique
+  `Registry` (`LocalCents.Tracking.BookRegistry`, Book id → process) and a
+  `DynamicSupervisor` (`LocalCents.Tracking.BookSupervisor`) that starts one
+  `LocalCents.Tracking.BookServer` per open Book on demand.
+- **Lifecycle (interim):** a `BookServer` starts on open, persists on every change,
+  and **stays resident until explicitly closed** (`Tracking.close_book/1`) or the app
+  shuts down. The full **auto-shutdown-on-last-viewer** behavior described under
+  "Lifecycle" above is **deferred** until the windows/LiveViews that create
+  subscribers exist — it requires monitoring subscriber presence, which is only
+  meaningfully testable against real viewers. Tracked in
+  [#74](https://github.com/zorn/local_cents/issues/74).

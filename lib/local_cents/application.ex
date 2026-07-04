@@ -47,7 +47,7 @@ defmodule LocalCents.Application do
   # Promoted to a top-level boundary so it can depend on both the core and the
   # web layer to wire up the supervision tree, without creating a dependency
   # cycle between `LocalCents` and `LocalCentsWeb`.
-  use Boundary, top_level?: true, deps: [LocalCents, LocalCentsWeb]
+  use Boundary, top_level?: true, deps: [LocalCents.Tracking, LocalCentsWeb]
 
   use Application
 
@@ -66,6 +66,11 @@ defmodule LocalCents.Application do
       # for `phx.new` parity and in case a networked mode ever wants it.
       {DNSCluster, query: Application.get_env(:local_cents, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: LocalCents.PubSub},
+
+      # The tracking context's per-Book runtime (registry + dynamic supervisor for
+      # `LocalCents.Tracking.BookServer` processes; see ADR 0007). Started after
+      # `Phoenix.PubSub` because a BookServer broadcasts changes over it.
+      LocalCents.Tracking.Supervisor,
 
       # See <https://hexdocs.pm/elixirkit/tauri.html#phoenix-tauri>
       {ElixirKit.PubSub, connect: pubsub || :ignore, on_exit: fn -> System.stop() end},

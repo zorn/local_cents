@@ -10,6 +10,11 @@ config :local_cents, LocalCentsWeb.Endpoint,
 # In test we don't send emails
 config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 
+# Persist Books to a temporary directory during tests so runs never touch the
+# real application-support location. Individual tests override this with their own
+# unique subdirectory (see `LocalCents.Tracking.BookStore`).
+config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_books")
+
 # The endpoint PhoenixTest drives when running feature tests.
 config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 

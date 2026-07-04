@@ -15,9 +15,14 @@ defmodule LocalCents.Tracking.ExAutomerge do
   `ex_automerge` crate (see `native/ex_automerge`). An Automerge document is
   represented on the Elixir side as an **opaque binary** — the serialized bytes of
   the CRDT. We never inspect or build these bytes in Elixir; we pass them back into
-  the NIFs. `LocalCents.Tracking` names that binary type `LocalCents.Tracking.Book`
-  (whose `t()` is just `binary()`) so the rest of the app refers to it in domain
-  terms rather than as raw bytes.
+  the NIFs.
+
+  Each document is a single LocalCents Book: it carries the Book's human-readable
+  `name` alongside its list of expenses (see
+  [ADR 0007](0007-book-runtime-and-persistence.html), which places the name *inside*
+  the document while the Book id lives in the file name). `document_name/1` reads
+  that name back out — the library uses it to enumerate Books without starting a
+  process per file.
 
   Because the document is a CRDT, two independently edited copies can be combined
   with `merge/2` without conflicts, which is the foundation for future
@@ -31,10 +36,25 @@ defmodule LocalCents.Tracking.ExAutomerge do
   use Rustler, otp_app: :local_cents, crate: "ex_automerge"
 
   @doc """
-  Creates a new, empty Automerge document and returns its serialized bytes.
+  Creates a new, empty Automerge document for a Book named `name` and returns its
+  serialized bytes.
   """
-  @spec new_document() :: binary()
-  def new_document, do: :erlang.nif_error(:nif_not_loaded)
+  @spec new_document(String.t()) :: binary()
+  def new_document(_name), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+  Returns the Book name stored in the document.
+  """
+  @spec document_name(binary()) :: String.t()
+  def document_name(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+  Sets the Book name and returns the updated serialized bytes.
+
+  The document is never mutated in place — a new binary is returned.
+  """
+  @spec rename(binary(), String.t()) :: binary()
+  def rename(_doc_bytes, _name), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
   Appends an expense to the document and returns the updated serialized bytes.

@@ -1,1 +1,1 @@
-[verbose: true, private: true, skip: false, router: nil, exit: "Low", format: "txt", out: nil, threshold: :low, ignore: [], ignore_files: [], version: false]
+[verbose: true, private: true, skip: true, router: nil, exit: "Low", format: "txt", out: nil, threshold: :low, ignore: [], ignore_files: [], version: false]

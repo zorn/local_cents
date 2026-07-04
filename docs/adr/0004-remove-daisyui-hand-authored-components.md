@@ -33,7 +33,7 @@ unique, world-class design."
 Remove DaisyUI and build the UI from hand-authored Tailwind components, collected
 in the Bond component library.
 
-The removal ([`254a98e`](254a98e)) deleted both vendored files and stripped the
+The removal ([`254a98e`](https://github.com/zorn/local_cents/commit/254a98e)) deleted both vendored files and stripped the
 DaisyUI wiring from `app.css`, `storybook.css`, the layouts, and `home_live.ex`
 (~1,340 deletions against ~112 insertions). In its place the styling stack is:
 
@@ -41,7 +41,7 @@ DaisyUI wiring from `app.css`, `storybook.css`, the layouts, and `home_live.ex`
   so templates read as content and intent rather than class soup.
 - **Two first-party Tailwind plugins** for the genuinely reusable primitives
   DaisyUI had been covering: `@tailwindcss/typography` (prose) and
-  `@tailwindcss/forms`, both added in [`5724adc`](5724adc) and declared via
+  `@tailwindcss/forms`, both added in [`5724adc`](https://github.com/zorn/local_cents/commit/5724adc) and declared via
   `@plugin` in `app.css`. These are low-level utility plugins, not a component
   library, so they don't undercut the learning goal.
 - **The Bond component library** as the home for every bespoke component

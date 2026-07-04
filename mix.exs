@@ -95,6 +95,7 @@ defmodule LocalCents.MixProject do
       "docs/ui-language.md",
       "docs/software-terms.md",
       "docs/module-boundaries.md",
+      "docs/book-runtime-architecture.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
       "docs/proposals/mvp.md",
@@ -117,7 +118,7 @@ defmodule LocalCents.MixProject do
   defp groups_for_extras do
     [
       Guides:
-        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|command-line-history|breadboard-demo))\.md},
+        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
       Proposals: ~r{docs/proposals/},
       Decisions: ~r{docs/adr/}
     ]

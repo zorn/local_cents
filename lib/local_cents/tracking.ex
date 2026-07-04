@@ -1,47 +1,134 @@
 defmodule LocalCents.Tracking do
   @moduledoc """
-  Provides functions for creating `Book` documents and the managing the `Expense` entries within books.
+  Public API for the tracking context: creating and opening `Book`s and managing
+  the `Expense` entries inside them.
 
-  This module is the public API for the tracking context. Call sites must go
-  through it — the internal implementation (e.g. `ExAutomerge`) is not exported
-  and may not be called from outside this boundary. Only the `Book` and
-  `Expense` types are exported, since they make up the context's contract:
-  `Expense` is a struct, and `Book` is an opaque `binary()` (a serialized
-  Automerge document).
+  Call sites must go through this module — the internal implementation
+  (`BookServer`, `BookStore`, `ExAutomerge`) is not exported and may not be called
+  from outside the boundary. Only the `Book` and `Expense` types are exported,
+  since they make up the context's contract.
+
+  ## How Books live at runtime
+
+  A Book is persisted as one Automerge document in a `.lcbook` file (see
+  [ADR 0009](0009-book-file-format.html)); the library is the enumeration of the
+  books directory. While a Book is open, a per-Book `BookServer` process is the
+  single source of truth for it (see
+  [ADR 0007](0007-book-runtime-and-persistence.html)). Mutating functions here
+  route to that process, which applies the change, persists it, and broadcasts to
+  subscribers; read functions are served from the process's in-memory document.
+
+  Identify a Book by its `id` (a UUID string, also its file name). `create_book/1`
+  and `list_books/0` return `Book` structs pairing that id with the name.
   """
 
   # The tracking context boundary. It is a top-level boundary (a peer of the
   # core and web layers rather than nested inside `LocalCents`) so that other
   # layers can depend on the context directly. It exports only the `Book` and
   # `Expense` types that make up its API contract; the implementation modules
-  # stay private.
-  use Boundary, top_level?: true, deps: [], exports: [Book, Expense]
+  # (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
+  use Boundary, top_level?: true, deps: [], exports: [Book, Expense, Supervisor]
 
   alias LocalCents.Tracking.Book
+  alias LocalCents.Tracking.BookServer
+  alias LocalCents.Tracking.BookStore
   alias LocalCents.Tracking.ExAutomerge
   alias LocalCents.Tracking.Expense
 
-  @spec new_book() :: Book.t()
-  def new_book do
-    ExAutomerge.new_document()
+  @doc """
+  Creates a new, empty Book named `name`, persists it, and starts its runtime
+  process. Returns the `Book`.
+  """
+  @spec create_book(String.t()) :: {:ok, Book.t()} | {:error, term()}
+  def create_book(name) when is_binary(name) do
+    id = BookStore.generate_id()
+
+    with :ok <- BookStore.save(id, ExAutomerge.new_document(name)),
+         {:ok, _pid} <- BookServer.ensure_started(id) do
+      {:ok, %Book{id: id, name: name}}
+    end
   end
 
-  @spec add_expense(Book.t(), Expense.t()) :: Book.t()
-  def add_expense(book, %Expense{description: description, amount: amount}) do
-    ExAutomerge.add_expense(book, description, amount)
+  @doc """
+  Ensures the Book's runtime process is running (idempotent). Returns `:ok` or an
+  error if no Book with `id` exists on disk.
+  """
+  @spec open_book(String.t()) :: :ok | {:error, term()}
+  def open_book(id) when is_binary(id) do
+    case BookServer.ensure_started(id) do
+      {:ok, _pid} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
-  @spec list_expenses(Book.t()) :: [Expense.t()]
-  def list_expenses(book) do
-    book
-    |> ExAutomerge.list_expenses()
+  @doc """
+  Persists and stops the Book's runtime process. The `.lcbook` file remains.
+  """
+  @spec close_book(String.t()) :: :ok
+  def close_book(id) when is_binary(id) do
+    if BookServer.alive?(id), do: BookServer.close(id)
+    :ok
+  end
+
+  @doc """
+  Returns every Book found in the books directory, as `Book` structs.
+
+  Reads each file's name directly (matching ADR 0007's "reads a bit of metadata
+  from each file on load") without starting a process per Book.
+  """
+  @spec list_books() :: [Book.t()]
+  def list_books do
+    for id <- BookStore.list_ids(), {:ok, doc} <- [BookStore.load(id)] do
+      %Book{id: id, name: ExAutomerge.document_name(doc)}
+    end
+  end
+
+  @doc """
+  Permanently deletes the Book: stops its process (if running) and removes the
+  `.lcbook` file.
+  """
+  @spec delete_book(String.t()) :: :ok | {:error, term()}
+  def delete_book(id) when is_binary(id) do
+    :ok = close_book(id)
+    BookStore.delete(id)
+  end
+
+  @doc """
+  Renames an open Book. The process must be running (`open_book/1`).
+  """
+  @spec rename_book(String.t(), String.t()) :: :ok
+  def rename_book(id, new_name) when is_binary(id) and is_binary(new_name) do
+    BookServer.rename(id, new_name)
+  end
+
+  @doc """
+  Adds an expense to an open Book. The process must be running (`open_book/1`).
+  """
+  @spec add_expense(String.t(), Expense.t()) :: :ok
+  def add_expense(id, %Expense{description: description, amount: amount}) do
+    BookServer.add_expense(id, description, amount)
+  end
+
+  @doc """
+  Lists the expenses of an open Book. The process must be running (`open_book/1`).
+  """
+  @spec list_expenses(String.t()) :: [Expense.t()]
+  def list_expenses(id) when is_binary(id) do
+    id
+    |> BookServer.list_expenses()
     |> Enum.map(fn %{description: description, amount: amount} ->
       %Expense{description: description, amount: amount}
     end)
   end
 
-  @spec merge(Book.t(), Book.t()) :: Book.t()
-  def merge(left_book, right_book) do
-    ExAutomerge.merge(left_book, right_book)
+  @doc """
+  Subscribes the calling process to a Book's change broadcasts.
+
+  After subscribing, the caller receives `{:book_updated, id}` messages whenever
+  the Book changes and should re-read via `list_expenses/1`.
+  """
+  @spec subscribe(String.t()) :: :ok | {:error, term()}
+  def subscribe(id) when is_binary(id) do
+    Phoenix.PubSub.subscribe(LocalCents.PubSub, BookServer.topic(id))
   end
 end
