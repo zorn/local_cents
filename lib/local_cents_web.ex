@@ -65,6 +65,8 @@ defmodule LocalCentsWeb do
     quote do
       use Phoenix.LiveView
 
+      import LocalCentsWeb.LiveViewPipes
+
       unquote(html_helpers())
     end
   end

@@ -23,9 +23,15 @@ defmodule LocalCentsWeb.BookLive do
     with :ok <- Tracking.open_book(id),
          %Tracking.Book{} = book <- Tracking.get_book(id) do
       if connected?(socket), do: Tracking.subscribe(id)
-      {:ok, assign(socket, book: book, page_title: book.name)}
+
+      socket
+      |> assign(book: book, page_title: book.name)
+      |> ok()
     else
-      _ -> {:ok, redirect_missing(socket, "That book could not be found.")}
+      _ ->
+        socket
+        |> redirect_missing("That book could not be found.")
+        |> ok()
     end
   end
 
@@ -50,10 +56,14 @@ defmodule LocalCentsWeb.BookLive do
   def handle_info({:book_updated, id}, socket) do
     case Tracking.get_book(id) do
       %Tracking.Book{} = book ->
-        {:noreply, assign(socket, book: book, page_title: book.name)}
+        socket
+        |> assign(book: book, page_title: book.name)
+        |> noreply()
 
       nil ->
-        {:noreply, redirect_missing(socket, "This book was deleted.")}
+        socket
+        |> redirect_missing("This book was deleted.")
+        |> noreply()
     end
   end
 

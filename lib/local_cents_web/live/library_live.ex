@@ -18,7 +18,9 @@ defmodule LocalCentsWeb.LibraryLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, books: Tracking.list_books())}
+    socket
+    |> assign(books: Tracking.list_books())
+    |> ok()
   end
 
   @impl Phoenix.LiveView
@@ -54,13 +56,17 @@ defmodule LocalCentsWeb.LibraryLive do
   def handle_event("create", %{"name" => name}, socket) do
     case name |> String.trim() |> create_book() do
       {:ok, _book} ->
-        {:noreply, assign(socket, books: Tracking.list_books())}
+        socket
+        |> assign(books: Tracking.list_books())
+        |> noreply()
 
       :empty ->
-        {:noreply, socket}
+        noreply(socket)
 
       {:error, _reason} ->
-        {:noreply, put_flash(socket, :error, "Could not create the book.")}
+        socket
+        |> put_flash(:error, "Could not create the book.")
+        |> noreply()
     end
   end
 
@@ -68,10 +74,15 @@ defmodule LocalCentsWeb.LibraryLive do
     with %Tracking.Book{} = book <- Enum.find(socket.assigns.books, &(&1.id == id)),
          :ok <- Tracking.open_book(book.id) do
       DesktopShell.open_book(book)
-      {:noreply, socket}
+      noreply(socket)
     else
-      nil -> {:noreply, socket}
-      {:error, _reason} -> {:noreply, put_flash(socket, :error, "Could not open the book.")}
+      nil ->
+        noreply(socket)
+
+      {:error, _reason} ->
+        socket
+        |> put_flash(:error, "Could not open the book.")
+        |> noreply()
     end
   end
 
