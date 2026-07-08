@@ -44,12 +44,26 @@ runs past a few paragraphs, break it into `##` sections with sentence-case
 headings (`## How it works`, `## Lifecycle`, `## Layout`) the way `Oban` and
 `Phoenix.LiveView` do. This keeps a long doc scannable instead of a wall.
 
-**4. Cross-link deliberately.** Reference other modules in backticks
-(`` `LocalCents.Tracking.BookStore` ``) so ExDoc autolinks them. Link to ADRs
-and guides by their rendered page (e.g.
+**4. Cross-link deliberately — and don't over-link.** Only a **fully-qualified**
+module name autolinks: `` `LocalCents.Tracking.BookStore` `` links, but bare
+`` `BookStore` `` or `` `Book` `` renders as plain code. Because full names are
+heavy to read, choose the form by intent rather than qualifying everything:
+
+- **Naming a domain concept in prose** — use the short backticked name
+  (`` `Book` ``, `` `Expense` ``). It reads as a proper noun and stays light; a
+  link on every mention is noise. No link, and that's fine.
+- **Pointing the reader at a module to go read it** — use the fully-qualified
+  name so it links (`` `LocalCents.Tracking.BookServer` ``). The jump earns the
+  longer text.
+- **You need the link but the full name breaks the sentence** — ExDoc keeps
+  short display text with a working link: `` [`Book`](`LocalCents.Tracking.Book`) ``
+  renders as `Book` and links. Use it sparingly; it's the noisiest to author.
+
+Link ADRs and guides by their rendered page (e.g.
 `[ADR 0007](0007-book-runtime-and-persistence.html)`,
-`[Module Boundaries](module-boundaries.html)`) and to issues by full URL. A
-moduledoc is a hub; wire it into the rest of the docs.
+`[Module Boundaries](module-boundaries.html)`) and issues by full URL. A
+moduledoc is a hub; wire it into the rest of the docs — without turning every
+noun into a link.
 
 **5. Show a small example when there's an API to demonstrate.** Modules with a
 public API that a caller drives benefit from a short fenced ` ```elixir ` block,
@@ -125,3 +139,5 @@ When in doubt, read these — they are the canonical examples of each kind above
 | Public API module      | `LocalCents.Tracking`             |
 | Private implementation | `LocalCents.Tracking.BookServer`  |
 | Data type              | `LocalCents.Tracking.Book`        |
+
+
