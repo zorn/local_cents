@@ -106,10 +106,26 @@ defmodule LocalCents.Tracking.BookServer do
     # Erlang tooling — otherwise a `:via`-registered process shows only its pid.
     Process.set_label({:book_server, id})
 
-    case BookStore.load(id) do
-      {:ok, doc} -> {:ok, %{id: id, doc: doc}}
+    with {:ok, doc} <- BookStore.load(id),
+         :ok <- validate_document(doc) do
+      {:ok, %{id: id, doc: doc}}
+    else
+      {:error, :invalid_document} -> {:stop, {:invalid_document, id}}
       {:error, reason} -> {:stop, {:load_failed, reason}}
     end
+  end
+
+  # Confirm the loaded bytes are a valid Book document before the server starts
+  # serving from them. A readable-but-corrupt `.lcbook` would otherwise start
+  # fine and only blow up later when a NIF raised `ArgumentError` on a `:name`/
+  # `:list_expenses` call — crashing the server and exiting the caller. Reading the
+  # name exercises the parse, so validating here makes `open_book/1` fail
+  # deterministically instead.
+  defp validate_document(doc) do
+    _ = ExAutomerge.document_name(doc)
+    :ok
+  rescue
+    ArgumentError -> {:error, :invalid_document}
   end
 
   @impl GenServer

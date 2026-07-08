@@ -4,8 +4,9 @@ defmodule LocalCents.Tracking do
   the `Expense` entries inside them.
 
   Call sites must go through this module; the internal implementation
-  (`BookServer`, `BookStore`, `ExAutomerge`) is private. Only the `Book` and
-  `Expense` types make up the context's contract.
+  (`BookServer`, `BookStore`, `ExAutomerge`) is private. The `Book` and `Expense`
+  types make up the data contract, and `Supervisor` is exported only so the
+  application supervision tree can start the context's runtime.
 
   ## How Books live at runtime
 
@@ -23,9 +24,10 @@ defmodule LocalCents.Tracking do
 
   # The tracking context boundary. It is a top-level boundary (a peer of the
   # core and web layers rather than nested inside `LocalCents`) so that other
-  # layers can depend on the context directly. It exports only the `Book` and
-  # `Expense` types that make up its API contract; the implementation modules
-  # (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
+  # layers can depend on the context directly. It exports the `Book` and `Expense`
+  # types that make up its API contract, plus `Supervisor` so the application
+  # supervision tree can start the context's runtime; the remaining implementation
+  # modules (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
   use Boundary, top_level?: true, deps: [], exports: [Book, Expense, Supervisor]
 
   alias LocalCents.Tracking.Book

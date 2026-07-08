@@ -76,8 +76,16 @@ defmodule LocalCents.Tracking.BookStore do
     final = path(id)
     tmp = final <> ".tmp"
 
-    with :ok <- File.write(tmp, bytes) do
-      File.rename(tmp, final)
+    with :ok <- File.write(tmp, bytes),
+         :ok <- File.rename(tmp, final) do
+      :ok
+    else
+      {:error, reason} ->
+        # A failed rename (permissions, cross-device, …) leaves the temp file
+        # behind; remove it so errors don't accumulate stale `.tmp` files. Ignore
+        # the cleanup result — the original error is what the caller needs.
+        _ = File.rm(tmp)
+        {:error, reason}
     end
   end
 

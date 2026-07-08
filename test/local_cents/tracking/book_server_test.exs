@@ -55,6 +55,17 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert Tracking.list_expenses(book.id) == []
   end
 
+  test "open_book/1 fails and starts no server for a readable but invalid .lcbook", %{
+    books_dir: dir
+  } do
+    id = "bad00000-0000-4000-8000-000000000000"
+    File.mkdir_p!(dir)
+    File.write!(Path.join(dir, id <> ".lcbook"), "garbage")
+
+    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id)
+    refute BookServer.alive?(id)
+  end
+
   test "close_book stops the server for good and it is not restarted" do
     # Regression guard: with the default :permanent restart, the DynamicSupervisor
     # would resurrect a just-closed BookServer (defeating close/1). :transient must

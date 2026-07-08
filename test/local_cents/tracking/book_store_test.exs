@@ -38,6 +38,16 @@ defmodule LocalCents.Tracking.BookStoreTest do
       assert {:ok, "second"} = BookStore.load(id)
       assert Path.wildcard(Path.join(dir, "*.tmp")) == []
     end
+
+    test "a failed rename returns an error and leaves no temporary file behind", %{books_dir: dir} do
+      # A directory at the final path makes the rename fail (can't rename a file
+      # over a non-empty directory), exercising the error path after the temp write.
+      id = BookStore.generate_id()
+      File.mkdir_p!(Path.join(BookStore.path(id), "occupied"))
+
+      assert {:error, _reason} = BookStore.save(id, "bytes")
+      assert Path.wildcard(Path.join(dir, "*.tmp")) == []
+    end
   end
 
   describe "list_ids/0" do
