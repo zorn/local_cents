@@ -1,7 +1,12 @@
 defmodule LocalCentsWeb.Layouts do
   @moduledoc """
-  This module holds layouts and related functionality
-  used by your application.
+  The app's shared layout shell and flash rendering.
+
+  `app/1` is the outer wrapper every LiveView template begins with; it renders
+  the shared chrome and the flash group around the page's `inner_block`. Because
+  it owns flash rendering, `flash_group/1` lives here too — it is **not** called
+  from anywhere else. The `layouts/*` templates embedded here (`root`, `app`)
+  provide the surrounding HTML document.
   """
   use LocalCentsWeb, :html
 
