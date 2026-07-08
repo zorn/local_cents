@@ -28,6 +28,8 @@ defmodule LocalCentsWeb.Router do
     pipe_through :browser
 
     live "/", HomeLive
+    live "/library", LibraryLive
+    live "/books/:id", BookLive
 
     live_storybook("/storybook", backend_module: LocalCentsWeb.Storybook)
   end

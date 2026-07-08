@@ -2,6 +2,7 @@ LocalCents is an open-source expense-tracking application built with Phoenix Liv
 
 ## Project guidelines
 
+- See [`CODING_STANDARDS.md`](CODING_STANDARDS.md) for the index of how we write code here (moduledocs, `@impl`/`@spec` style, Bond components, boundaries, PubSub, commits); it links each rule's authoritative home
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 - When writing or editing a `@moduledoc`/`@typedoc`, follow the house standard in `docs/moduledoc-style.md` (summary-first line, explain the _why_, link ADRs rather than restate them, and calibrate length to the module's kind)

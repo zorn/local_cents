@@ -111,6 +111,19 @@ defmodule LocalCents.TrackingTest do
     end
   end
 
+  describe "get_book/1" do
+    test "returns the Book for a known id" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert %Book{id: id, name: "Family"} = Tracking.get_book(book.id)
+      assert id == book.id
+    end
+
+    test "returns nil for an unknown id" do
+      assert Tracking.get_book("11111111-1111-4111-8111-111111111111") == nil
+    end
+  end
+
   describe "open_book/1 and close_book/1" do
     test "reopening a closed book still reads its persisted expenses" do
       {:ok, book} = Tracking.create_book("Family")
