@@ -35,9 +35,9 @@ the second to make sense.
 names and typespecs. The moduledoc earns its keep by explaining what the code
 can't: the module's job in the larger system, the modules it collaborates with,
 the invariants it upholds, and the reasoning behind a design that would
-otherwise look arbitrary. `LocalCents.Tracking.BookServer` spends its moduledoc on the
-persist-then-commit ordering and why Book state never lives in a socket —
-exactly the things you can't infer from the callbacks.
+otherwise look arbitrary. `LocalCents.Tracking.BookServer` spends its
+moduledoc on the persist-then-commit ordering and why Book state never lives
+in a socket — exactly the things you can't infer from the callbacks.
 
 **3. Use `##` sections once it grows.** A short moduledoc is just prose. Once it
 runs past a few paragraphs, break it into `##` sections with sentence-case

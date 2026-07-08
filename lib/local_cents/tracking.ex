@@ -13,8 +13,9 @@ defmodule LocalCents.Tracking do
 
   A Book is persisted as one Automerge document in a `.lcbook` file (see
   [ADR 0009](0009-book-file-format.html)); the library is the enumeration of the
-  books directory. While a Book is open, a per-Book `LocalCents.Tracking.BookServer` process is the
-  single source of truth for it (see
+  books directory. While a Book is open, a per-Book
+  [`BookServer`](`LocalCents.Tracking.BookServer`) process is the single source
+  of truth for it (see
   [ADR 0007](0007-book-runtime-and-persistence.html)). Mutating functions here
   route to that process, which applies the change, persists it, and broadcasts to
   subscribers; read functions are served from the process's in-memory document.
