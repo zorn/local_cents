@@ -11,7 +11,9 @@ defmodule LocalCentsWeb.HomeLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, count: 0)}
+    socket
+    |> assign(count: 0)
+    |> ok()
   end
 
   @impl Phoenix.LiveView
@@ -35,6 +37,9 @@ defmodule LocalCentsWeb.HomeLive do
   def handle_event("inc", _params, socket) do
     count = socket.assigns.count + 1
     ElixirKit.PubSub.broadcast("messages", "count:#{count}")
-    {:noreply, assign(socket, count: count)}
+
+    socket
+    |> assign(count: count)
+    |> noreply()
   end
 end
