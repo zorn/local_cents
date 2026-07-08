@@ -1,6 +1,6 @@
 defmodule LocalCents.Tracking do
   @moduledoc """
-  Public API for the tracking context: creating and opening `Book`s and managing
+  The tracking context's public API — creating and opening `Book`s and managing
   the `Expense` entries inside them.
 
   Call sites must go through this module; the internal implementation

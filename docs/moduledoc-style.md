@@ -80,10 +80,11 @@ one of them and link rather than restate.
 Calibrate the length to the module's kind. A context has three kinds of module,
 and `LocalCents.Tracking` has an exemplar of each; use them as templates.
 
-- **The public API** (`LocalCents.Tracking`) — the fullest moduledoc in a
-  context. Cover the API surface at a high level, the runtime model, and how
-  callers identify and refer to entities. This is the front door; spend words
-  here.
+- **The public API module** (`LocalCents.Tracking`) — the context's front door,
+  and the fullest moduledoc in a context. Cover the API surface at a high level,
+  the runtime model, and how callers identify and refer to entities. Spend words
+  here. ("Public API" always names this module, never the context as a whole —
+  the context is the whole territory; this is the door into it.)
 - **The private implementation** (`LocalCents.Tracking.BookServer`,
   `LocalCents.Tracking.BookStore`, `LocalCents.Tracking.ExAutomerge`,
   `LocalCents.Tracking.Supervisor`) — everything behind that front door. Open by
@@ -121,6 +122,6 @@ When in doubt, read these — they are the canonical examples of each kind above
 
 | Kind                   | Module                            |
 | ---------------------- | --------------------------------- |
-| Public API             | `LocalCents.Tracking`             |
+| Public API module      | `LocalCents.Tracking`             |
 | Private implementation | `LocalCents.Tracking.BookServer`  |
 | Data type              | `LocalCents.Tracking.Book`        |
