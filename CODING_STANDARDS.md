@@ -1,0 +1,92 @@
+# Coding standards
+
+How we write code in LocalCents. This file is an **index**: where a rule already
+has an authoritative home — a guide, an ADR, or `CLAUDE.md` — this file links
+there instead of restating it, matching the house rule of keeping each fact in
+one place (see [`docs/moduledoc-style.md`](docs/moduledoc-style.md)). Rules that
+had no home in the repo before are written out here in full.
+
+`/code-review`'s Standards axis discovers this file automatically. Keep it current
+as conventions land, and add a link here rather than a second copy when a rule
+gets its own guide or ADR.
+
+## Elixir & Phoenix
+
+- **Moduledocs & typedocs** — follow the house style in
+  [`docs/moduledoc-style.md`](docs/moduledoc-style.md): summary-first line, explain
+  the _why_, link ADRs by rendered page, backtick domain concepts (`` `Book` ``).
+  Audit every moduledoc you touch against it as an end-of-feature step, not only in
+  review.
+
+- **`@impl` names the behaviour; never `@impl true`.** Annotate callbacks with the
+  explicit behaviour module — `@impl Phoenix.LiveView`, `@impl Phoenix.Component`,
+  `@impl GenServer`, and so on. `@impl true` is ambiguous about which contract the
+  callback belongs to; the module name makes it clear at a glance.
+
+- **Component `@spec`s use `Socket.assigns()` and `Rendered.t()`, not `map()`.** For
+  a Phoenix component function, alias the types once at the top of the module and
+  use the short form:
+
+  ```elixir
+  alias Phoenix.LiveView.Rendered
+  alias Phoenix.LiveView.Socket
+
+  @spec my_component(Socket.assigns()) :: Rendered.t()
+  def my_component(assigns) do
+  ```
+
+  `Socket.assigns()` is the precise public type (`map | assigns_not_in_socket()`);
+  the aliases keep the spec line readable.
+
+- **Phoenix v1.8 conventions** — the `<Layouts.app flash={@flash} …>` wrapper on
+  every LiveView template, the imported `<.input>` / `<.icon>` components,
+  authenticated-route / `current_scope` rules, and `Req` as the HTTP client — are
+  documented in [`CLAUDE.md`](CLAUDE.md).
+
+## Frontend (JS, CSS, components)
+
+- **No npm.** Keep `package.json` / `node_modules` out of the project as long as
+  possible. Vendor JS/CSS dependencies as local files under `assets/vendor/` and
+  reference them from `app.js` / `app.css` (e.g. `@plugin "../vendor/<name>"`).
+
+- **Tailwind v4 and hand-authored components** — the `@import "tailwindcss"` /
+  `@source` syntax, no `@apply` in raw CSS, and hand-writing components instead of
+  daisyUI — are documented in [`CLAUDE.md`](CLAUDE.md).
+
+- **New or changed UI is a Bond component with a mirrored Storybook story.** Add
+  components under `lib/local_cents_web/bond/{elements,composites,layouts}/` and
+  give each a mirrored story in `storybook/`; a component is not done until it
+  appears in Storybook. Where Bond lives and why:
+  [ADR 0003](docs/adr/0003-bond-namespace-location.md). Note that
+  `bond/composites/expense_cell.ex` and `bond/elements/tag_pill.ex` still encode
+  the pre-decision "tags" design and need reworking to the single-Category model
+  ([ADR 0005](docs/adr/0005-categories-not-tags.md)).
+
+## Architecture
+
+- **Module boundaries** — contexts are top-level boundaries that export only their
+  API, and the `:boundary` compiler must run first. Full conventions and gotchas:
+  [`docs/module-boundaries.md`](docs/module-boundaries.md).
+
+- **PubSub topic naming** — `"<kind>:<id>"`, owned by the broadcasting module via a
+  `topic/1` function so callers never hand-build the string:
+  [ADR 0011](docs/adr/0011-pubsub-topic-naming.md). All architecture decisions live
+  in [`docs/adr/`](docs/adr/).
+
+## Rust & Tauri
+
+- Keep Rust minimal — native window management and process lifecycle only.
+  Business logic stays in Elixir; do not add a new IPC channel or a
+  `#[tauri::command]` for data work. The `elixirkit` PubSub bridge is the intended
+  extension point. See [`CLAUDE.md`](CLAUDE.md) and
+  [ADR 0006](docs/adr/0006-multi-window-desktop-shell.md).
+
+## Commits & PRs
+
+- Commits and PRs carry **no AI attribution or co-authorship trailers** — attribution
+  is to the human author.
+- PR titles follow conventional commits with a lowercase-starting subject
+  (e.g. `feat: add multi-window desktop shell`).
+- `mix precommit` (compile `--warnings-as-errors`, `deps.unlock --check-unused`,
+  `format`, `credo --strict`, `dialyzer`, `sobelow`, `test`) must pass before a
+  change is considered done.
