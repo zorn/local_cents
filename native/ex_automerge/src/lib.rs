@@ -9,13 +9,15 @@ pub struct Expense {
 }
 
 #[derive(Reconcile, Hydrate, Clone, Debug)]
-struct ExpenseDoc {
+struct BookDoc {
+    name: String,
     expenses: Vec<Expense>,
 }
 
-impl ExpenseDoc {
-    fn empty() -> Self {
+impl BookDoc {
+    fn empty(name: String) -> Self {
         Self {
+            name,
             expenses: Vec::new(),
         }
     }
@@ -32,10 +34,26 @@ fn to_badarg<E>(_: E) -> rustler::Error {
 }
 
 #[rustler::nif]
-fn new_document<'a>(env: Env<'a>) -> Binary<'a> {
+fn new_document<'a>(env: Env<'a>, name: String) -> Result<Binary<'a>, rustler::Error> {
     let mut doc = AutoCommit::new();
-    reconcile(&mut doc, &ExpenseDoc::empty()).expect("reconcile empty ExpenseDoc");
-    binary_from_bytes(env, &doc.save())
+    reconcile(&mut doc, &BookDoc::empty(name)).map_err(to_badarg)?;
+    Ok(binary_from_bytes(env, &doc.save()))
+}
+
+#[rustler::nif]
+fn document_name(doc_bytes: Binary) -> Result<String, rustler::Error> {
+    let doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
+    let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
+    Ok(state.name)
+}
+
+#[rustler::nif]
+fn rename<'a>(env: Env<'a>, doc_bytes: Binary, name: String) -> Result<Binary<'a>, rustler::Error> {
+    let mut doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
+    let mut state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
+    state.name = name;
+    reconcile(&mut doc, &state).map_err(to_badarg)?;
+    Ok(binary_from_bytes(env, &doc.save()))
 }
 
 #[rustler::nif]
@@ -46,7 +64,7 @@ fn add_expense<'a>(
     amount: i64,
 ) -> Result<Binary<'a>, rustler::Error> {
     let mut doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
-    let mut state: ExpenseDoc = hydrate(&doc).map_err(to_badarg)?;
+    let mut state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
     state.expenses.push(Expense {
         description,
         amount,
@@ -58,7 +76,7 @@ fn add_expense<'a>(
 #[rustler::nif]
 fn list_expenses(doc_bytes: Binary) -> Result<Vec<Expense>, rustler::Error> {
     let doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
-    let state: ExpenseDoc = hydrate(&doc).map_err(to_badarg)?;
+    let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
     Ok(state.expenses)
 }
 

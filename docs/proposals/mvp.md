@@ -8,7 +8,7 @@ win.)_
 This document is the agreed scope for the first buildable slice of LocalCents,
 forged in a design session. It is a **summary and index** — the binding decisions
 live in [`CONTEXT.md`](../../CONTEXT.md) (the glossary) and in the ADRs under
-[`docs/adr/`](../adr/), which each section links to. Where this document and an ADR
+[`docs/adr/`](../adr/about.md), which each section links to. Where this document and an ADR
 disagree, the ADR wins.
 
 Implementation is tracked in the Wayfinder map
