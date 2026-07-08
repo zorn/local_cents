@@ -16,23 +16,17 @@ defmodule LocalCentsWeb.DesktopShell do
   the native window `title`.
   """
 
-  # Not a boundary of its own: this is part of the web layer, which already
-  # depends on the tracking context for the `Book` type and reaches the
-  # `ElixirKit.PubSub` bridge exactly as `LocalCentsWeb.HomeLive` does.
   alias LocalCents.Tracking.Book
 
   # The one duplex channel to the native shell. Fixed on both sides; see the
   # `ElixirKit.PubSub` bridge notes in `CLAUDE.md` and ADR 0011's final section.
   @channel "messages"
 
-  @doc """
-  Asks the native shell to open (or focus) the document window for `book`.
-
-  Fire-and-forget: the broadcast is a no-op when no native shell is connected
-  (dev via `mix phx.server`, tests), so this is safe to call from any LiveView.
-  """
+  @doc "Asks the native shell to open (or focus) the document window for `book`."
   @spec open_book(Book.t()) :: :ok
   def open_book(%Book{} = book) do
+    # Fire-and-forget: a no-op when no native shell is connected (dev via
+    # `mix phx.server`, tests), so this is safe to call from any LiveView.
     ElixirKit.PubSub.broadcast(@channel, open_book_command(book))
   end
 

@@ -16,17 +16,16 @@ defmodule LocalCentsWeb.BookLive do
 
   @impl Phoenix.LiveView
   def mount(%{"id" => id}, _session, socket) do
-    case Tracking.open_book(id) do
-      :ok ->
-        if connected?(socket), do: Tracking.subscribe(id)
-        book = Tracking.get_book(id)
-        {:ok, assign(socket, book: book, page_title: book_title(book))}
-
-      {:error, _reason} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "That book could not be found.")
-         |> push_navigate(to: ~p"/library")}
+    # `open_book/1` fails for an id with no `.lcbook` on disk; `get_book/1` still
+    # returns nil if the file vanished between the two calls (a delete race). Both
+    # mean "no Book to show here", so both fall through to the library redirect
+    # and `@book` is only ever a real struct by the time `render/1` runs.
+    with :ok <- Tracking.open_book(id),
+         %Tracking.Book{} = book <- Tracking.get_book(id) do
+      if connected?(socket), do: Tracking.subscribe(id)
+      {:ok, assign(socket, book: book, page_title: book.name)}
+    else
+      _ -> {:ok, redirect_missing(socket, "That book could not be found.")}
     end
   end
 
@@ -44,13 +43,23 @@ defmodule LocalCentsWeb.BookLive do
     """
   end
 
-  # Re-read the Book's identity on change so a rename reflects in the title.
+  # Re-read the Book's identity on change so a rename reflects in the title. A
+  # broadcast can also announce a deletion, in which case the Book is gone and the
+  # window closes to the library with a notice (ADR 0006).
   @impl Phoenix.LiveView
   def handle_info({:book_updated, id}, socket) do
-    book = Tracking.get_book(id)
-    {:noreply, assign(socket, book: book, page_title: book_title(book))}
+    case Tracking.get_book(id) do
+      %Tracking.Book{} = book ->
+        {:noreply, assign(socket, book: book, page_title: book.name)}
+
+      nil ->
+        {:noreply, redirect_missing(socket, "This book was deleted.")}
+    end
   end
 
-  defp book_title(nil), do: "LocalCents"
-  defp book_title(%Tracking.Book{name: name}), do: name
+  defp redirect_missing(socket, message) do
+    socket
+    |> put_flash(:error, message)
+    |> push_navigate(to: ~p"/library")
+  end
 end

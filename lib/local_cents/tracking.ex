@@ -100,13 +100,13 @@ defmodule LocalCents.Tracking do
 
   @doc """
   Returns the `Book` with `id`, or `nil` if no such Book exists in the library.
-
-  A single-Book counterpart to `list_books/0` for callers that already hold an
-  id — e.g. the document view resolving its Book on mount.
   """
   @spec get_book(Book.id()) :: Book.t() | nil
   def get_book(id) when is_binary(id) do
-    Enum.find(list_books(), &(&1.id == id))
+    # Read only this Book's file rather than enumerating the whole library. The
+    # `list_ids/0` guard keeps an absent id quiet (no `read_book/1` warning) and
+    # cheap (a directory listing, not a parse of every `.lcbook`).
+    if id in BookStore.list_ids(), do: read_book(id)
   end
 
   # Reads one Book's identity, tolerating a file that cannot be read or is not a
