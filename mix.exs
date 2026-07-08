@@ -190,7 +190,7 @@ defmodule LocalCents.MixProject do
   defp deps do
     [
       # To help organize and document UI components.
-      {:phoenix_storybook, "~> 1.3"},
+      {:phoenix_storybook, "~> 1.3.0"},
 
       # For documentation generation.
       {:ex_doc, "~> 0.4", only: :dev, runtime: false, warn_if_outdated: true},
@@ -235,7 +235,7 @@ defmodule LocalCents.MixProject do
       # The Phoenix web framework and LiveView, plus dev/test companions.
       {:phoenix, "~> 1.8.7"},
       {:phoenix_html, "~> 4.1"},
-      {:phoenix_live_view, "~> 1.1"},
+      {:phoenix_live_view, "~> 1.2.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:lazy_html, ">= 0.1.0", only: :test},
