@@ -33,6 +33,7 @@ defmodule LocalCents.Tracking.BookServer do
   # `:permanent` would resurrect a just-closed Book, defeating `close/1`.
   use GenServer, restart: :transient
 
+  alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.BookStore
   alias LocalCents.Tracking.ExAutomerge
 
@@ -45,7 +46,7 @@ defmodule LocalCents.Tracking.BookServer do
   Ensures a BookServer for `id` is running, starting it under the supervisor if
   needed. Returns the pid either way.
   """
-  @spec ensure_started(String.t()) :: {:ok, pid()} | {:error, term()}
+  @spec ensure_started(Book.id()) :: {:ok, pid()} | {:error, term()}
   def ensure_started(id) do
     case DynamicSupervisor.start_child(@supervisor, {__MODULE__, id}) do
       {:ok, pid} -> {:ok, pid}
@@ -60,7 +61,7 @@ defmodule LocalCents.Tracking.BookServer do
   The `Registry` clears entries for dead processes asynchronously, so a lookup can
   briefly still return a just-stopped pid; confirm liveness before answering.
   """
-  @spec alive?(String.t()) :: boolean()
+  @spec alive?(Book.id()) :: boolean()
   def alive?(id) do
     case Registry.lookup(@registry, id) do
       [{pid, _}] -> Process.alive?(pid)
@@ -68,33 +69,33 @@ defmodule LocalCents.Tracking.BookServer do
     end
   end
 
-  @spec start_link(String.t()) :: GenServer.on_start()
+  @spec start_link(Book.id()) :: GenServer.on_start()
   def start_link(id) when is_binary(id) do
     GenServer.start_link(__MODULE__, id, name: via(id))
   end
 
   @doc "Returns the Book's name."
-  @spec name(String.t()) :: String.t()
+  @spec name(Book.id()) :: Book.name()
   def name(id), do: GenServer.call(via(id), :name)
 
   @doc "Returns the Book's expenses."
-  @spec list_expenses(String.t()) :: [map()]
+  @spec list_expenses(Book.id()) :: [map()]
   def list_expenses(id), do: GenServer.call(via(id), :list_expenses)
 
   @doc "Appends an expense, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
-  @spec add_expense(String.t(), String.t(), integer()) :: :ok | {:error, term()}
+  @spec add_expense(Book.id(), String.t(), integer()) :: :ok | {:error, term()}
   def add_expense(id, description, amount) when is_binary(id) do
     GenServer.call(via(id), {:add_expense, description, amount})
   end
 
   @doc "Renames the Book, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
-  @spec rename(String.t(), String.t()) :: :ok | {:error, term()}
+  @spec rename(Book.id(), Book.name()) :: :ok | {:error, term()}
   def rename(id, new_name) when is_binary(id) do
     GenServer.call(via(id), {:rename, new_name})
   end
 
   @doc "Stops the process. The document is already persisted after every change."
-  @spec close(String.t()) :: :ok
+  @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
 
   # Server
@@ -153,7 +154,7 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   @doc "The `Phoenix.PubSub` topic a subscriber listens on for a Book's changes."
-  @spec topic(String.t()) :: String.t()
+  @spec topic(Book.id()) :: String.t()
   def topic(id), do: "book:" <> id
 
   defp via(id), do: {:via, Registry, {@registry, id}}

@@ -3,9 +3,8 @@ defmodule LocalCents.Tracking.BookStore do
   On-disk persistence for Books: the mapping between a Book id and its `.lcbook`
   file.
 
-  This module is the private filesystem layer of `LocalCents.Tracking`. Nothing
-  outside the context should call it directly (the `Boundary` compiler enforces
-  this); `LocalCents.Tracking.BookServer` reads and writes through it.
+  This module is the private filesystem layer of `LocalCents.Tracking`;
+  `LocalCents.Tracking.BookServer` reads and writes through it.
 
   ## Layout
 
@@ -20,6 +19,8 @@ defmodule LocalCents.Tracking.BookStore do
   overridden with the `:books_dir` application env, which the test suite uses to
   redirect writes to a temporary directory.
   """
+
+  alias LocalCents.Tracking.Book
 
   @extension ".lcbook"
 
@@ -45,7 +46,7 @@ defmodule LocalCents.Tracking.BookStore do
   We generate this ourselves rather than pull in a UUID dependency; the value only
   needs to be a collision-resistant, filesystem-safe file name.
   """
-  @spec generate_id() :: String.t()
+  @spec generate_id() :: Book.id()
   def generate_id do
     <<a::32, b::16, c::16, d::16, e::48>> = :crypto.strong_rand_bytes(16)
     # Set the version (4) and variant (RFC 4122) bits.
@@ -62,9 +63,11 @@ defmodule LocalCents.Tracking.BookStore do
   Writes to a temporary file and atomically renames it into place, so a crash or
   power loss mid-write leaves the previous `.lcbook` intact rather than a truncated,
   unreadable file. A leftover `.tmp` from an interrupted write is ignored by
-  `list_ids/0` (which only matches `*.lcbook`).
+  `list_ids/0` (which only matches `*.lcbook`) and is truncated and overwritten by
+  the next `save/2` — writes for a given Book are serialized through its single
+  `BookServer`, so two writes never race on the same `.tmp`.
   """
-  @spec save(String.t(), binary()) :: :ok | {:error, File.posix()}
+  @spec save(Book.id(), binary()) :: :ok | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
   # Paths derive from `path/1`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
@@ -81,7 +84,7 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Reads the document bytes for `id`.
   """
-  @spec load(String.t()) :: {:ok, binary()} | {:error, File.posix()}
+  @spec load(Book.id()) :: {:ok, binary()} | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
   # The path comes from `path/1`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
@@ -92,7 +95,7 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Deletes the `.lcbook` file for `id`.
   """
-  @spec delete(String.t()) :: :ok | {:error, File.posix()}
+  @spec delete(Book.id()) :: :ok | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
   # The path comes from `path/1`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
@@ -103,7 +106,7 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Returns the ids of every Book with a `.lcbook` file in the books directory.
   """
-  @spec list_ids() :: [String.t()]
+  @spec list_ids() :: [Book.id()]
   def list_ids do
     [books_dir(), "*" <> @extension]
     |> Path.join()
@@ -120,7 +123,7 @@ defmodule LocalCents.Tracking.BookStore do
   books directory. `Path.basename(id) == id` rejects anything containing a
   directory separator or a `.`/`..` segment.
   """
-  @spec path(String.t()) :: String.t()
+  @spec path(Book.id()) :: String.t()
   def path(id) when is_binary(id) do
     Path.join(books_dir(), safe_component!(id) <> @extension)
   end

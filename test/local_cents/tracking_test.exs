@@ -60,6 +60,14 @@ defmodule LocalCents.TrackingTest do
                Tracking.add_expense(id, %Expense{description: "Coffee", amount: 500})
 
       assert {:error, :not_open} = Tracking.rename_book(id, "New Name")
+      assert {:error, :not_open} = Tracking.list_expenses(id)
+    end
+
+    test "list_expenses/1 returns {:error, :not_open} for a closed book" do
+      {:ok, book} = Tracking.create_book("Family")
+      :ok = Tracking.close_book(book.id)
+
+      assert {:error, :not_open} = Tracking.list_expenses(book.id)
     end
   end
 

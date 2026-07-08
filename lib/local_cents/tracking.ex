@@ -3,10 +3,9 @@ defmodule LocalCents.Tracking do
   Public API for the tracking context: creating and opening `Book`s and managing
   the `Expense` entries inside them.
 
-  Call sites must go through this module — the internal implementation
-  (`BookServer`, `BookStore`, `ExAutomerge`) is not exported and may not be called
-  from outside the boundary. Only the `Book` and `Expense` types are exported,
-  since they make up the context's contract.
+  Call sites must go through this module; the internal implementation
+  (`BookServer`, `BookStore`, `ExAutomerge`) is private. Only the `Book` and
+  `Expense` types make up the context's contract.
 
   ## How Books live at runtime
 
@@ -41,7 +40,7 @@ defmodule LocalCents.Tracking do
   Creates a new, empty Book named `name`, persists it, and starts its runtime
   process. Returns the `Book`.
   """
-  @spec create_book(String.t()) :: {:ok, Book.t()} | {:error, term()}
+  @spec create_book(Book.name()) :: {:ok, Book.t()} | {:error, term()}
   def create_book(name) when is_binary(name) do
     id = BookStore.generate_id()
 
@@ -61,7 +60,7 @@ defmodule LocalCents.Tracking do
   Ensures the Book's runtime process is running (idempotent). Returns `:ok` or an
   error if no Book with `id` exists on disk.
   """
-  @spec open_book(String.t()) :: :ok | {:error, term()}
+  @spec open_book(Book.id()) :: :ok | {:error, term()}
   def open_book(id) when is_binary(id) do
     case BookServer.ensure_started(id) do
       {:ok, _pid} -> :ok
@@ -72,7 +71,7 @@ defmodule LocalCents.Tracking do
   @doc """
   Persists and stops the Book's runtime process. The `.lcbook` file remains.
   """
-  @spec close_book(String.t()) :: :ok
+  @spec close_book(Book.id()) :: :ok
   def close_book(id) when is_binary(id) do
     if BookServer.alive?(id), do: BookServer.close(id)
     :ok
@@ -116,7 +115,7 @@ defmodule LocalCents.Tracking do
   Permanently deletes the Book: stops its process (if running) and removes the
   `.lcbook` file.
   """
-  @spec delete_book(String.t()) :: :ok | {:error, term()}
+  @spec delete_book(Book.id()) :: :ok | {:error, term()}
   def delete_book(id) when is_binary(id) do
     :ok = close_book(id)
     BookStore.delete(id)
@@ -128,7 +127,7 @@ defmodule LocalCents.Tracking do
   Returns `{:error, :not_open}` if the Book's process is not running
   (`open_book/1`), or `{:error, reason}` if persisting the change fails.
   """
-  @spec rename_book(String.t(), String.t()) :: :ok | {:error, term()}
+  @spec rename_book(Book.id(), Book.name()) :: :ok | {:error, term()}
   def rename_book(id, new_name) when is_binary(id) and is_binary(new_name) do
     BookServer.rename(id, new_name)
   catch
@@ -141,7 +140,7 @@ defmodule LocalCents.Tracking do
   Returns `{:error, :not_open}` if the Book's process is not running
   (`open_book/1`), or `{:error, reason}` if persisting the change fails.
   """
-  @spec add_expense(String.t(), Expense.t()) :: :ok | {:error, term()}
+  @spec add_expense(Book.id(), Expense.t()) :: :ok | {:error, term()}
   def add_expense(id, %Expense{description: description, amount: amount}) when is_binary(id) do
     BookServer.add_expense(id, description, amount)
   catch
@@ -149,15 +148,21 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
-  Lists the expenses of an open Book. The process must be running (`open_book/1`).
+  Lists the expenses of an open Book.
+
+  Returns `{:error, :not_open}` if the Book's process is not running
+  (`open_book/1`), matching `add_expense/2` and `rename_book/2` rather than
+  crashing the caller.
   """
-  @spec list_expenses(String.t()) :: [Expense.t()]
+  @spec list_expenses(Book.id()) :: [Expense.t()] | {:error, :not_open}
   def list_expenses(id) when is_binary(id) do
     id
     |> BookServer.list_expenses()
     |> Enum.map(fn %{description: description, amount: amount} ->
       %Expense{description: description, amount: amount}
     end)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
   end
 
   @doc """
@@ -166,7 +171,7 @@ defmodule LocalCents.Tracking do
   After subscribing, the caller receives `{:book_updated, id}` messages whenever
   the Book changes and should re-read via `list_expenses/1`.
   """
-  @spec subscribe(String.t()) :: :ok | {:error, term()}
+  @spec subscribe(Book.id()) :: :ok | {:error, term()}
   def subscribe(id) when is_binary(id) do
     Phoenix.PubSub.subscribe(LocalCents.PubSub, BookServer.topic(id))
   end

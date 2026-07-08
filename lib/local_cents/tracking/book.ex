@@ -13,8 +13,19 @@ defmodule LocalCents.Tracking.Book do
   @enforce_keys [:id, :name]
   defstruct id: nil, name: nil
 
+  @typedoc """
+  A Book's unique identifier: a UUID string that is also its `.lcbook` file name.
+  """
+  @type id() :: String.t()
+
+  @typedoc """
+  A Book's human-readable name, as shown in the library and displayed to the user.
+  Free-form and user-supplied; not required to be unique.
+  """
+  @type name() :: String.t()
+
   @type t() :: %__MODULE__{
-          id: String.t(),
-          name: String.t()
+          id: id(),
+          name: name()
         }
 end
