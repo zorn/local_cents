@@ -116,7 +116,9 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     default: nil,
     doc: "Classes applied to the outer wrapper div — use for layout (flex-1, w-full, etc.)"
 
-  attr :rest, :global, doc: "HTML attributes (placeholder, phx-*, disabled, etc.)"
+  attr :rest, :global,
+    include: ~w(placeholder),
+    doc: "HTML attributes (placeholder, phx-*, disabled, etc.)"
 
   @spec input(Socket.assigns()) :: Rendered.t()
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
