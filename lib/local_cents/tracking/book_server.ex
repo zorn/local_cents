@@ -169,7 +169,13 @@ defmodule LocalCents.Tracking.BookServer do
     end
   end
 
-  @doc "The `Phoenix.PubSub` topic a subscriber listens on for a Book's changes."
+  @doc """
+  The `Phoenix.PubSub` topic a subscriber listens on for a Book's changes.
+
+  Follows the project topic-naming scheme (`docs/adr/0011-pubsub-topic-naming.md`):
+  `"<kind>:<id>"`, owned by the broadcasting module so callers never hand-build
+  the string.
+  """
   @spec topic(Book.id()) :: String.t()
   def topic(id), do: "book:" <> id
 
