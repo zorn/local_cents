@@ -1,6 +1,7 @@
 defmodule LocalCentsWeb.Bond.Layouts.DesktopWindow do
   @moduledoc """
   A macOS-style desktop window chrome with a marbled title bar and subtly textured background.
+
   Renders traffic-light buttons and a centered title above slot content.
   """
 
