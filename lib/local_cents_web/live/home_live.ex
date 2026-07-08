@@ -1,4 +1,12 @@
 defmodule LocalCentsWeb.HomeLive do
+  @moduledoc """
+  The interim landing view mounted at `/`.
+
+  This is a placeholder counter left over from wiring up the Tauri bridge — the
+  increment button broadcasts a `count:*` message over `ElixirKit.PubSub`, which
+  exercises the Elixir → native channel end to end. It stands in until the real
+  library/home screens from the MVP replace it.
+  """
   use LocalCentsWeb, :live_view
 
   @impl Phoenix.LiveView

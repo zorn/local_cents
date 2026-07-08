@@ -1,5 +1,5 @@
 defmodule LocalCentsWeb.Bond.Composites.BookCell do
-  @moduledoc "A book row for use inside Bond.Elements.ListView."
+  @moduledoc "A book row for use inside `LocalCentsWeb.Bond.Elements.ListView`."
 
   use Phoenix.Component
   alias LocalCentsWeb.Bond
