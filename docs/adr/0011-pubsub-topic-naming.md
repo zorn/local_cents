@@ -21,15 +21,19 @@ discoverable. Raised in review of #75.
 bare `"<kind>"` for a resource collection or global stream.**
 
 - `<kind>` is the singular, lowercase, kebab-case name of the resource the topic
-  concerns, using the vocabulary from `CONTEXT.md` — `book`, `library`.
+  concerns, using the term as defined in `CONTEXT.md` — e.g. `book`. A `<kind>`
+  for a resource the glossary does not yet name must be added to `CONTEXT.md`
+  before it is used in a topic, so topic strings never drift ahead of the
+  ubiquitous language.
 - `:` (colon) is the only separator. Ids follow the last colon.
 - `<id>` is the resource's own id string used verbatim. Book ids are opaque,
   topic-safe strings (see [ADR 0009](0009-book-file-format.md)), so no encoding
-  or escaping is applied. A `<kind>` that names a single global stream (a
-  library that has no id, an app-wide event bus) omits the `:<id>` entirely.
+  or escaping is applied. A `<kind>` that names a single global stream (an
+  app-wide event bus, or a collection that has no id) omits the `:<id>` entirely.
 
-Examples: `book:0192f3c1-…` (one Book's changes), a future `library` (the set of
-Books changed).
+Example: `book:0192f3c1-…` (one Book's changes). A future collection stream — say
+a not-yet-defined term for "the set of Books changed" — would be a bare
+`<kind>`, added to `CONTEXT.md` first.
 
 **The topic string is owned by the module that broadcasts on it, exposed as a
 `topic/1` (or `topic/0`) function; callers never hand-build the string.**
