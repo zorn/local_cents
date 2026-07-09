@@ -18,6 +18,35 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> assert_has("#books", text: "Side Hustle")
   end
 
+  test "shows a book's last updated subtitle", ~M{conn} do
+    # No browser time zone is reported in tests, so the subtitle renders in UTC:
+    # 13:34 UTC -> "1:34 PM".
+    {:ok, _} = Tracking.create_book("Family Expenses", ~U[2026-06-02 13:34:20Z])
+
+    conn
+    |> visit(~p"/library")
+    |> assert_has("#books", text: "Last Updated: 06-02-2026 1:34 PM")
+  end
+
+  test "keeps a book's last updated live when the book changes elsewhere", ~M{conn} do
+    {:ok, book} = Tracking.create_book("Family", ~U[2026-06-02 13:34:20Z])
+
+    session =
+      conn
+      |> visit(~p"/library")
+      |> assert_has("#books", text: "Last Updated: 06-02-2026 1:34 PM")
+
+    # An edit from the Book's own document window broadcasts to the library.
+    :ok =
+      Tracking.add_expense(
+        book.id,
+        %Tracking.Expense{description: "Coffee", amount: 500},
+        ~U[2026-06-02 15:10:05Z]
+      )
+
+    assert_has(session, "#books", text: "Last Updated: 06-02-2026 3:10 PM")
+  end
+
   test "shows an empty state before any book exists", ~M{conn} do
     conn
     |> visit(~p"/library")

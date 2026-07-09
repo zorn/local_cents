@@ -82,16 +82,34 @@ defmodule LocalCents.Tracking.BookServer do
   @spec list_expenses(Book.id()) :: [map()]
   def list_expenses(id), do: GenServer.call(via(id), :list_expenses)
 
-  @doc "Appends an expense, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
-  @spec add_expense(Book.id(), String.t(), integer()) :: :ok | {:error, term()}
-  def add_expense(id, description, amount) when is_binary(id) do
-    GenServer.call(via(id), {:add_expense, description, amount})
+  @doc """
+  Appends an expense, persists, and broadcasts. Returns `{:error, reason}` if the
+  write fails.
+
+  `time` is the unix-seconds stamp recorded on the change so the Book's
+  `updated_at` advances (see [ADR 0012](0012-book-last-updated-timestamp.html)).
+  """
+  @spec add_expense(
+          Book.id(),
+          description :: String.t(),
+          amount :: integer(),
+          time :: integer()
+        ) ::
+          :ok | {:error, term()}
+  def add_expense(id, description, amount, time) when is_binary(id) do
+    GenServer.call(via(id), {:add_expense, description, amount, time})
   end
 
-  @doc "Renames the Book, persists, and broadcasts. Returns `{:error, reason}` if the write fails."
-  @spec rename(Book.id(), Book.name()) :: :ok | {:error, term()}
-  def rename(id, new_name) when is_binary(id) do
-    GenServer.call(via(id), {:rename, new_name})
+  @doc """
+  Renames the Book, persists, and broadcasts. Returns `{:error, reason}` if the
+  write fails.
+
+  `time` is the unix-seconds stamp recorded on the change so the Book's
+  `updated_at` advances (see [ADR 0012](0012-book-last-updated-timestamp.html)).
+  """
+  @spec rename(Book.id(), Book.name(), time :: integer()) :: :ok | {:error, term()}
+  def rename(id, new_name, time) when is_binary(id) do
+    GenServer.call(via(id), {:rename, new_name, time})
   end
 
   @doc "Stops the process. The document is already persisted after every change."
@@ -137,12 +155,12 @@ defmodule LocalCents.Tracking.BookServer do
     {:reply, ExAutomerge.list_expenses(state.doc), state}
   end
 
-  def handle_call({:add_expense, description, amount}, _from, state) do
-    change(state, fn doc -> ExAutomerge.add_expense(doc, description, amount) end)
+  def handle_call({:add_expense, description, amount, time}, _from, state) do
+    change(state, fn doc -> ExAutomerge.add_expense(doc, description, amount, time) end)
   end
 
-  def handle_call({:rename, new_name}, _from, state) do
-    change(state, fn doc -> ExAutomerge.rename(doc, new_name) end)
+  def handle_call({:rename, new_name, time}, _from, state) do
+    change(state, fn doc -> ExAutomerge.rename(doc, new_name, time) end)
   end
 
   # Applies a document transform, then persists-then-commits. A NIF badarg (e.g. an

@@ -26,9 +26,13 @@ import {hooks as colocatedHooks} from "phoenix-colocated/local_cents"
 import topbar from "../vendor/topbar"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+// Report the browser's IANA time zone (e.g. "America/New_York") on connect so
+// LiveViews can render times in the user's local zone. In the Tauri webview this
+// is the machine's zone; in the future hosted web app it's each user's own zone.
+const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken},
+  params: {_csrf_token: csrfToken, time_zone: timeZone},
   hooks: {...colocatedHooks},
 })
 

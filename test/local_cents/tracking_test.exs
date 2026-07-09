@@ -30,6 +30,51 @@ defmodule LocalCents.TrackingTest do
     end
   end
 
+  describe "a Book's updated_at" do
+    # A fixed, sub-second "now" proves the value is truncated to whole seconds (the
+    # resolution Automerge records) and that the injected clock is honored.
+    @created ~U[2026-06-02 13:34:20.500000Z]
+    @edited ~U[2026-06-02 15:10:05.000000Z]
+
+    test "create_book/2 seeds updated_at from now, truncated to the second" do
+      {:ok, book} = Tracking.create_book("Family", @created)
+      assert book.updated_at == ~U[2026-06-02 13:34:20Z]
+    end
+
+    test "list_books/0 and get_book/1 expose the derived updated_at" do
+      {:ok, book} = Tracking.create_book("Family", @created)
+
+      assert [%Book{updated_at: ~U[2026-06-02 13:34:20Z]}] = Tracking.list_books()
+      assert %Book{updated_at: ~U[2026-06-02 13:34:20Z]} = Tracking.get_book(book.id)
+    end
+
+    test "adding an expense advances updated_at" do
+      {:ok, book} = Tracking.create_book("Family", @created)
+
+      :ok = Tracking.add_expense(book.id, %Expense{description: "Coffee", amount: 500}, @edited)
+
+      assert %Book{updated_at: ~U[2026-06-02 15:10:05Z]} = Tracking.get_book(book.id)
+    end
+
+    test "renaming advances updated_at" do
+      {:ok, book} = Tracking.create_book("Family", @created)
+
+      :ok = Tracking.rename_book(book.id, "Household", @edited)
+
+      assert %Book{updated_at: ~U[2026-06-02 15:10:05Z]} = Tracking.get_book(book.id)
+    end
+
+    test "an epoch (0) now yields no updated_at, consistent with a later read" do
+      # A `0` unix stamp is "unset" on the read path (the NIF filters `time > 0`), so
+      # the created Book must agree — nil, not the Unix epoch — with what list_books/0
+      # would report.
+      {:ok, book} = Tracking.create_book("Family", ~U[1970-01-01 00:00:00Z])
+
+      assert book.updated_at == nil
+      assert %Book{updated_at: nil} = Tracking.get_book(book.id)
+    end
+  end
+
   describe "add_expense/2 and list_expenses/1" do
     test "adds an expense and returns it as an Expense struct" do
       {:ok, book} = Tracking.create_book("Family")

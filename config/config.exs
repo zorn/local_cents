@@ -10,6 +10,10 @@ import Config
 config :local_cents,
   generators: [timestamp_type: :utc_datetime]
 
+# Use the `tz` package as Elixir's time zone database so `DateTime.shift_zone/2`
+# can convert a Book's UTC `updated_at` into the user's local time (see ADR 0012).
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
 # Configure the endpoint
 config :local_cents, LocalCentsWeb.Endpoint,
   url: [host: "localhost"],

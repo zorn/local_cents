@@ -38,6 +38,48 @@ gets its own guide or ADR.
   `Socket.assigns()` is the precise public type (`map | assigns_not_in_socket()`);
   the aliases keep the spec line readable.
 
+- **Name `@spec` arguments whose type doesn't reveal their role.** Annotate a
+  primitive or generic argument type with a name so the argument's purpose is legible
+  from the spec alone, without opening the function body:
+
+  ```elixir
+  # Not this — three opaque types, no idea what each is:
+  @spec add_expense(binary(), String.t(), number(), integer()) :: binary()
+
+  # This — each argument reads for itself:
+  @spec add_expense(
+          doc_bytes :: binary(),
+          description :: String.t(),
+          amount :: number(),
+          time :: integer()
+        ) :: binary()
+  ```
+
+  Leave a type **bare when it is already self-describing** — a domain type carries
+  its own meaning and a name would just be noise: `Book.id()`, `Book.name()`,
+  `Expense.t()`, `DateTime.t()` (unless two of the same type sit side by side, e.g.
+  `now :: DateTime.t()`), `Socket.assigns()`, `Plug.Conn.t()`. The test is whether a
+  reader can tell what the argument is from its type; if not (`binary()`,
+  `String.t()`, `integer()`, `map()`, `keyword()`, `term()`), name it. Match the name
+  to the function's actual parameter.
+
+- **Stack a long `@spec` one entry per line, return type on its own line.** When a
+  spec is too long to read comfortably on one line, put each argument on its own line
+  and pull the return type onto its own line after `::`. A newline right after the
+  opening `(` nudges the formatter into keeping this shape:
+
+  ```elixir
+  @spec add_expense(
+          doc_bytes :: binary(),
+          description :: String.t(),
+          amount :: integer(),
+          time :: integer()
+        ) ::
+          binary()
+  ```
+
+  Short specs stay on one line — this is only for the ones that wrap.
+
 - **Name LiveView events in snake_case.** The event strings behind `phx-*`
   bindings and matched in `handle_event/3` are snake_case and describe what they
   represent — `handle_event("email_changed", …)`, `"validate"`, `"save"` — per

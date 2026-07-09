@@ -27,10 +27,10 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
     |> Enum.join("; ")
   end
 
-  @spec init(keyword()) :: keyword()
+  @spec init(opts :: keyword()) :: keyword()
   def init(opts), do: opts
 
-  @spec call(Plug.Conn.t(), keyword()) :: Plug.Conn.t()
+  @spec call(Plug.Conn.t(), opts :: keyword()) :: Plug.Conn.t()
   def call(conn, _opts) do
     nonce = 16 |> :crypto.strong_rand_bytes() |> Base.encode64()
 
