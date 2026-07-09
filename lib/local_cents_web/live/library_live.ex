@@ -30,7 +30,6 @@ defmodule LocalCentsWeb.LibraryLive do
       books: Tracking.list_books(),
       creating: false,
       create_name: "",
-      create_errors: [],
       open_menu_id: nil,
       dialog: nil,
       rename_errors: []
@@ -42,7 +41,9 @@ defmodule LocalCentsWeb.LibraryLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="flex min-h-screen flex-col">
+      <%!-- h-screen (not min-h-screen) pins the column to the viewport so the list
+      scrolls inside it and the bottom bar stays visible no matter how many books. --%>
+      <div class="flex h-screen flex-col overflow-hidden">
         <%!-- The window's native title bar shows "Library"; this heading is for
         assistive tech and document structure. --%>
         <h1 class="sr-only">Library</h1>
@@ -112,7 +113,6 @@ defmodule LocalCentsWeb.LibraryLive do
                   id="new-book-name"
                   name="name"
                   value={@create_name}
-                  errors={@create_errors}
                   placeholder="Name your new book"
                   class="min-w-0 flex-1"
                   phx-mounted={JS.focus()}
@@ -122,7 +122,11 @@ defmodule LocalCentsWeb.LibraryLive do
                 <Bond.button type="button" variant={:outline} phx-click="cancel_create">
                   Cancel
                 </Bond.button>
-                <Bond.button type="submit">Create</Bond.button>
+                <%!-- Disable rather than validate-on-submit: a blank name can't be
+                submitted, so there's no error state to show or lay out. --%>
+                <Bond.button type="submit" disabled={blank_name?(@create_name)}>
+                  Create
+                </Bond.button>
               </:trailing_content>
             </Bond.input_bar>
           </form>
@@ -178,31 +182,24 @@ defmodule LocalCentsWeb.LibraryLive do
 
   @impl Phoenix.LiveView
   def handle_event("validate_create", %{"name" => name}, socket) do
-    # Track the field so it can be cleared after a successful create, and drop a
-    # standing "can't be blank" once the user has typed something (don't nag mid-edit).
-    errors =
-      case String.trim(name) do
-        "" -> socket.assigns.create_errors
-        _typed -> []
-      end
-
-    socket
-    |> assign(create_name: name, create_errors: errors)
-    |> noreply()
+    # Track the field live so the Create button's disabled state follows it.
+    socket |> assign(create_name: name) |> noreply()
   end
 
   def handle_event("start_create", _params, socket) do
-    socket |> assign(creating: true, create_name: "", create_errors: []) |> noreply()
+    socket |> assign(creating: true, create_name: "") |> noreply()
   end
 
   def handle_event("cancel_create", _params, socket) do
-    socket |> assign(creating: false, create_name: "", create_errors: []) |> noreply()
+    socket |> assign(creating: false, create_name: "") |> noreply()
   end
 
   def handle_event("create", %{"name" => name}, socket) do
+    # Create is disabled while blank, so this only fires with a real name; the
+    # guard just keeps a stray submit (e.g. Enter in an empty field) a no-op.
     case validate_name(name) do
       {:ok, trimmed} -> create_book(socket, trimmed)
-      :error -> socket |> assign(create_errors: ["can't be blank"]) |> noreply()
+      :error -> noreply(socket)
     end
   end
 
@@ -277,12 +274,7 @@ defmodule LocalCentsWeb.LibraryLive do
         DesktopShell.open_book(book)
 
         socket
-        |> assign(
-          books: Tracking.list_books(),
-          creating: false,
-          create_name: "",
-          create_errors: []
-        )
+        |> assign(books: Tracking.list_books(), creating: false, create_name: "")
         |> noreply()
 
       {:error, _reason} ->
@@ -326,4 +318,6 @@ defmodule LocalCentsWeb.LibraryLive do
       trimmed -> {:ok, trimmed}
     end
   end
+
+  defp blank_name?(name), do: String.trim(name) == ""
 end

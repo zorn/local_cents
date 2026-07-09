@@ -43,14 +43,15 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> assert_has("#books", text: "Groceries")
   end
 
-  test "a blank name shows a validation error and creates nothing", ~M{conn} do
+  test "Create stays disabled until a non-blank name is entered", ~M{conn} do
     conn
     |> visit(~p"/library")
     |> click_button("New Book")
+    |> assert_has("button[disabled]", text: "Create")
     |> fill_in("New book name", with: "   ")
-    |> click_button("Create")
-    |> assert_has("p", text: "can't be blank")
-    |> refute_has("#books")
+    |> assert_has("button[disabled]", text: "Create")
+    |> fill_in("New book name", with: "Groceries")
+    |> refute_has("button[disabled]", text: "Create")
   end
 
   test "opening a book keeps the library rendered", ~M{conn} do

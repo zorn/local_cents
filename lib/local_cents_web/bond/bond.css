@@ -201,11 +201,11 @@ dialog.bond-side-panel {
   box-shadow: var(--bond-stamp-x, 2px) var(--bond-stamp-y, 3px) 0 var(--bond-stamp-shadow, var(--color-primary-900));
   transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
-.bond-stamp:hover {
+.bond-stamp:hover:not(:disabled) {
   transform: translate(calc(var(--bond-stamp-x, 2px) / 2), calc(var(--bond-stamp-y, 3px) / 2));
   box-shadow: calc(var(--bond-stamp-x, 2px) / 2) calc(var(--bond-stamp-y, 3px) / 2) 0 var(--bond-stamp-shadow, var(--color-primary-900));
 }
-.bond-stamp:active {
+.bond-stamp:active:not(:disabled) {
   transform: translate(var(--bond-stamp-x, 2px), var(--bond-stamp-y, 3px));
   box-shadow: none;
 }

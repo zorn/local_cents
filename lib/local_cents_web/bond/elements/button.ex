@@ -31,14 +31,20 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
     """
   end
 
+  # `disabled:` utilities dim the button and block the pointer; the stamp-press
+  # hover/active is suppressed for `:disabled` in bond.css so a disabled button
+  # also stops reacting to hover.
+  @disabled "disabled:opacity-40 disabled:cursor-not-allowed"
+
   defp button_class(:primary),
-    do: "font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
+    do: "font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp #{@disabled}"
 
   defp button_class(:outline),
-    do: "font-bold px-3 py-1.5 text-sm rounded bond-stamp"
+    do: "font-bold px-3 py-1.5 text-sm rounded bond-stamp #{@disabled}"
 
   defp button_class(:square),
-    do: "font-bold text-sm rounded bond-stamp w-7 h-7 flex items-center justify-center"
+    do:
+      "font-bold text-sm rounded bond-stamp w-7 h-7 flex items-center justify-center #{@disabled}"
 
   defp button_style(:primary),
     do:
