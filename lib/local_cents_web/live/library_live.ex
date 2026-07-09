@@ -353,15 +353,8 @@ defmodule LocalCentsWeb.LibraryLive do
         {:error, _reason} -> updated_at
       end
 
-    date = Calendar.strftime(local, "%m-%d-%Y")
-    minute = local.minute |> Integer.to_string() |> String.pad_leading(2, "0")
-    "#{date} #{twelve_hour(local.hour)}:#{minute} #{period(local.hour)}"
+    # e.g. "06-02-2026 1:34 PM": `%-I` is the 12-hour hour with no leading zero,
+    # `%M` the zero-padded minute, `%p` the AM/PM marker.
+    Calendar.strftime(local, "%m-%d-%Y %-I:%M %p")
   end
-
-  defp twelve_hour(0), do: 12
-  defp twelve_hour(hour) when hour > 12, do: hour - 12
-  defp twelve_hour(hour), do: hour
-
-  defp period(hour) when hour < 12, do: "AM"
-  defp period(_hour), do: "PM"
 end
