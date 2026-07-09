@@ -49,7 +49,7 @@ defmodule LocalCents.Tracking do
   `now` stamps the document's first change and seeds the Book's `updated_at`; it
   defaults to the current time and is injectable for tests.
   """
-  @spec create_book(Book.name(), DateTime.t()) :: {:ok, Book.t()} | {:error, term()}
+  @spec create_book(Book.name(), now :: DateTime.t()) :: {:ok, Book.t()} | {:error, term()}
   def create_book(name, now \\ DateTime.utc_now()) when is_binary(name) do
     id = BookStore.generate_id()
     seconds = unix_seconds(now)
@@ -173,7 +173,7 @@ defmodule LocalCents.Tracking do
   `now` stamps the rename change so the Book's `updated_at` advances; it defaults
   to the current time and is injectable for tests.
   """
-  @spec rename_book(Book.id(), Book.name(), DateTime.t()) :: :ok | {:error, term()}
+  @spec rename_book(Book.id(), Book.name(), now :: DateTime.t()) :: :ok | {:error, term()}
   def rename_book(id, new_name, now \\ DateTime.utc_now())
       when is_binary(id) and is_binary(new_name) do
     case BookServer.alive?(id) do
@@ -207,7 +207,7 @@ defmodule LocalCents.Tracking do
   `now` stamps the change so the Book's `updated_at` advances; it defaults to the
   current time and is injectable for tests.
   """
-  @spec add_expense(Book.id(), Expense.t(), DateTime.t()) :: :ok | {:error, term()}
+  @spec add_expense(Book.id(), Expense.t(), now :: DateTime.t()) :: :ok | {:error, term()}
   def add_expense(
         id,
         %Expense{description: description, amount: amount},

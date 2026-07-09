@@ -67,7 +67,7 @@ defmodule LocalCents.Tracking.BookStore do
   the next `save/2` — writes for a given Book are serialized through its single
   `BookServer`, so two writes never race on the same `.tmp`.
   """
-  @spec save(Book.id(), binary()) :: :ok | {:error, File.posix()}
+  @spec save(Book.id(), bytes :: binary()) :: :ok | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
   # Paths derive from `path/1`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.

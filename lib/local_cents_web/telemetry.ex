@@ -2,7 +2,7 @@ defmodule LocalCentsWeb.Telemetry do
   use Supervisor
   import Telemetry.Metrics
 
-  @spec start_link(keyword()) :: Supervisor.on_start()
+  @spec start_link(arg :: keyword()) :: Supervisor.on_start()
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end

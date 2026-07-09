@@ -89,7 +89,8 @@ defmodule LocalCents.Tracking.BookServer do
   `time` is the unix-seconds stamp recorded on the change so the Book's
   `updated_at` advances (see [ADR 0012](0012-book-last-updated-timestamp.html)).
   """
-  @spec add_expense(Book.id(), String.t(), integer(), integer()) :: :ok | {:error, term()}
+  @spec add_expense(Book.id(), description :: String.t(), amount :: integer(), time :: integer()) ::
+          :ok | {:error, term()}
   def add_expense(id, description, amount, time) when is_binary(id) do
     GenServer.call(via(id), {:add_expense, description, amount, time})
   end
@@ -101,7 +102,7 @@ defmodule LocalCents.Tracking.BookServer do
   `time` is the unix-seconds stamp recorded on the change so the Book's
   `updated_at` advances (see [ADR 0012](0012-book-last-updated-timestamp.html)).
   """
-  @spec rename(Book.id(), Book.name(), integer()) :: :ok | {:error, term()}
+  @spec rename(Book.id(), Book.name(), time :: integer()) :: :ok | {:error, term()}
   def rename(id, new_name, time) when is_binary(id) do
     GenServer.call(via(id), {:rename, new_name, time})
   end

@@ -50,13 +50,13 @@ defmodule LocalCents.Tracking.ExAutomerge do
   `time` is a unix-seconds timestamp recorded on the document's first change so the
   Book has a "last updated" from the moment it exists.
   """
-  @spec new_document(String.t(), integer()) :: binary()
+  @spec new_document(name :: String.t(), time :: integer()) :: binary()
   def new_document(_name, _time), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
   Returns the Book name stored in the document.
   """
-  @spec document_name(binary()) :: String.t()
+  @spec document_name(doc_bytes :: binary()) :: String.t()
   def document_name(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
@@ -67,7 +67,7 @@ defmodule LocalCents.Tracking.ExAutomerge do
   rather than a stored field, so it reflects the *latest edit* after a merge rather
   than the latest local write (see [ADR 0012](0012-book-last-updated-timestamp.html)).
   """
-  @spec document_updated_at(binary()) :: integer() | nil
+  @spec document_updated_at(doc_bytes :: binary()) :: integer() | nil
   def document_updated_at(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
@@ -76,7 +76,7 @@ defmodule LocalCents.Tracking.ExAutomerge do
   `time` is a unix-seconds timestamp recorded on the resulting change. The document
   is never mutated in place — a new binary is returned.
   """
-  @spec rename(binary(), String.t(), integer()) :: binary()
+  @spec rename(doc_bytes :: binary(), name :: String.t(), time :: integer()) :: binary()
   def rename(_doc_bytes, _name, _time), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
@@ -86,7 +86,12 @@ defmodule LocalCents.Tracking.ExAutomerge do
   seconds) recorded on the resulting change, and returns a new binary — the document
   is never mutated in place.
   """
-  @spec add_expense(binary(), String.t(), number(), integer()) :: binary()
+  @spec add_expense(
+          doc_bytes :: binary(),
+          description :: String.t(),
+          amount :: number(),
+          time :: integer()
+        ) :: binary()
   def add_expense(_doc_bytes, _description, _amount, _time),
     do: :erlang.nif_error(:nif_not_loaded)
 
@@ -96,7 +101,7 @@ defmodule LocalCents.Tracking.ExAutomerge do
   Each map has `:description` and `:amount` keys. `LocalCents.Tracking` maps these
   into `LocalCents.Tracking.Expense` structs before handing them to callers.
   """
-  @spec list_expenses(binary()) :: [map()]
+  @spec list_expenses(doc_bytes :: binary()) :: [map()]
   def list_expenses(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
@@ -105,6 +110,6 @@ defmodule LocalCents.Tracking.ExAutomerge do
   Automerge resolves the two histories as a CRDT, so the operation is safe even
   when both sides were edited independently.
   """
-  @spec merge(binary(), binary()) :: binary()
+  @spec merge(left_bytes :: binary(), right_bytes :: binary()) :: binary()
   def merge(_left_bytes, _right_bytes), do: :erlang.nif_error(:nif_not_loaded)
 end
