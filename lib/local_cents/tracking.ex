@@ -253,8 +253,13 @@ defmodule LocalCents.Tracking do
   # whether it was just created or later re-read from the document.
   defp unix_seconds(%DateTime{} = now), do: DateTime.to_unix(now, :second)
 
-  # `document_updated_at/1` returns `nil` when no change carries a usable time; the
-  # Book then has no `updated_at` and the library renders no "last updated" line.
-  defp to_datetime(nil), do: nil
-  defp to_datetime(seconds) when is_integer(seconds), do: DateTime.from_unix!(seconds, :second)
+  # A Book has no `updated_at` (and the library renders no "last updated" line) when
+  # there's no usable stamp. We mirror the NIF's `time > 0` rule here so a freshly
+  # created Book agrees with a later `list_books/0` read: `document_updated_at/1`
+  # returns `nil` for an unset (`0`) stamp, so a `0` seed must become `nil` too rather
+  # than the Unix epoch.
+  defp to_datetime(seconds) when is_integer(seconds) and seconds > 0,
+    do: DateTime.from_unix!(seconds, :second)
+
+  defp to_datetime(_seconds), do: nil
 end

@@ -63,6 +63,23 @@ gets its own guide or ADR.
   `String.t()`, `integer()`, `map()`, `keyword()`, `term()`), name it. Match the name
   to the function's actual parameter.
 
+- **Stack a long `@spec` one entry per line, return type on its own line.** When a
+  spec is too long to read comfortably on one line, put each argument on its own line
+  and pull the return type onto its own line after `::`. A newline right after the
+  opening `(` nudges the formatter into keeping this shape:
+
+  ```elixir
+  @spec add_expense(
+          doc_bytes :: binary(),
+          description :: String.t(),
+          amount :: integer(),
+          time :: integer()
+        ) ::
+          binary()
+  ```
+
+  Short specs stay on one line — this is only for the ones that wrap.
+
 - **Name LiveView events in snake_case.** The event strings behind `phx-*`
   bindings and matched in `handle_event/3` are snake_case and describe what they
   represent — `handle_event("email_changed", …)`, `"validate"`, `"save"` — per

@@ -63,6 +63,16 @@ defmodule LocalCents.TrackingTest do
 
       assert %Book{updated_at: ~U[2026-06-02 15:10:05Z]} = Tracking.get_book(book.id)
     end
+
+    test "an epoch (0) now yields no updated_at, consistent with a later read" do
+      # A `0` unix stamp is "unset" on the read path (the NIF filters `time > 0`), so
+      # the created Book must agree — nil, not the Unix epoch — with what list_books/0
+      # would report.
+      {:ok, book} = Tracking.create_book("Family", ~U[1970-01-01 00:00:00Z])
+
+      assert book.updated_at == nil
+      assert %Book{updated_at: nil} = Tracking.get_book(book.id)
+    end
   end
 
   describe "add_expense/2 and list_expenses/1" do

@@ -89,9 +89,10 @@ defmodule LocalCents.Tracking.ExAutomerge do
   @spec add_expense(
           doc_bytes :: binary(),
           description :: String.t(),
-          amount :: number(),
+          amount :: integer(),
           time :: integer()
-        ) :: binary()
+        ) ::
+          binary()
   def add_expense(_doc_bytes, _description, _amount, _time),
     do: :erlang.nif_error(:nif_not_loaded)
 

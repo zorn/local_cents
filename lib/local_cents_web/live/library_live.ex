@@ -268,12 +268,28 @@ defmodule LocalCentsWeb.LibraryLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_info({:book_updated, _id}, socket) do
-    # A Book changed (here or in its document window) — re-read the library so every
-    # "Last Updated" subtitle reflects the edit and any deleted Book drops out. The
-    # library is small, so re-enumerating is simpler than tracking rows by hand and
-    # matches how the dialog flows already resync.
-    socket |> assign(books: Tracking.list_books()) |> noreply()
+  def handle_info({:book_updated, id}, socket) do
+    # Re-read only the Book that changed, not the whole library: an edit (e.g. adding
+    # an expense) can arrive often, and re-enumerating every `.lcbook` on each one is
+    # needless disk IO and churn. The broadcast carries the id, so we refresh that one
+    # row in place; a deleted Book (get_book/1 -> nil) drops out.
+    socket |> assign(books: refresh_book(socket.assigns.books, id)) |> noreply()
+  end
+
+  # Replaces the changed Book in the list in place (preserving order), or removes it
+  # when it no longer exists. The list holds only Books we subscribe to, so an id we
+  # aren't already showing is left as-is.
+  defp refresh_book(books, id) do
+    case Tracking.get_book(id) do
+      nil ->
+        Enum.reject(books, &(&1.id == id))
+
+      book ->
+        Enum.map(books, fn
+          %{id: ^id} -> book
+          other -> other
+        end)
+    end
   end
 
   defp create_book(socket, name) do
