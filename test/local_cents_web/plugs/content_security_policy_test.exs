@@ -3,6 +3,9 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
 
   alias LocalCentsWeb.Plugs.ContentSecurityPolicy
 
+  # opt out of Jump.CredoChecks.AvoidSocketAssignsInTest
+  @moduletag :plug_test
+
   describe "call/2" do
     test "sets the content-security-policy response header" do
       conn = build_conn() |> ContentSecurityPolicy.call([])
@@ -17,7 +20,6 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
 
     test "assigns csp_nonce to the conn" do
       conn = build_conn() |> ContentSecurityPolicy.call([])
-      assert is_binary(conn.assigns.csp_nonce)
       assert byte_size(conn.assigns.csp_nonce) > 0
     end
 

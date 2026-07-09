@@ -15,7 +15,6 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
   describe "new_document/2 and document_name/1" do
     test "a new document carries its name and has no expenses" do
       doc = ExAutomerge.new_document("Family Expenses", @t1)
-      assert is_binary(doc)
       assert byte_size(doc) > 0
       assert ExAutomerge.document_name(doc) == "Family Expenses"
       assert ExAutomerge.list_expenses(doc) == []

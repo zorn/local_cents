@@ -15,7 +15,7 @@ defmodule LocalCents.TrackingTest do
       assert {:ok, %Book{id: id, name: "Family Expenses"}} =
                Tracking.create_book("Family Expenses")
 
-      assert is_binary(id)
+      assert byte_size(id) > 0
     end
 
     test "a new book has no expenses" do
