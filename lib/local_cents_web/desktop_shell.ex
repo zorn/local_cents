@@ -14,7 +14,9 @@ defmodule LocalCentsWeb.DesktopShell do
   window `label` (Rust's per-resource tag — re-requesting a label focuses the
   existing window rather than duplicating it), the LiveView `path` to load, and
   the native window `title`. `close-window` carries only the `label` of the
-  window to close.
+  window to close. `set-title` carries the `label` and a new `title` for an
+  already-open window (the native title bar does not follow the webview's
+  document `<title>`, so a live rename must push it).
   """
 
   alias LocalCents.Tracking.Book
@@ -72,5 +74,30 @@ defmodule LocalCentsWeb.DesktopShell do
   @spec close_book_command(Book.t()) :: String.t()
   def close_book_command(%Book{id: id}) do
     Jason.encode!(%{action: "close-window", label: "book-" <> id})
+  end
+
+  @doc """
+  Asks the native shell to update `book`'s document window title to its current
+  name.
+
+  A renamed Book updates its LiveView (the in-page heading and the document
+  `<title>`), but the native window's title bar was set once when Rust built the
+  window and does not follow the webview — so a live rename must push the new
+  title here. Fire-and-forget like the other commands.
+  """
+  @spec set_book_title(Book.t()) :: :ok
+  def set_book_title(%Book{} = book) do
+    ElixirKit.PubSub.broadcast(@channel, set_title_command(book))
+  end
+
+  @doc """
+  Builds the JSON `set-title` command for `book`'s document window.
+
+  Carries the window `label` (`"book-<id>"`) and the new `title`. Split out from
+  `set_book_title/1` so the wire format is unit testable without a live bridge.
+  """
+  @spec set_title_command(Book.t()) :: String.t()
+  def set_title_command(%Book{id: id, name: name}) do
+    Jason.encode!(%{action: "set-title", label: "book-" <> id, title: name})
   end
 end

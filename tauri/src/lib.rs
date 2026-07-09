@@ -65,6 +65,7 @@ pub fn run() {
                             open_or_focus_window(&app_handle, &cmd.label, &cmd.path, &cmd.title)
                         }
                         "close-window" => close_window(&app_handle, &cmd.label),
+                        "set-title" => set_window_title(&app_handle, &cmd.label, &cmd.title),
                         other => println!("[rust] unknown window action: {}", other),
                     }
                 } else {
@@ -135,6 +136,19 @@ fn close_window(app_handle: &tauri::AppHandle, label: &str) {
     if let Some(window) = app_handle.get_webview_window(label) {
         if let Err(e) = window.close() {
             eprintln!("[rust] failed to close window {}: {}", label, e);
+        }
+    }
+}
+
+/// Updates the title bar of the native window tagged `label`, if one is open.
+///
+/// The native title is set when the window is built and does not follow the
+/// webview's document `<title>`, so a Book renamed while its window is open
+/// pushes the new title here (ADR 0006). An unknown label is a no-op.
+fn set_window_title(app_handle: &tauri::AppHandle, label: &str, title: &str) {
+    if let Some(window) = app_handle.get_webview_window(label) {
+        if let Err(e) = window.set_title(title) {
+            eprintln!("[rust] failed to set title for window {}: {}", label, e);
         }
     }
 }

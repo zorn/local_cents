@@ -42,4 +42,13 @@ defmodule LocalCentsWeb.DesktopShellTest do
       assert Enum.sort(keys) == ["action", "label"]
     end
   end
+
+  describe "set_title_command/1" do
+    test "encodes a set-title command with the window label and the Book's name" do
+      book = %Book{id: "abc-123", name: "Household"}
+
+      assert %{"action" => "set-title", "label" => "book-abc-123", "title" => "Household"} =
+               Jason.decode!(DesktopShell.set_title_command(book))
+    end
+  end
 end
