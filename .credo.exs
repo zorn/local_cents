@@ -184,9 +184,53 @@
           {Credo.Check.Warning.UnusedOperation, []},
           {Credo.Check.Warning.UnusedTupleOperation, []},
           {Credo.Check.Warning.WrongTestFileExtension, []},
-          {Credo.Check.Warning.WrongTestFilename, []}
+          {Credo.Check.Warning.WrongTestFilename, []},
+
+          #
+          ## Jump.CredoChecks — extra checks that nudge toward higher-quality
+          ## Elixir/LiveView/test code (https://github.com/Jump-App/credo_checks).
+          ##
+          ## Migration checks (PreferTextColumns, PreferChangeOverUpDownMigrations)
+          ## and UseObanProWorker are omitted — this app has no Ecto or Oban.
+          #
+          {Jump.CredoChecks.AssertElementSelectorCanNeverFail, []},
+          {Jump.CredoChecks.AssertReceiveTimeout,
+           min_assert_receive_timeout: 1_000, max_refute_receive_timeout: 100},
+          {Jump.CredoChecks.AvoidFunctionLevelElse, []},
+          {Jump.CredoChecks.AvoidLoggerConfigureInTest, []},
+          # Plug tests legitimately introspect `conn.assigns` (there is no
+          # user-observable UI to assert against); they opt out per-module with
+          # `@moduletag :plug_test`. (The check's `excluded:` param is a no-op
+          # in v0.4 — the tag is the only working opt-out.)
+          {Jump.CredoChecks.AvoidSocketAssignsInTest, []},
+          {Jump.CredoChecks.ConditionalAssertion, []},
+          {Jump.CredoChecks.DoctestIExExamples,
+           derive_test_path: fn filename ->
+             filename
+             |> String.replace_leading("lib/", "test/")
+             |> String.replace_trailing(".ex", "_test.exs")
+           end},
+          {Jump.CredoChecks.ForbiddenFunction,
+           functions: [
+             {:erlang, :binary_to_term,
+              "Use Plug.Crypto.non_executable_binary_to_term/2 instead."}
+           ]},
+          {Jump.CredoChecks.LiveViewFormCanBeRehydrated, []},
+          {Jump.CredoChecks.SafeBinaryToTerm, []},
+          {Jump.CredoChecks.TestHasNoAssertions, []},
+          {Jump.CredoChecks.TooManyAssertions, max_assertions: 20},
+          {Jump.CredoChecks.TopLevelAliasImportRequire, []},
+          {Jump.CredoChecks.UnusedLiveViewAssign, []},
+          {Jump.CredoChecks.VacuousTest, []},
+          {Jump.CredoChecks.WeakAssertion, []}
         ],
         disabled: [
+          # Jump.CredoChecks.UndeclaredExternalResource is too crude for this
+          # codebase: it flags any module attribute whose AST mentions `File.`,
+          # so a `@spec ... :: {:error, File.posix()}` typespec (a standard
+          # Elixir idiom) is misread as a compile-time file read. Nothing here
+          # reads files into module attributes, so the check is all noise.
+          {Jump.CredoChecks.UndeclaredExternalResource, []},
           {Credo.Check.Consistency.UnusedVariableNames, []},
           {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.NestedFunctionCalls, []},

@@ -152,7 +152,12 @@ defmodule LocalCentsWeb.LibraryLive do
         title="Rename Book"
         on_cancel="close_dialog"
       >
-        <form id="rename-book-form" phx-submit="rename" class="space-y-4">
+        <form
+          id="rename-book-form"
+          phx-submit="rename"
+          phx-change="validate_rename"
+          class="space-y-4"
+        >
           <Bond.input
             id="rename-name"
             name="name"
@@ -237,6 +242,12 @@ defmodule LocalCentsWeb.LibraryLive do
 
   def handle_event("close_dialog", _params, socket) do
     socket |> assign(dialog: nil, rename_errors: []) |> noreply()
+  end
+
+  def handle_event("validate_rename", %{"name" => _name}, socket) do
+    # Clear any prior "can't be blank" error as the user edits the field so the
+    # message doesn't linger once they start typing again.
+    socket |> assign(rename_errors: []) |> noreply()
   end
 
   def handle_event("rename", %{"name" => name}, socket) do

@@ -35,7 +35,7 @@ defmodule LocalCents.Tracking.BookServerTest do
 
     # Persist-then-commit: the in-memory document was not updated, no broadcast fired,
     # and the server stayed alive rather than crashing and losing the change.
-    refute_receive {:book_updated, _}
+    refute_receive {:book_updated, _}, 50
     assert Tracking.list_expenses(book.id) == []
     assert BookServer.alive?(book.id)
   end

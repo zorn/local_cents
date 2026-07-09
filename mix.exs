@@ -223,6 +223,10 @@ defmodule LocalCents.MixProject do
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
 
+      # Extra Credo checks that nudge toward higher-quality Elixir/LiveView/test
+      # code — see https://github.com/Jump-App/credo_checks.
+      {:jump_credo_checks, "~> 0.4", only: [:dev, :test], runtime: false},
+
       # For enforcing domain-context isolation at compile time — each context
       # exposes a public API boundary and keeps its internals private.
       {:boundary, "~> 0.10.4", runtime: false},
