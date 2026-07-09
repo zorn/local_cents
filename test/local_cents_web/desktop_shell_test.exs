@@ -25,4 +25,21 @@ defmodule LocalCentsWeb.DesktopShellTest do
       assert decoded["path"] == "/books/0192f3c1-dead-beef"
     end
   end
+
+  describe "close_book_command/1" do
+    test "encodes a close-window command tagged with the Book's id" do
+      book = %Book{id: "abc-123", name: "Family Expenses"}
+
+      assert %{"action" => "close-window", "label" => "book-abc-123"} =
+               Jason.decode!(DesktopShell.close_book_command(book))
+    end
+
+    test "carries only the action and label — Rust needs no path or title to close" do
+      book = %Book{id: "abc-123", name: "Family Expenses"}
+
+      keys = book |> DesktopShell.close_book_command() |> Jason.decode!() |> Map.keys()
+
+      assert Enum.sort(keys) == ["action", "label"]
+    end
+  end
 end

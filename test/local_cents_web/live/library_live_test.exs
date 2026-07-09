@@ -24,9 +24,20 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> assert_has("p", text: "No books yet")
   end
 
+  test "the create form is revealed by New Book and hidden by Cancel", ~M{conn} do
+    conn
+    |> visit(~p"/library")
+    |> refute_has("#create-book-form")
+    |> click_button("New Book")
+    |> assert_has("#create-book-form")
+    |> click_button("Cancel")
+    |> refute_has("#create-book-form")
+  end
+
   test "creating a book adds it to the list", ~M{conn} do
     conn
     |> visit(~p"/library")
+    |> click_button("New Book")
     |> fill_in("New book name", with: "Groceries")
     |> click_button("Create")
     |> assert_has("#books", text: "Groceries")
@@ -35,6 +46,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
   test "a blank name shows a validation error and creates nothing", ~M{conn} do
     conn
     |> visit(~p"/library")
+    |> click_button("New Book")
     |> fill_in("New book name", with: "   ")
     |> click_button("Create")
     |> assert_has("p", text: "can't be blank")

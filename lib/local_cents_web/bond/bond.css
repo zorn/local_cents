@@ -130,6 +130,20 @@
   --color-mac-os-maximize: #28c840;
 }
 
+/* Window paper — the light window background: a soft blue surface crossed by a
+   faint 45° hatch. Shared by the desktop-window chrome and the app's window
+   background so every window sits on the same textured "paper". */
+.bond-window-paper {
+  background-color: var(--color-surface-200);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.3) 0px,
+    rgba(255, 255, 255, 0.3) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
 /* Marbled endpaper — a dark, marbled fill for title bars & the edit panel */
 .bond-marble {
   background-color: var(--color-surface-900);

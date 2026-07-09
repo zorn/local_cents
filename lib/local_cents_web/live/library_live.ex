@@ -10,11 +10,13 @@ defmodule LocalCentsWeb.LibraryLive do
   focus) a separate window at `/books/:id`, so several `Book`s can be open at once
   while the library window itself stays put.
 
-  Each row carries an overflow menu for the per-Book actions that need
-  confirmation or input: **Rename** (a modal name field) and **Delete** (a modal
-  confirmation). Both changes propagate to an open document window — a rename
-  updates its title live, and a delete closes it to the library with a notice —
-  through `LocalCents.Tracking`'s broadcasts.
+  New books are created from a bar pinned to the bottom of the window: a **New
+  Book** button reveals an inline name field. Each row carries an overflow menu
+  for the per-Book actions that need confirmation or input: **Rename** (a modal
+  name field) and **Delete** (a modal confirmation). Renaming a Book updates its
+  open document window's title live; deleting one asks the native shell to close
+  that window up front (`LocalCentsWeb.DesktopShell.close_book/1`) — both via
+  `LocalCents.Tracking`'s broadcasts and the window bridge.
   """
   use LocalCentsWeb, :live_view
 
@@ -26,6 +28,7 @@ defmodule LocalCentsWeb.LibraryLive do
     socket
     |> assign(
       books: Tracking.list_books(),
+      creating: false,
       create_name: "",
       create_errors: [],
       open_menu_id: nil,
@@ -39,74 +42,95 @@ defmodule LocalCentsWeb.LibraryLive do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="mx-auto max-w-2xl p-4">
-        <h1 class="mb-4 text-xl font-semibold text-surface-800">Library</h1>
+      <div class="flex min-h-screen flex-col">
+        <%!-- The window's native title bar shows "Library"; this heading is for
+        assistive tech and document structure. --%>
+        <h1 class="sr-only">Library</h1>
+        <div class="flex-1 overflow-y-auto">
+          <p
+            :if={@books == []}
+            class="m-4 rounded-lg border border-dashed border-surface-400 px-4 py-10 text-center text-sm text-surface-600"
+          >
+            No books yet — add one below to get started.
+          </p>
 
-        <form
-          id="create-book-form"
-          phx-submit="create"
-          phx-change="validate_create"
-          class="mb-6 flex items-end gap-2"
-        >
-          <Bond.input
-            id="new-book-name"
-            name="name"
-            value={@create_name}
-            label="New book name"
-            errors={@create_errors}
-            class="flex-1"
-          />
-          <Bond.button type="submit">Create</Bond.button>
-        </form>
-
-        <p
-          :if={@books == []}
-          class="rounded-lg border border-dashed border-surface-300 px-4 py-8 text-center text-sm text-surface-500"
-        >
-          No books yet — name one above to get started.
-        </p>
-
-        <div :if={@books != []} id="books">
-          <Bond.list_view>
-            <Bond.book_cell :for={book <- @books} id={"book-#{book.id}"} name={book.name}>
-              <:actions>
-                <div class="relative">
-                  <Bond.button variant={:square} phx-click="toggle_menu" phx-value-id={book.id}>
-                    <.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
-                    <span class="sr-only">Book actions</span>
-                  </Bond.button>
-                  <div
-                    :if={@open_menu_id == book.id}
-                    id={"menu-#{book.id}"}
-                    phx-click-away="close_menu"
-                    class="absolute right-0 top-full z-20 mt-1 min-w-[8rem] rounded-lg bg-surface-50 py-1 shadow-lg"
-                    style="border: 1px solid var(--color-surface-300)"
-                  >
-                    <button
-                      type="button"
-                      phx-click="open_rename"
-                      phx-value-id={book.id}
-                      class="block w-full px-3 py-1.5 text-left text-sm text-surface-700 hover:bg-surface-100 transition-colors"
+          <div :if={@books != []} id="books">
+            <Bond.list_view>
+              <Bond.book_cell :for={book <- @books} id={"book-#{book.id}"} name={book.name}>
+                <:actions>
+                  <div class="relative">
+                    <Bond.button variant={:square} phx-click="toggle_menu" phx-value-id={book.id}>
+                      <.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
+                      <span class="sr-only">Book actions</span>
+                    </Bond.button>
+                    <div
+                      :if={@open_menu_id == book.id}
+                      id={"menu-#{book.id}"}
+                      phx-click-away="close_menu"
+                      class="absolute right-0 top-full z-20 mt-1 min-w-[8rem] rounded-lg bg-surface-50 py-1 shadow-lg"
+                      style="border: 1px solid var(--color-surface-300)"
                     >
-                      Rename
-                    </button>
-                    <button
-                      type="button"
-                      phx-click="open_delete"
-                      phx-value-id={book.id}
-                      class="block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-100"
-                      style="color: var(--color-error-400)"
-                    >
-                      Delete
-                    </button>
+                      <button
+                        type="button"
+                        phx-click="open_rename"
+                        phx-value-id={book.id}
+                        class="block w-full px-3 py-1.5 text-left text-sm text-surface-700 hover:bg-surface-100 transition-colors"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        type="button"
+                        phx-click="open_delete"
+                        phx-value-id={book.id}
+                        class="block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-100"
+                        style="color: var(--color-error-400)"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <Bond.button variant={:outline} phx-click="open" phx-value-id={book.id}>
-                  Open
+                  <Bond.button variant={:outline} phx-click="open" phx-value-id={book.id}>
+                    Open
+                  </Bond.button>
+                </:actions>
+              </Bond.book_cell>
+            </Bond.list_view>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <form
+            :if={@creating}
+            id="create-book-form"
+            phx-submit="create"
+            phx-change="validate_create"
+          >
+            <Bond.input_bar>
+              <:leading_content>
+                <label for="new-book-name" class="sr-only">New book name</label>
+                <Bond.input
+                  id="new-book-name"
+                  name="name"
+                  value={@create_name}
+                  errors={@create_errors}
+                  placeholder="Name your new book"
+                  class="flex-1"
+                  phx-mounted={JS.focus()}
+                />
+              </:leading_content>
+              <:trailing_content>
+                <Bond.button type="button" variant={:outline} phx-click="cancel_create">
+                  Cancel
                 </Bond.button>
-              </:actions>
-            </Bond.book_cell>
-          </Bond.list_view>
+                <Bond.button type="submit">Create</Bond.button>
+              </:trailing_content>
+            </Bond.input_bar>
+          </form>
+
+          <div :if={!@creating} class="flex items-center justify-between">
+            <Bond.button phx-click="start_create">New Book</Bond.button>
+            <Bond.button variant={:square} aria-label="Help" title="Help">?</Bond.button>
+          </div>
         </div>
       </div>
 
@@ -166,6 +190,14 @@ defmodule LocalCentsWeb.LibraryLive do
     socket
     |> assign(create_name: name, create_errors: errors)
     |> noreply()
+  end
+
+  def handle_event("start_create", _params, socket) do
+    socket |> assign(creating: true, create_name: "", create_errors: []) |> noreply()
+  end
+
+  def handle_event("cancel_create", _params, socket) do
+    socket |> assign(creating: false, create_name: "", create_errors: []) |> noreply()
   end
 
   def handle_event("create", %{"name" => name}, socket) do
@@ -229,6 +261,10 @@ defmodule LocalCentsWeb.LibraryLive do
   def handle_event("delete", _params, socket) do
     {:delete, book} = socket.assigns.dialog
 
+    # Close the Book's document window up front, then remove it, so the window
+    # disappears on confirm rather than lingering to redirect itself (ADR 0006).
+    DesktopShell.close_book(book)
+
     case Tracking.delete_book(book.id) do
       :ok -> socket |> resync_and_close_dialog() |> noreply()
       {:error, _reason} -> dismiss_dialog_with_error(socket, "Could not delete the book.")
@@ -242,7 +278,12 @@ defmodule LocalCentsWeb.LibraryLive do
         DesktopShell.open_book(book)
 
         socket
-        |> assign(books: Tracking.list_books(), create_name: "", create_errors: [])
+        |> assign(
+          books: Tracking.list_books(),
+          creating: false,
+          create_name: "",
+          create_errors: []
+        )
         |> noreply()
 
       {:error, _reason} ->

@@ -18,18 +18,22 @@ const LIBRARY_PATH: &str = "/library";
 // name; this is the library's equivalent.
 const LIBRARY_TITLE: &str = "Library";
 
-/// A request from Elixir to open (or focus) a native window.
+/// A window command from Elixir, sent as JSON over the `elixirkit` PubSub bridge
+/// — the one IPC channel between Elixir and Rust (see `CLAUDE.md`).
 ///
-/// Sent as JSON over the `elixirkit` PubSub bridge — the one IPC channel between
-/// Elixir and Rust (see `CLAUDE.md`). `label` is the window's tag: re-requesting
-/// an already-open label focuses that window instead of duplicating it, which is
-/// how "one document window per Book" is enforced. `path` is the LiveView route
-/// to load and `title` is the native window title.
+/// `label` is the window's tag: for `open-window`, re-requesting an already-open
+/// label focuses that window instead of duplicating it, which is how "one
+/// document window per Book" is enforced; for `close-window` it names the window
+/// to close. `path` (the LiveView route to load) and `title` (the native window
+/// title) are only carried by `open-window`, so they default to empty for
+/// commands that omit them.
 #[derive(Deserialize)]
-struct OpenWindow {
+struct WindowCommand {
     action: String,
     label: String,
+    #[serde(default)]
     path: String,
+    #[serde(default)]
     title: String,
 }
 
@@ -46,11 +50,12 @@ pub fn run() {
                 if msg == b"ready" {
                     // Launching the app opens the library window (ADR 0006).
                     open_or_focus_window(&app_handle, LIBRARY_LABEL, LIBRARY_PATH, LIBRARY_TITLE);
-                } else if let Ok(cmd) = serde_json::from_slice::<OpenWindow>(msg) {
+                } else if let Ok(cmd) = serde_json::from_slice::<WindowCommand>(msg) {
                     match cmd.action.as_str() {
                         "open-window" => {
                             open_or_focus_window(&app_handle, &cmd.label, &cmd.path, &cmd.title)
                         }
+                        "close-window" => close_window(&app_handle, &cmd.label),
                         other => println!("[rust] unknown window action: {}", other),
                     }
                 } else {
@@ -108,6 +113,19 @@ fn open_or_focus_window(app_handle: &tauri::AppHandle, label: &str, path: &str, 
         .build()
     {
         eprintln!("[rust] failed to open window {}: {}", label, e);
+    }
+}
+
+/// Closes the native window tagged `label`, if one is open.
+///
+/// Used when a Book is deleted from the library so its document window goes away
+/// immediately (ADR 0006). An unknown label — the Book was never opened — is a
+/// no-op, matching the fire-and-forget nature of the PubSub bridge.
+fn close_window(app_handle: &tauri::AppHandle, label: &str) {
+    if let Some(window) = app_handle.get_webview_window(label) {
+        if let Err(e) = window.close() {
+            eprintln!("[rust] failed to close window {}: {}", label, e);
+        }
     }
 }
 
