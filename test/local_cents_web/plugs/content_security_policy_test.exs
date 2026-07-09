@@ -3,8 +3,7 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
 
   alias LocalCentsWeb.Plugs.ContentSecurityPolicy
 
-  # This exercises a Plug directly, so introspecting `conn.assigns` is the point
-  # of the test — opt out of Jump.CredoChecks.AvoidSocketAssignsInTest.
+  # opt out of Jump.CredoChecks.AvoidSocketAssignsInTest
   @moduletag :plug_test
 
   describe "call/2" do
