@@ -10,6 +10,15 @@ const BASE_URL: &str = "http://127.0.0.1:4000";
 const CASCADE_ORIGIN: f64 = 120.0;
 const CASCADE_STEP: f64 = 28.0;
 
+// Default and minimum window size. Below the minimum the library's create bar
+// (field + Cancel + Create) and book rows start to overflow, so the native
+// window refuses to shrink past it — the first line of defense against a
+// too-small window breaking the layout.
+const DEFAULT_WIDTH: f64 = 800.0;
+const DEFAULT_HEIGHT: f64 = 600.0;
+const MIN_WIDTH: f64 = 520.0;
+const MIN_HEIGHT: f64 = 400.0;
+
 // The persistent library window: opened at startup and never keyed to a Book.
 const LIBRARY_LABEL: &str = "library";
 const LIBRARY_PATH: &str = "/library";
@@ -108,7 +117,8 @@ fn open_or_focus_window(app_handle: &tauri::AppHandle, label: &str, path: &str, 
 
     if let Err(e) = tauri::WebviewWindowBuilder::new(app_handle, label, url)
         .title(title)
-        .inner_size(800.0, 600.0)
+        .inner_size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        .min_inner_size(MIN_WIDTH, MIN_HEIGHT)
         .position(offset, offset)
         .build()
     {

@@ -114,7 +114,7 @@ defmodule LocalCentsWeb.LibraryLive do
                   value={@create_name}
                   errors={@create_errors}
                   placeholder="Name your new book"
-                  class="flex-1"
+                  class="min-w-0 flex-1"
                   phx-mounted={JS.focus()}
                 />
               </:leading_content>

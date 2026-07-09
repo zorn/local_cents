@@ -26,14 +26,14 @@ defmodule LocalCentsWeb.Bond.Composites.BookCell do
       {@rest}
     >
       <div class="flex-1 min-w-0">
-        <p class="text-base font-semibold leading-snug text-surface-800">
+        <p class="truncate text-base font-semibold leading-snug text-surface-800">
           {@name}
         </p>
         <p :if={@last_updated} class="text-xs mt-0.5 text-surface-600">
           Last Updated: {@last_updated}
         </p>
       </div>
-      <div :if={@actions != []} class="flex items-center gap-2">
+      <div :if={@actions != []} class="flex shrink-0 items-center gap-2">
         {render_slot(@actions)}
       </div>
     </div>
