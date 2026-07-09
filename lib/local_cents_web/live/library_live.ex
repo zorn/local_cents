@@ -30,7 +30,6 @@ defmodule LocalCentsWeb.LibraryLive do
       books: Tracking.list_books(),
       creating: false,
       create_name: "",
-      open_menu_id: nil,
       dialog: nil,
       rename_errors: []
     )
@@ -59,37 +58,33 @@ defmodule LocalCentsWeb.LibraryLive do
             <Bond.list_view fill>
               <Bond.book_cell :for={book <- @books} id={"book-#{book.id}"} name={book.name}>
                 <:actions>
-                  <div class="relative">
-                    <Bond.button variant={:square} phx-click="toggle_menu" phx-value-id={book.id}>
-                      <.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
-                      <span class="sr-only">Book actions</span>
-                    </Bond.button>
-                    <div
-                      :if={@open_menu_id == book.id}
-                      id={"menu-#{book.id}"}
-                      phx-click-away="close_menu"
-                      class="absolute right-0 top-full z-20 mt-1 min-w-[8rem] rounded-lg bg-surface-50 py-1 shadow-lg"
-                      style="border: 1px solid var(--color-surface-300)"
+                  <Bond.menu id={"menu-#{book.id}"}>
+                    <:trigger>
+                      <Bond.button variant={:square}>
+                        <.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
+                        <span class="sr-only">Book actions</span>
+                      </Bond.button>
+                    </:trigger>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      phx-click="open_rename"
+                      phx-value-id={book.id}
+                      class="block w-full px-3 py-1.5 text-left text-sm text-surface-700 hover:bg-surface-100 transition-colors"
                     >
-                      <button
-                        type="button"
-                        phx-click="open_rename"
-                        phx-value-id={book.id}
-                        class="block w-full px-3 py-1.5 text-left text-sm text-surface-700 hover:bg-surface-100 transition-colors"
-                      >
-                        Rename
-                      </button>
-                      <button
-                        type="button"
-                        phx-click="open_delete"
-                        phx-value-id={book.id}
-                        class="block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-100"
-                        style="color: var(--color-error-400)"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+                      Rename
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      phx-click="open_delete"
+                      phx-value-id={book.id}
+                      class="block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-100"
+                      style="color: var(--color-error-600)"
+                    >
+                      Delete
+                    </button>
+                  </Bond.menu>
                   <Bond.button variant={:outline} phx-click="open" phx-value-id={book.id}>
                     Open
                   </Bond.button>
@@ -218,15 +213,6 @@ defmodule LocalCentsWeb.LibraryLive do
     end
   end
 
-  def handle_event("toggle_menu", %{"id" => id}, socket) do
-    # Clicking the open row's toggle closes it; any other row's opens that one.
-    socket |> assign(open_menu_id: toggle_menu_id(socket.assigns.open_menu_id, id)) |> noreply()
-  end
-
-  def handle_event("close_menu", _params, socket) do
-    socket |> assign(open_menu_id: nil) |> noreply()
-  end
-
   def handle_event("open_rename", %{"id" => id}, socket) do
     open_dialog(socket, :rename, id)
   end
@@ -282,15 +268,16 @@ defmodule LocalCentsWeb.LibraryLive do
     end
   end
 
-  # Opens a per-Book action dialog, closing the overflow menu. Re-reads the Book so
-  # the modal shows a fresh name and quietly resyncs if it was deleted meanwhile.
+  # Opens a per-Book action dialog. Re-reads the Book so the modal shows a fresh
+  # name and quietly resyncs if it was deleted meanwhile. (The overflow menu closes
+  # itself client-side when an item is chosen.)
   defp open_dialog(socket, kind, id) do
     case Tracking.get_book(id) do
       %Tracking.Book{} = book ->
-        socket |> assign(dialog: {kind, book}, open_menu_id: nil, rename_errors: []) |> noreply()
+        socket |> assign(dialog: {kind, book}, rename_errors: []) |> noreply()
 
       nil ->
-        socket |> assign(books: Tracking.list_books(), open_menu_id: nil) |> noreply()
+        socket |> assign(books: Tracking.list_books()) |> noreply()
     end
   end
 
@@ -306,9 +293,6 @@ defmodule LocalCentsWeb.LibraryLive do
     |> assign(dialog: nil, rename_errors: [])
     |> noreply()
   end
-
-  defp toggle_menu_id(open_id, open_id), do: nil
-  defp toggle_menu_id(_open_id, id), do: id
 
   defp dialog_book({_kind, book}), do: book
 

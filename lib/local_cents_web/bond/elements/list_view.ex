@@ -34,7 +34,14 @@ defmodule LocalCentsWeb.Bond.Elements.ListView do
         </div>
       <% end %>
       <div
-        class={["overflow-y-auto divide-y divide-surface-200/60", @fill && "flex-1"]}
+        class={
+          [
+            "overflow-y-auto divide-y divide-surface-200/60",
+            # When filling, rows sit at the top with empty card below, so close the
+            # last row with its own divider (divide-y only draws between rows).
+            @fill && "flex-1 [&>*:last-child]:border-b [&>*:last-child]:border-surface-200/60"
+          ]
+        }
         style={not @fill && @max_height && "max-height: #{@max_height}"}
       >
         {render_slot(@inner_block)}

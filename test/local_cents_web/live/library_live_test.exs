@@ -71,7 +71,6 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       |> visit(~p"/library")
       |> within("#book-#{book.id}", fn s ->
         s
-        |> click_button("Book actions")
         |> click_button("Rename")
       end)
 
@@ -92,7 +91,6 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> visit(~p"/library")
     |> within("#book-#{book.id}", fn s ->
       s
-      |> click_button("Book actions")
       |> click_button("Rename")
     end)
     |> within("#rename-modal", fn s ->
@@ -110,7 +108,6 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> visit(~p"/library")
     |> within("#book-#{book.id}", fn s ->
       s
-      |> click_button("Book actions")
       |> click_button("Delete")
     end)
     |> within("#delete-modal", fn s -> click_button(s, "Delete") end)
