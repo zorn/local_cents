@@ -23,7 +23,8 @@ defmodule LocalCentsWeb.Bond do
       `action_chip/1`, `list_view/1`, `tag_pill/1`.
     * **Layouts** (`LocalCentsWeb.Bond.Layouts`) — slot-driven arrangement
       shells that position content but carry no data of their own:
-      `desktop_window/1`, `input_bar/1`, `list_controls/1`, `side_panel/1`.
+      `desktop_window/1`, `input_bar/1`, `list_controls/1`, `modal/1`,
+      `side_panel/1`.
     * **Composites** (`LocalCentsWeb.Bond.Composites`) — domain-aware rows that
       combine elements into a single unit: `book_cell/1`, `expense_cell/1`.
 
@@ -42,6 +43,7 @@ defmodule LocalCentsWeb.Bond do
   defdelegate list_view(assigns), to: LocalCentsWeb.Bond.Elements.ListView
   defdelegate desktop_window(assigns), to: LocalCentsWeb.Bond.Layouts.DesktopWindow
   defdelegate input_bar(assigns), to: LocalCentsWeb.Bond.Layouts.InputBar
+  defdelegate modal(assigns), to: LocalCentsWeb.Bond.Layouts.Modal
   defdelegate list_controls(assigns), to: LocalCentsWeb.Bond.Layouts.ListControls
   defdelegate side_panel(assigns), to: LocalCentsWeb.Bond.Layouts.SidePanel
   defdelegate book_cell(assigns), to: LocalCentsWeb.Bond.Composites.BookCell

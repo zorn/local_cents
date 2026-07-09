@@ -59,7 +59,6 @@ defmodule LocalCents.TrackingTest do
       assert {:error, :not_open} =
                Tracking.add_expense(id, %Expense{description: "Coffee", amount: 500})
 
-      assert {:error, :not_open} = Tracking.rename_book(id, "New Name")
       assert {:error, :not_open} = Tracking.list_expenses(id)
     end
 
@@ -79,6 +78,32 @@ defmodule LocalCents.TrackingTest do
 
       assert [%Book{id: id, name: "New Name"}] = Tracking.list_books()
       assert id == book.id
+    end
+
+    test "renames a closed book by writing its file directly, without starting a process" do
+      {:ok, book} = Tracking.create_book("Old Name")
+      :ok = Tracking.close_book(book.id)
+
+      assert :ok = Tracking.rename_book(book.id, "New Name")
+      # The rename must not have resurrected the book's runtime process.
+      refute LocalCents.Tracking.BookServer.alive?(book.id)
+      assert %Book{name: "New Name"} = Tracking.get_book(book.id)
+    end
+
+    test "renames an open book through its process and broadcasts the change" do
+      {:ok, book} = Tracking.create_book("Old Name")
+      :ok = Tracking.subscribe(book.id)
+
+      assert :ok = Tracking.rename_book(book.id, "New Name")
+
+      assert_receive {:book_updated, id}
+      assert id == book.id
+      assert %Book{name: "New Name"} = Tracking.get_book(book.id)
+    end
+
+    test "returns an error for an id with no book file" do
+      assert {:error, :enoent} =
+               Tracking.rename_book("11111111-1111-4111-8111-111111111111", "New Name")
     end
   end
 
@@ -147,6 +172,16 @@ defmodule LocalCents.TrackingTest do
 
       assert :ok = Tracking.delete_book(book.id)
       assert Tracking.list_books() == []
+    end
+
+    test "broadcasts to subscribers so an open document window can react" do
+      {:ok, book} = Tracking.create_book("Family")
+      :ok = Tracking.subscribe(book.id)
+
+      assert :ok = Tracking.delete_book(book.id)
+
+      assert_receive {:book_updated, id}
+      assert id == book.id
     end
   end
 end

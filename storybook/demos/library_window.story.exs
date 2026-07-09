@@ -6,8 +6,8 @@ defmodule Storybook.Demos.LibraryWindow do
       "The Library window — a desktop window listing expense books, composed entirely from Bond components."
 
   @books [
-    %{id: 1, name: "Family Expenses", last_updated: "06-02-2026 1:34 PM"},
-    %{id: 2, name: "Side Hustle LLC Expenses", last_updated: "06-02-2026 1:34 PM"}
+    %{id: 1, name: "Family Expenses"},
+    %{id: 2, name: "Side Hustle LLC Expenses"}
   ]
 
   @impl Phoenix.LiveView
@@ -25,11 +25,14 @@ defmodule Storybook.Demos.LibraryWindow do
       <div class="resize-x overflow-hidden min-w-[320px] max-w-full w-[576px] p-6">
         <Bond.desktop_window title="Library">
           <Bond.list_view max_height="320px">
-            <Bond.book_cell
-              :for={book <- @books}
-              name={book.name}
-              last_updated={book.last_updated}
-            />
+            <Bond.book_cell :for={book <- @books} name={book.name}>
+              <:actions>
+                <Bond.button variant={:square}>
+                  <LocalCentsWeb.CoreComponents.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
+                </Bond.button>
+                <Bond.button variant={:outline}>Open</Bond.button>
+              </:actions>
+            </Bond.book_cell>
           </Bond.list_view>
           <div class="flex items-center justify-between px-4 py-4">
             <Bond.button>New Book</Bond.button>
