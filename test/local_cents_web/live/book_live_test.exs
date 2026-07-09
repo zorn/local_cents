@@ -16,6 +16,14 @@ defmodule LocalCentsWeb.BookLiveTest do
     |> assert_has("h1", text: "Family Expenses")
   end
 
+  test "shows the book's name in a draggable title bar", ~M{conn} do
+    {:ok, book} = Tracking.create_book("Family Expenses")
+
+    conn
+    |> visit(~p"/books/#{book.id}")
+    |> assert_has("[data-tauri-drag-region]", text: "Family Expenses")
+  end
+
   test "a renamed book updates the heading live", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")
 

@@ -116,13 +116,26 @@ fn open_or_focus_window(app_handle: &tauri::AppHandle, label: &str, path: &str, 
     // further from the origin.
     let offset = CASCADE_ORIGIN + app_handle.webview_windows().len() as f64 * CASCADE_STEP;
 
-    if let Err(e) = tauri::WebviewWindowBuilder::new(app_handle, label, url)
+    let builder = tauri::WebviewWindowBuilder::new(app_handle, label, url)
         .title(title)
         .inner_size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
         .min_inner_size(MIN_WIDTH, MIN_HEIGHT)
-        .position(offset, offset)
-        .build()
-    {
+        .position(offset, offset);
+
+    // Let the webview's paper texture paint up into the title bar while the native
+    // traffic lights (and, crucially, the green button's native Zoom) stay put — see
+    // ADR 0013. `Overlay` is the style that makes AppKit's fullSizeContentView extend
+    // the content under a transparent title bar; `Transparent` alone leaves the bar
+    // showing the window's background color, not our HTML. `hidden_title` drops the
+    // native title text so the HTML title in `Layouts.app` is the only one shown.
+    // Both builder methods are macOS-only (the shell is macOS-only for the MVP), so
+    // they are cfg-gated to keep other targets compiling.
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true);
+
+    if let Err(e) = builder.build() {
         eprintln!("[rust] failed to open window {}: {}", label, e);
     }
 }

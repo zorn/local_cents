@@ -48,12 +48,13 @@ defmodule LocalCentsWeb.LibraryLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <%!-- h-screen (not min-h-screen) pins the column to the viewport so the list
-      scrolls inside it and the bottom bar stays visible no matter how many books. --%>
-      <div class="flex h-screen flex-col overflow-hidden">
-        <%!-- The window's native title bar shows "Library"; this heading is for
-        assistive tech and document structure. --%>
+    <Layouts.app flash={@flash} window_title="Library">
+      <%!-- h-full (not min-h-screen) pins the column to the shell's content area so
+      the list scrolls inside it and the bottom bar stays visible no matter how many
+      books; the title bar above already claimed its slice of the viewport. --%>
+      <div class="flex h-full flex-col overflow-hidden">
+        <%!-- The title bar's "Library" is decorative chrome (aria-hidden); this
+        heading carries the name for assistive tech and document structure. --%>
         <h1 class="sr-only">Library</h1>
         <div class="flex min-h-0 flex-1 flex-col">
           <p

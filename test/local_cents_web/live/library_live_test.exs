@@ -8,6 +8,12 @@ defmodule LocalCentsWeb.LibraryLiveTest do
 
   setup :with_temp_books_dir
 
+  test "shows the window title in a draggable title bar", ~M{conn} do
+    conn
+    |> visit(~p"/library")
+    |> assert_has("[data-tauri-drag-region]", text: "Library")
+  end
+
   test "lists existing books", ~M{conn} do
     {:ok, _} = Tracking.create_book("Family Expenses")
     {:ok, _} = Tracking.create_book("Side Hustle")
