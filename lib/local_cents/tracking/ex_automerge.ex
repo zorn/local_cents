@@ -24,6 +24,14 @@ defmodule LocalCents.Tracking.ExAutomerge do
   that name back out — the library uses it to enumerate Books without starting a
   process per file.
 
+  Every mutating NIF (`new_document/2`, `rename/3`, `add_expense/4`) takes a
+  `time` — a unix-seconds stamp Elixir supplies — and records it on the Automerge
+  change it produces. `document_updated_at/1` reads the most recent such stamp back
+  out, which is how a Book earns its "last updated" without relying on the file's
+  mtime (see [ADR 0012](0012-book-last-updated-timestamp.html)). The Automerge core
+  never defaults a change time, so the clock stays in Elixir and is always passed
+  in explicitly.
+
   Because the document is a CRDT, two independently edited copies can be combined
   with `merge/2` without conflicts, which is the foundation for future
   multi-device sync.
@@ -38,9 +46,12 @@ defmodule LocalCents.Tracking.ExAutomerge do
   @doc """
   Creates a new, empty Automerge document for a Book named `name` and returns its
   serialized bytes.
+
+  `time` is a unix-seconds timestamp recorded on the document's first change so the
+  Book has a "last updated" from the moment it exists.
   """
-  @spec new_document(String.t()) :: binary()
-  def new_document(_name), do: :erlang.nif_error(:nif_not_loaded)
+  @spec new_document(String.t(), integer()) :: binary()
+  def new_document(_name, _time), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
   Returns the Book name stored in the document.
@@ -49,21 +60,34 @@ defmodule LocalCents.Tracking.ExAutomerge do
   def document_name(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
+  Returns the unix-seconds timestamp of the document's most recent change, or `nil`
+  when no change carries a usable time.
+
+  Derived from Automerge change metadata (the max across the document's changes)
+  rather than a stored field, so it reflects the *latest edit* after a merge rather
+  than the latest local write (see [ADR 0012](0012-book-last-updated-timestamp.html)).
+  """
+  @spec document_updated_at(binary()) :: integer() | nil
+  def document_updated_at(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
   Sets the Book name and returns the updated serialized bytes.
 
-  The document is never mutated in place — a new binary is returned.
+  `time` is a unix-seconds timestamp recorded on the resulting change. The document
+  is never mutated in place — a new binary is returned.
   """
-  @spec rename(binary(), String.t()) :: binary()
-  def rename(_doc_bytes, _name), do: :erlang.nif_error(:nif_not_loaded)
+  @spec rename(binary(), String.t(), integer()) :: binary()
+  def rename(_doc_bytes, _name, _time), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
   Appends an expense to the document and returns the updated serialized bytes.
 
-  Takes the current document bytes, a `description`, and an `amount`, and returns
-  a new binary — the document is never mutated in place.
+  Takes the current document bytes, a `description`, an `amount`, and a `time` (unix
+  seconds) recorded on the resulting change, and returns a new binary — the document
+  is never mutated in place.
   """
-  @spec add_expense(binary(), String.t(), number()) :: binary()
-  def add_expense(_doc_bytes, _description, _amount),
+  @spec add_expense(binary(), String.t(), number(), integer()) :: binary()
+  def add_expense(_doc_bytes, _description, _amount, _time),
     do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """

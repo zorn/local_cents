@@ -25,9 +25,18 @@ defmodule LocalCentsWeb.LibraryLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
+    books = Tracking.list_books()
+
+    # Once connected, listen for each Book's changes so a "Last Updated" subtitle
+    # never goes stale while another window edits the Book (see ADR 0012). The
+    # browser reports its time zone through connect params; the static first render
+    # has none, so it falls back to UTC until the socket connects.
+    if connected?(socket), do: Enum.each(books, &Tracking.subscribe(&1.id))
+
     socket
     |> assign(
-      books: Tracking.list_books(),
+      books: books,
+      time_zone: connected_time_zone(socket),
       creating: false,
       create_name: "",
       dialog: nil,
@@ -56,7 +65,12 @@ defmodule LocalCentsWeb.LibraryLive do
 
           <div :if={@books != []} id="books" class="flex min-h-0 flex-1 flex-col">
             <Bond.list_view fill>
-              <Bond.book_cell :for={book <- @books} id={"book-#{book.id}"} name={book.name}>
+              <Bond.book_cell
+                :for={book <- @books}
+                id={"book-#{book.id}"}
+                name={book.name}
+                last_updated={format_updated_at(book.updated_at, @time_zone)}
+              >
                 <:actions>
                   <Bond.menu id={"menu-#{book.id}"}>
                     <:trigger>
@@ -253,11 +267,22 @@ defmodule LocalCentsWeb.LibraryLive do
     end
   end
 
+  @impl Phoenix.LiveView
+  def handle_info({:book_updated, _id}, socket) do
+    # A Book changed (here or in its document window) — re-read the library so every
+    # "Last Updated" subtitle reflects the edit and any deleted Book drops out. The
+    # library is small, so re-enumerating is simpler than tracking rows by hand and
+    # matches how the dialog flows already resync.
+    socket |> assign(books: Tracking.list_books()) |> noreply()
+  end
+
   defp create_book(socket, name) do
     case Tracking.create_book(name) do
       {:ok, book} ->
         # Creating a book opens its document window straight away (ADR 0006).
         DesktopShell.open_book(book)
+        # Follow the new Book's changes so its subtitle stays live like the rest.
+        if connected?(socket), do: Tracking.subscribe(book.id)
 
         socket
         |> assign(books: Tracking.list_books(), creating: false, create_name: "")
@@ -304,4 +329,39 @@ defmodule LocalCentsWeb.LibraryLive do
   end
 
   defp blank_name?(name), do: String.trim(name) == ""
+
+  # The IANA time zone the browser reported on connect (e.g. "America/New_York"),
+  # falling back to UTC on the static first render (no connect params yet) or if the
+  # param is missing.
+  defp connected_time_zone(socket) do
+    case get_connect_params(socket) do
+      %{"time_zone" => time_zone} when is_binary(time_zone) -> time_zone
+      _ -> "Etc/UTC"
+    end
+  end
+
+  # Renders a Book's UTC `updated_at` in the user's local zone as, e.g.,
+  # "06-02-2026 1:34 PM". Returns nil when there's no timestamp, so `book_cell`
+  # omits the subtitle. An unknown/garbage zone falls back to showing UTC rather
+  # than crashing the whole library.
+  defp format_updated_at(nil, _time_zone), do: nil
+
+  defp format_updated_at(%DateTime{} = updated_at, time_zone) do
+    local =
+      case DateTime.shift_zone(updated_at, time_zone) do
+        {:ok, shifted} -> shifted
+        {:error, _reason} -> updated_at
+      end
+
+    date = Calendar.strftime(local, "%m-%d-%Y")
+    minute = local.minute |> Integer.to_string() |> String.pad_leading(2, "0")
+    "#{date} #{twelve_hour(local.hour)}:#{minute} #{period(local.hour)}"
+  end
+
+  defp twelve_hour(0), do: 12
+  defp twelve_hour(hour) when hour > 12, do: hour - 12
+  defp twelve_hour(hour), do: hour
+
+  defp period(hour) when hour < 12, do: "AM"
+  defp period(_hour), do: "PM"
 end

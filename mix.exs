@@ -110,7 +110,10 @@ defmodule LocalCents.MixProject do
       "docs/adr/0007-book-runtime-and-persistence.md",
       "docs/adr/0008-mvp-expense-shape.md",
       "docs/adr/0009-book-file-format.md",
-      "docs/adr/0010-cost-as-decimal-string.md"
+      "docs/adr/0010-cost-as-decimal-string.md",
+      "docs/adr/0011-pubsub-topic-naming.md",
+      "docs/adr/0012-book-last-updated-timestamp.md",
+      "docs/research/automerge-last-updated.md"
     ]
   end
 
@@ -121,7 +124,8 @@ defmodule LocalCents.MixProject do
       Guides:
         ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|moduledoc-style|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
       Proposals: ~r{docs/proposals/},
-      Decisions: ~r{docs/adr/}
+      Decisions: ~r{docs/adr/},
+      Research: ~r{docs/research/}
     ]
   end
 
@@ -263,6 +267,12 @@ defmodule LocalCents.MixProject do
 
       # For internationalization and localization.
       {:gettext, "~> 1.0"},
+
+      # IANA time zone database for `DateTime.shift_zone/2`, so the library can
+      # render a Book's "last updated" in the user's local time. `tz` makes no
+      # network calls by default (unlike `tzdata`), which suits an offline-first
+      # desktop app. See ADR 0012.
+      {:tz, "~> 0.28"},
 
       # For JSON encoding and decoding.
       {:jason, "~> 1.2"},

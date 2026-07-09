@@ -20,8 +20,10 @@ defmodule LocalCents.Tracking do
   route to that process, which applies the change, persists it, and broadcasts to
   subscribers; read functions are served from the process's in-memory document.
 
-  Identify a Book by its `id` (a UUID string, also its file name). `create_book/1`
-  and `list_books/0` return `Book` structs pairing that id with the name.
+  Identify a Book by its `id` (a UUID string, also its file name). `create_book/2`
+  and `list_books/0` return `Book` structs pairing that id with the name and a
+  `updated_at` derived from the document's change history (see
+  [ADR 0012](0012-book-last-updated-timestamp.html)).
   """
 
   # The tracking context boundary. It is a top-level boundary (a peer of the
@@ -43,14 +45,18 @@ defmodule LocalCents.Tracking do
   @doc """
   Creates a new, empty Book named `name`, persists it, and starts its runtime
   process. Returns the `Book`.
-  """
-  @spec create_book(Book.name()) :: {:ok, Book.t()} | {:error, term()}
-  def create_book(name) when is_binary(name) do
-    id = BookStore.generate_id()
 
-    with :ok <- BookStore.save(id, ExAutomerge.new_document(name)),
+  `now` stamps the document's first change and seeds the Book's `updated_at`; it
+  defaults to the current time and is injectable for tests.
+  """
+  @spec create_book(Book.name(), DateTime.t()) :: {:ok, Book.t()} | {:error, term()}
+  def create_book(name, now \\ DateTime.utc_now()) when is_binary(name) do
+    id = BookStore.generate_id()
+    seconds = unix_seconds(now)
+
+    with :ok <- BookStore.save(id, ExAutomerge.new_document(name, seconds)),
          {:ok, _pid} <- BookServer.ensure_started(id) do
-      {:ok, %Book{id: id, name: name}}
+      {:ok, %Book{id: id, name: name, updated_at: to_datetime(seconds)}}
     else
       {:error, reason} ->
         # If the process failed to start after the file was written, remove it so a
@@ -109,12 +115,16 @@ defmodule LocalCents.Tracking do
     if id in BookStore.list_ids(), do: read_book(id)
   end
 
-  # Reads one Book's identity, tolerating a file that cannot be read or is not a
-  # valid Book document, so a single bad `.lcbook` never blanks the whole library.
+  # Reads one Book's library view, tolerating a file that cannot be read or is not
+  # a valid Book document, so a single bad `.lcbook` never blanks the whole library.
   defp read_book(id) do
     case BookStore.load(id) do
       {:ok, doc} ->
-        %Book{id: id, name: ExAutomerge.document_name(doc)}
+        %Book{
+          id: id,
+          name: ExAutomerge.document_name(doc),
+          updated_at: to_datetime(ExAutomerge.document_updated_at(doc))
+        }
 
       {:error, reason} ->
         Logger.warning("Skipping unreadable book file #{inspect(id)}: #{inspect(reason)}")
@@ -159,24 +169,28 @@ defmodule LocalCents.Tracking do
 
   Returns `{:error, reason}` if the Book cannot be read or the change cannot be
   persisted.
+
+  `now` stamps the rename change so the Book's `updated_at` advances; it defaults
+  to the current time and is injectable for tests.
   """
-  @spec rename_book(Book.id(), Book.name()) :: :ok | {:error, term()}
-  def rename_book(id, new_name) when is_binary(id) and is_binary(new_name) do
+  @spec rename_book(Book.id(), Book.name(), DateTime.t()) :: :ok | {:error, term()}
+  def rename_book(id, new_name, now \\ DateTime.utc_now())
+      when is_binary(id) and is_binary(new_name) do
     case BookServer.alive?(id) do
-      true -> BookServer.rename(id, new_name)
-      false -> rename_on_disk(id, new_name)
+      true -> BookServer.rename(id, new_name, unix_seconds(now))
+      false -> rename_on_disk(id, new_name, unix_seconds(now))
     end
   catch
     # The server can die between alive?/1 and the rename call; the document is
     # persisted after every change, so falling back to the on-disk rename is safe.
-    :exit, {:noproc, _} -> rename_on_disk(id, new_name)
+    :exit, {:noproc, _} -> rename_on_disk(id, new_name, unix_seconds(now))
   end
 
   # Renames a closed Book by rewriting its file. No `BookServer` owns the document,
   # so disk is the source of truth and no process needs to start just to rename.
-  defp rename_on_disk(id, new_name) do
+  defp rename_on_disk(id, new_name, seconds) do
     with {:ok, doc} <- BookStore.load(id) do
-      BookStore.save(id, ExAutomerge.rename(doc, new_name))
+      BookStore.save(id, ExAutomerge.rename(doc, new_name, seconds))
     end
   rescue
     # A readable-but-corrupt `.lcbook` makes the rename NIF raise; report it rather
@@ -189,10 +203,18 @@ defmodule LocalCents.Tracking do
 
   Returns `{:error, :not_open}` if the Book's process is not running
   (`open_book/1`), or `{:error, reason}` if persisting the change fails.
+
+  `now` stamps the change so the Book's `updated_at` advances; it defaults to the
+  current time and is injectable for tests.
   """
-  @spec add_expense(Book.id(), Expense.t()) :: :ok | {:error, term()}
-  def add_expense(id, %Expense{description: description, amount: amount}) when is_binary(id) do
-    BookServer.add_expense(id, description, amount)
+  @spec add_expense(Book.id(), Expense.t(), DateTime.t()) :: :ok | {:error, term()}
+  def add_expense(
+        id,
+        %Expense{description: description, amount: amount},
+        now \\ DateTime.utc_now()
+      )
+      when is_binary(id) do
+    BookServer.add_expense(id, description, amount, unix_seconds(now))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -225,4 +247,14 @@ defmodule LocalCents.Tracking do
   def subscribe(id) when is_binary(id) do
     Phoenix.PubSub.subscribe(LocalCents.PubSub, BookServer.topic(id))
   end
+
+  # The change stamp we hand the NIFs is whole unix seconds — the resolution
+  # Automerge records — so a Book's `updated_at` round-trips at the same precision
+  # whether it was just created or later re-read from the document.
+  defp unix_seconds(%DateTime{} = now), do: DateTime.to_unix(now, :second)
+
+  # `document_updated_at/1` returns `nil` when no change carries a usable time; the
+  # Book then has no `updated_at` and the library renders no "last updated" line.
+  defp to_datetime(nil), do: nil
+  defp to_datetime(seconds) when is_integer(seconds), do: DateTime.from_unix!(seconds, :second)
 end
