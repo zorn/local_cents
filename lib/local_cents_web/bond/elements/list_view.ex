@@ -13,9 +13,10 @@ defmodule LocalCentsWeb.Bond.Elements.ListView do
 
   attr :fill, :boolean,
     default: false,
-    doc:
-      "When true, stretch to fill the height of a flex-column parent and scroll internally, " <>
-        "instead of sizing to content. Takes precedence over `max_height`."
+    doc: """
+    When true, stretch to fill the height of a flex-column parent and scroll
+    internally, instead of sizing to content. Takes precedence over `max_height`.
+    """
 
   slot :header, doc: "Optional content rendered above the scrollable area, inside the container"
   slot :inner_block, required: true, doc: "Row content rendered inside the scrollable area"

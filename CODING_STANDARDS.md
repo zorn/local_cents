@@ -38,6 +38,12 @@ gets its own guide or ADR.
   `Socket.assigns()` is the precise public type (`map | assigns_not_in_socket()`);
   the aliases keep the spec line readable.
 
+- **Prefix intentionally-unused bindings with `_`.** A pattern-match binding kept
+  for shape but not used — `{:error, _reason}`, an event handler's unused payload
+  (`handle_event("cancel", _params, socket)`) — takes a leading underscore. It
+  documents the intent and matches Elixir/LiveView norms (see LiveView's
+  [form events](https://hexdocs.pm/phoenix_live_view/form-bindings.html#form-events)).
+
 - **Phoenix v1.8 conventions** — the `<Layouts.app flash={@flash} …>` wrapper on
   every LiveView template, the imported `<.input>` / `<.icon>` components,
   authenticated-route / `current_scope` rules, and `Req` as the HTTP client — are

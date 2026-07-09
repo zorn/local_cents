@@ -69,14 +69,11 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     session =
       conn
       |> visit(~p"/library")
-      |> within("#book-#{book.id}", fn s ->
-        s
-        |> click_button("Rename")
-      end)
+      |> within("#book-#{book.id}", fn row -> click_button(row, "Rename") end)
 
     session
-    |> within("#rename-modal", fn s ->
-      s
+    |> within("#rename-modal", fn modal ->
+      modal
       |> fill_in("New name", with: "New Name")
       |> click_button("Rename")
     end)
@@ -89,12 +86,9 @@ defmodule LocalCentsWeb.LibraryLiveTest do
 
     conn
     |> visit(~p"/library")
-    |> within("#book-#{book.id}", fn s ->
-      s
-      |> click_button("Rename")
-    end)
-    |> within("#rename-modal", fn s ->
-      s
+    |> within("#book-#{book.id}", fn row -> click_button(row, "Rename") end)
+    |> within("#rename-modal", fn modal ->
+      modal
       |> fill_in("New name", with: "   ")
       |> click_button("Rename")
     end)
@@ -106,11 +100,8 @@ defmodule LocalCentsWeb.LibraryLiveTest do
 
     conn
     |> visit(~p"/library")
-    |> within("#book-#{book.id}", fn s ->
-      s
-      |> click_button("Delete")
-    end)
-    |> within("#delete-modal", fn s -> click_button(s, "Delete") end)
+    |> within("#book-#{book.id}", fn row -> click_button(row, "Delete") end)
+    |> within("#delete-modal", fn modal -> click_button(modal, "Delete") end)
     |> assert_has("p", text: "No books yet")
 
     assert Tracking.list_books() == []

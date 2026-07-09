@@ -72,8 +72,14 @@ defmodule LocalCentsWeb.Bond.Elements.Menu do
     <script :type={Phoenix.LiveView.ColocatedHook} name=".Menu">
       export default {
         mounted() {
-          this.trigger = this.el.querySelector("[data-menu-trigger]")
+          const wrapper = this.el.querySelector("[data-menu-trigger]")
           this.panel = this.el.querySelector("[data-menu-panel]")
+          // ARIA and the click handler belong on the real control (the button/link
+          // the user focuses), not the wrapper, so assistive tech announces the
+          // menu's expanded state. Fall back to the wrapper if there isn't one.
+          this.control = wrapper.querySelector("button, a, [role='button']") || wrapper
+          this.control.setAttribute("aria-haspopup", "true")
+          this.control.setAttribute("aria-expanded", "false")
 
           this.onTrigger = (e) => { e.stopPropagation(); this.toggle() }
           this.onPanelClick = () => this.close()
@@ -81,13 +87,13 @@ defmodule LocalCentsWeb.Bond.Elements.Menu do
           this.onKeydown = (e) => { if (e.key === "Escape") this.close() }
           this.onReflow = () => this.close()
 
-          this.trigger.addEventListener("click", this.onTrigger)
+          this.control.addEventListener("click", this.onTrigger)
           this.panel.addEventListener("click", this.onPanelClick)
         },
 
         destroyed() {
           this.detachOpenListeners()
-          this.trigger.removeEventListener("click", this.onTrigger)
+          this.control.removeEventListener("click", this.onTrigger)
           this.panel.removeEventListener("click", this.onPanelClick)
         },
 
@@ -98,7 +104,7 @@ defmodule LocalCentsWeb.Bond.Elements.Menu do
         open() {
           this.position()
           this.panel.classList.remove("invisible")
-          this.trigger.setAttribute("aria-expanded", "true")
+          this.control.setAttribute("aria-expanded", "true")
           document.addEventListener("click", this.onDocClick)
           document.addEventListener("keydown", this.onKeydown)
           window.addEventListener("resize", this.onReflow)
@@ -107,7 +113,7 @@ defmodule LocalCentsWeb.Bond.Elements.Menu do
 
         close() {
           this.panel.classList.add("invisible")
-          this.trigger.setAttribute("aria-expanded", "false")
+          this.control.setAttribute("aria-expanded", "false")
           this.detachOpenListeners()
         },
 
@@ -122,7 +128,7 @@ defmodule LocalCentsWeb.Bond.Elements.Menu do
         // it fits, otherwise above; right-aligned to the trigger, clamped so it
         // never leaves the window on either edge.
         position() {
-          const t = this.trigger.getBoundingClientRect()
+          const t = this.control.getBoundingClientRect()
           const pw = this.panel.offsetWidth
           const ph = this.panel.offsetHeight
           const gap = 4

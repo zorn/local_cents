@@ -1,11 +1,13 @@
 defmodule Storybook.Elements.Menu do
   use LocalCentsWeb.Storybook.Story, :example
 
-  def doc,
-    do:
-      "A dropdown menu whose panel floats on the top layer (position: fixed), so it escapes any " <>
-        "overflow-clipped container. It flips above the trigger when there's no room below, clamps " <>
-        "to the window's left/right edges, and closes on outside-click, Escape, resize, or scroll."
+  def doc do
+    """
+    A dropdown menu whose panel floats on the top layer (position: fixed), so it escapes any
+    overflow-clipped container. It flips above the trigger when there's no room below, clamps
+    to the window's left/right edges, and closes on outside-click, Escape, resize, or scroll.
+    """
+  end
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket), do: {:ok, assign(socket, picked: nil)}

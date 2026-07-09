@@ -136,10 +136,10 @@ defmodule LocalCents.Tracking do
 
     case BookStore.delete(id) do
       :ok ->
-        # Tell any open document window the Book is gone so it can close to the
-        # library with a notice (ADR 0006). Broadcast after the file is removed so
-        # a subscriber re-reading the Book sees it absent.
-        Phoenix.PubSub.broadcast(LocalCents.PubSub, BookServer.topic(id), {:book_updated, id})
+        # Announce the change on the Book's topic after the file is gone, so a
+        # subscriber that re-reads finds it absent. Best-effort: the delete has
+        # already succeeded, so the broadcast result is not our concern.
+        _ = Phoenix.PubSub.broadcast(LocalCents.PubSub, BookServer.topic(id), {:book_updated, id})
         :ok
 
       {:error, reason} ->

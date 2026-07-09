@@ -36,9 +36,10 @@ defmodule Storybook.Elements.ListView do
       },
       %Variation{
         id: :fill,
-        description:
-          "fill stretches the list to its flex-column parent's height and scrolls inside " <>
-            "(shown here in a fixed-height container).",
+        description: """
+        fill stretches the list to its flex-column parent's height and scrolls inside
+        (shown here in a fixed-height container).
+        """,
         attributes: %{fill: true},
         template: """
         <div class="flex h-72 flex-col bg-surface-200">
