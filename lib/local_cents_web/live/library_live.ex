@@ -127,9 +127,8 @@ defmodule LocalCentsWeb.LibraryLive do
             </Bond.input_bar>
           </form>
 
-          <div :if={!@creating} class="flex items-center justify-between">
+          <div :if={!@creating}>
             <Bond.button phx-click="start_create">New Book</Bond.button>
-            <Bond.button variant={:square} aria-label="Help" title="Help">?</Bond.button>
           </div>
         </div>
       </div>

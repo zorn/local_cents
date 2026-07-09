@@ -35,7 +35,7 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
     do: "font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp"
 
   defp button_class(:outline),
-    do: "font-bold px-3 py-1 text-sm rounded bond-stamp"
+    do: "font-bold px-3 py-1.5 text-sm rounded bond-stamp"
 
   defp button_class(:square),
     do: "font-bold text-sm rounded bond-stamp w-7 h-7 flex items-center justify-center"
