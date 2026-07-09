@@ -10,6 +10,15 @@ const BASE_URL: &str = "http://127.0.0.1:4000";
 const CASCADE_ORIGIN: f64 = 120.0;
 const CASCADE_STEP: f64 = 28.0;
 
+// Default and minimum window size. Below the minimum the library's create bar
+// (field + Cancel + Create) and book rows start to overflow, so the native
+// window refuses to shrink past it — the first line of defense against a
+// too-small window breaking the layout.
+const DEFAULT_WIDTH: f64 = 800.0;
+const DEFAULT_HEIGHT: f64 = 600.0;
+const MIN_WIDTH: f64 = 520.0;
+const MIN_HEIGHT: f64 = 400.0;
+
 // The persistent library window: opened at startup and never keyed to a Book.
 const LIBRARY_LABEL: &str = "library";
 const LIBRARY_PATH: &str = "/library";
@@ -18,18 +27,22 @@ const LIBRARY_PATH: &str = "/library";
 // name; this is the library's equivalent.
 const LIBRARY_TITLE: &str = "Library";
 
-/// A request from Elixir to open (or focus) a native window.
+/// A window command from Elixir, sent as JSON over the `elixirkit` PubSub bridge
+/// — the one IPC channel between Elixir and Rust (see `CLAUDE.md`).
 ///
-/// Sent as JSON over the `elixirkit` PubSub bridge — the one IPC channel between
-/// Elixir and Rust (see `CLAUDE.md`). `label` is the window's tag: re-requesting
-/// an already-open label focuses that window instead of duplicating it, which is
-/// how "one document window per Book" is enforced. `path` is the LiveView route
-/// to load and `title` is the native window title.
+/// `label` is the window's tag: for `open-window`, re-requesting an already-open
+/// label focuses that window instead of duplicating it, which is how "one
+/// document window per Book" is enforced; for `close-window` it names the window
+/// to close. `path` (the LiveView route to load) and `title` (the native window
+/// title) are only carried by `open-window`, so they default to empty for
+/// commands that omit them.
 #[derive(Deserialize)]
-struct OpenWindow {
+struct WindowCommand {
     action: String,
     label: String,
+    #[serde(default)]
     path: String,
+    #[serde(default)]
     title: String,
 }
 
@@ -46,11 +59,13 @@ pub fn run() {
                 if msg == b"ready" {
                     // Launching the app opens the library window (ADR 0006).
                     open_or_focus_window(&app_handle, LIBRARY_LABEL, LIBRARY_PATH, LIBRARY_TITLE);
-                } else if let Ok(cmd) = serde_json::from_slice::<OpenWindow>(msg) {
+                } else if let Ok(cmd) = serde_json::from_slice::<WindowCommand>(msg) {
                     match cmd.action.as_str() {
                         "open-window" => {
                             open_or_focus_window(&app_handle, &cmd.label, &cmd.path, &cmd.title)
                         }
+                        "close-window" => close_window(&app_handle, &cmd.label),
+                        "set-title" => set_window_title(&app_handle, &cmd.label, &cmd.title),
                         other => println!("[rust] unknown window action: {}", other),
                     }
                 } else {
@@ -103,11 +118,38 @@ fn open_or_focus_window(app_handle: &tauri::AppHandle, label: &str, path: &str, 
 
     if let Err(e) = tauri::WebviewWindowBuilder::new(app_handle, label, url)
         .title(title)
-        .inner_size(800.0, 600.0)
+        .inner_size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
+        .min_inner_size(MIN_WIDTH, MIN_HEIGHT)
         .position(offset, offset)
         .build()
     {
         eprintln!("[rust] failed to open window {}: {}", label, e);
+    }
+}
+
+/// Closes the native window tagged `label`, if one is open.
+///
+/// Used when a Book is deleted from the library so its document window goes away
+/// immediately (ADR 0006). An unknown label — the Book was never opened — is a
+/// no-op, matching the fire-and-forget nature of the PubSub bridge.
+fn close_window(app_handle: &tauri::AppHandle, label: &str) {
+    if let Some(window) = app_handle.get_webview_window(label) {
+        if let Err(e) = window.close() {
+            eprintln!("[rust] failed to close window {}: {}", label, e);
+        }
+    }
+}
+
+/// Updates the title bar of the native window tagged `label`, if one is open.
+///
+/// The native title is set when the window is built and does not follow the
+/// webview's document `<title>`, so a Book renamed while its window is open
+/// pushes the new title here (ADR 0006). An unknown label is a no-op.
+fn set_window_title(app_handle: &tauri::AppHandle, label: &str, title: &str) {
+    if let Some(window) = app_handle.get_webview_window(label) {
+        if let Err(e) = window.set_title(title) {
+            eprintln!("[rust] failed to set title for window {}: {}", label, e);
+        }
     }
 }
 

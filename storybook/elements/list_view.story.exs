@@ -35,6 +35,31 @@ defmodule Storybook.Elements.ListView do
         ]
       },
       %Variation{
+        id: :fill,
+        description: """
+        fill stretches the list to its flex-column parent's height and scrolls inside
+        (shown here in a fixed-height container).
+        """,
+        attributes: %{fill: true},
+        template: """
+        <div class="flex h-72 flex-col bg-surface-200">
+          <.psb-variation/>
+        </div>
+        """,
+        slots: [
+          """
+          <div class="px-4 py-3">Item One</div>
+          <div class="px-4 py-3">Item Two</div>
+          <div class="px-4 py-3">Item Three</div>
+          <div class="px-4 py-3">Item Four</div>
+          <div class="px-4 py-3">Item Five</div>
+          <div class="px-4 py-3">Item Six</div>
+          <div class="px-4 py-3">Item Seven</div>
+          <div class="px-4 py-3">Item Eight</div>
+          """
+        ]
+      },
+      %Variation{
         id: :with_header,
         description:
           "Optional header slot renders above the scrollable area, inside the container.",

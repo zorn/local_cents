@@ -38,6 +38,16 @@ gets its own guide or ADR.
   `Socket.assigns()` is the precise public type (`map | assigns_not_in_socket()`);
   the aliases keep the spec line readable.
 
+- **Name LiveView events in snake_case.** The event strings behind `phx-*`
+  bindings and matched in `handle_event/3` are snake_case and describe what they
+  represent — `handle_event("email_changed", …)`, `"validate"`, `"save"` — per
+  LiveView's [form events](https://hexdocs.pm/phoenix_live_view/form-bindings.html#form-events).
+
+- **Discard an ignored return with `_ = expr`.** When a call is fire-and-forget and
+  its result genuinely doesn't matter — e.g. a best-effort `Phoenix.PubSub.broadcast/3`
+  once the real work has already succeeded — bind it to `_` so the disinterest is
+  explicit rather than a bare dangling expression.
+
 - **Phoenix v1.8 conventions** — the `<Layouts.app flash={@flash} …>` wrapper on
   every LiveView template, the imported `<.input>` / `<.icon>` components,
   authenticated-route / `current_scope` rules, and `Req` as the HTTP client — are

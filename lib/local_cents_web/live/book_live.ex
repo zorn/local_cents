@@ -13,6 +13,7 @@ defmodule LocalCentsWeb.BookLive do
   use LocalCentsWeb, :live_view
 
   alias LocalCents.Tracking
+  alias LocalCentsWeb.DesktopShell
 
   @impl Phoenix.LiveView
   def mount(%{"id" => id}, _session, socket) do
@@ -56,6 +57,10 @@ defmodule LocalCentsWeb.BookLive do
   def handle_info({:book_updated, id}, socket) do
     case Tracking.get_book(id) do
       %Tracking.Book{} = book ->
+        # `page_title` updates the document `<title>`, but the native window's
+        # title bar does not follow it — push the new name to the shell too.
+        DesktopShell.set_book_title(book)
+
         socket
         |> assign(book: book, page_title: book.name)
         |> noreply()

@@ -23,6 +23,12 @@ defmodule Storybook.Elements.Button do
         description: "Small fixed-size square button for single characters.",
         attributes: %{variant: :square},
         slots: ["?"]
+      },
+      %Variation{
+        id: :disabled,
+        description: "Disabled state — dimmed, not-allowed cursor, and no stamp press on hover.",
+        attributes: %{variant: :primary, disabled: true},
+        slots: ["Create"]
       }
     ]
   end

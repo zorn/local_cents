@@ -133,20 +133,55 @@ defmodule LocalCents.Tracking do
   @spec delete_book(Book.id()) :: :ok | {:error, term()}
   def delete_book(id) when is_binary(id) do
     :ok = close_book(id)
-    BookStore.delete(id)
+
+    case BookStore.delete(id) do
+      :ok ->
+        # Announce the change on the Book's topic after the file is gone, so a
+        # subscriber that re-reads finds it absent. Best-effort: the delete has
+        # already succeeded, so the broadcast result is not our concern.
+        _ = Phoenix.PubSub.broadcast(LocalCents.PubSub, BookServer.topic(id), {:book_updated, id})
+        :ok
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
-  Renames an open Book.
+  Renames a Book, whether or not it is currently open.
 
-  Returns `{:error, :not_open}` if the Book's process is not running
-  (`open_book/1`), or `{:error, reason}` if persisting the change fails.
+  When the Book has a running [`BookServer`](`LocalCents.Tracking.BookServer`) —
+  i.e. its document window is open — the rename goes through that process, which
+  persists it and broadcasts so the open window updates its title live. When the
+  Book is closed, its `.lcbook` file is the source of truth (see
+  [ADR 0007](0007-book-runtime-and-persistence.html)), so the rename is applied to
+  the file directly without starting a runtime process.
+
+  Returns `{:error, reason}` if the Book cannot be read or the change cannot be
+  persisted.
   """
   @spec rename_book(Book.id(), Book.name()) :: :ok | {:error, term()}
   def rename_book(id, new_name) when is_binary(id) and is_binary(new_name) do
-    BookServer.rename(id, new_name)
+    case BookServer.alive?(id) do
+      true -> BookServer.rename(id, new_name)
+      false -> rename_on_disk(id, new_name)
+    end
   catch
-    :exit, {:noproc, _} -> {:error, :not_open}
+    # The server can die between alive?/1 and the rename call; the document is
+    # persisted after every change, so falling back to the on-disk rename is safe.
+    :exit, {:noproc, _} -> rename_on_disk(id, new_name)
+  end
+
+  # Renames a closed Book by rewriting its file. No `BookServer` owns the document,
+  # so disk is the source of truth and no process needs to start just to rename.
+  defp rename_on_disk(id, new_name) do
+    with {:ok, doc} <- BookStore.load(id) do
+      BookStore.save(id, ExAutomerge.rename(doc, new_name))
+    end
+  rescue
+    # A readable-but-corrupt `.lcbook` makes the rename NIF raise; report it rather
+    # than crash the caller, matching how `read_book/1` tolerates bad files.
+    ArgumentError -> {:error, :invalid_document}
   end
 
   @doc """

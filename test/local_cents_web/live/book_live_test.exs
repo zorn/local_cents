@@ -35,4 +35,20 @@ defmodule LocalCentsWeb.BookLiveTest do
     |> assert_path(~p"/library")
     |> assert_has("h1", text: "Library")
   end
+
+  test "deleting a book closes its open window to the library with a notice", ~M{conn} do
+    {:ok, book} = Tracking.create_book("Family Expenses")
+
+    session =
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> assert_has("h1", text: "Family Expenses")
+
+    :ok = Tracking.delete_book(book.id)
+
+    session
+    |> assert_has("h1", text: "Library", timeout: 100)
+    |> assert_has("#flash-error", text: "This book was deleted.")
+    |> assert_path(~p"/library")
+  end
 end

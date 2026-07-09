@@ -1,14 +1,11 @@
-// If your components require any hooks or custom uploaders, or if your pages
-// require connect parameters, uncomment the following lines and declare them as
-// such:
-//
-// import * as Hooks from "./hooks";
-// import * as Params from "./params";
-// import * as Uploaders from "./uploaders";
+// Register Bond's colocated JS hooks (e.g. the Menu positioner, SidePanel/Modal
+// Escape handlers) with the Storybook LiveSocket so interactive components
+// behave in the catalog exactly as they do in the app.
+import {hooks as colocatedHooks} from "phoenix-colocated/local_cents"
 
-// (function () {
-//   window.storybook = { Hooks, Params, Uploaders };
-// })();
+;(function () {
+  window.storybook = {Hooks: colocatedHooks}
+})()
 
 
 // If your components require alpinejs, you'll need to start

@@ -164,7 +164,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
           {@rest}
         />
       </div>
-      <.input_errors errors={@errors} />
+      <.input_errors errors={@errors} variant={@variant} />
     </div>
     """
   end
@@ -182,7 +182,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         style="--bond-placeholder: var(--color-surface-400); --bond-focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-400) 35%, transparent)"
         {@rest}
       />
-      <.input_errors errors={@errors} />
+      <.input_errors errors={@errors} variant={@variant} />
     </div>
     """
   end
@@ -200,7 +200,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         style="--bond-placeholder: var(--color-surface-400); --bond-focus-ring: 0 0 0 3px color-mix(in srgb, var(--color-primary-800) 15%, transparent)"
         {@rest}
       />
-      <.input_errors errors={@errors} />
+      <.input_errors errors={@errors} variant={@variant} />
     </div>
     """
   end
@@ -222,12 +222,17 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     <p
       :for={msg <- @errors}
       class="mt-1 text-xs flex items-center gap-1"
-      style="color: var(--color-error-400);"
+      style={"color: #{error_color(@variant)};"}
     >
       {msg}
     </p>
     """
   end
+
+  # Errors read on the input's own background: a light red on the dark frosted
+  # panel, a darker red on the light default/search fields so it keeps contrast.
+  defp error_color("frosted"), do: "var(--color-error-400)"
+  defp error_color(_variant), do: "var(--color-error-600)"
 
   defp label_color_class("frosted"), do: "text-primary-400"
   defp label_color_class(_), do: "text-surface-600"
