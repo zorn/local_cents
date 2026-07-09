@@ -46,7 +46,7 @@ defmodule LocalCentsWeb.LibraryLive do
         <%!-- The window's native title bar shows "Library"; this heading is for
         assistive tech and document structure. --%>
         <h1 class="sr-only">Library</h1>
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex min-h-0 flex-1 flex-col">
           <p
             :if={@books == []}
             class="m-4 rounded-lg border border-dashed border-surface-400 px-4 py-10 text-center text-sm text-surface-600"
@@ -54,8 +54,8 @@ defmodule LocalCentsWeb.LibraryLive do
             No books yet — add one below to get started.
           </p>
 
-          <div :if={@books != []} id="books">
-            <Bond.list_view>
+          <div :if={@books != []} id="books" class="flex min-h-0 flex-1 flex-col">
+            <Bond.list_view fill>
               <Bond.book_cell :for={book <- @books} id={"book-#{book.id}"} name={book.name}>
                 <:actions>
                   <div class="relative">
