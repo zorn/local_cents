@@ -217,7 +217,7 @@ defmodule LocalCents.Tracking do
   machine's date (the default); a future web caller supplies the browser's date.
   Both are injectable for tests.
   """
-  @spec add_expense(Book.id(), map(), now :: DateTime.t(), today :: Date.t()) ::
+  @spec add_expense(Book.id(), attrs :: map(), now :: DateTime.t(), today :: Date.t()) ::
           {:ok, Expense.t()} | {:error, term()}
   def add_expense(id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
       when is_binary(id) and is_map(attrs) do
@@ -235,7 +235,13 @@ defmodule LocalCents.Tracking do
   or `{:error, reason}` if persisting fails. `now`/`today` behave as in
   `add_expense/4`.
   """
-  @spec edit_expense(Book.id(), Expense.id(), map(), now :: DateTime.t(), today :: Date.t()) ::
+  @spec edit_expense(
+          Book.id(),
+          Expense.id(),
+          attrs :: map(),
+          now :: DateTime.t(),
+          today :: Date.t()
+        ) ::
           {:ok, Expense.t()} | {:error, term()}
   def edit_expense(id, expense_id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
       when is_binary(id) and is_binary(expense_id) and is_map(attrs) do

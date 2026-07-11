@@ -92,7 +92,13 @@ defmodule LocalCents.Tracking.BookServer do
   `time` is the unix-seconds stamp recorded on the change so the Book's
   `updated_at` advances (see [ADR 0012](0012-book-last-updated-timestamp.html)).
   """
-  @spec add_expense(Book.id(), map(), Expense.id(), Date.t(), time :: integer()) ::
+  @spec add_expense(
+          Book.id(),
+          attrs :: map(),
+          Expense.id(),
+          today :: Date.t(),
+          time :: integer()
+        ) ::
           {:ok, Expense.t()} | {:error, term()}
   def add_expense(id, attrs, expense_id, today, time) when is_binary(id) do
     GenServer.call(via(id), {:add_expense, attrs, expense_id, today, time})
@@ -104,7 +110,13 @@ defmodule LocalCents.Tracking.BookServer do
   `attrs`, `{:error, :not_found}` for an unknown `expense_id`, or `{:error, reason}`
   if the write fails.
   """
-  @spec edit_expense(Book.id(), Expense.id(), map(), Date.t(), time :: integer()) ::
+  @spec edit_expense(
+          Book.id(),
+          Expense.id(),
+          attrs :: map(),
+          today :: Date.t(),
+          time :: integer()
+        ) ::
           {:ok, Expense.t()} | {:error, term()}
   def edit_expense(id, expense_id, attrs, today, time) when is_binary(id) do
     GenServer.call(via(id), {:edit_expense, expense_id, attrs, today, time})

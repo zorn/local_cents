@@ -44,7 +44,7 @@ defmodule LocalCents.Tracking.BookDocument do
   the process shell deals only in domain values and never touches the codec module
   directly.
   """
-  @spec from_bytes(binary()) :: t()
+  @spec from_bytes(doc_bytes :: binary()) :: t()
   def from_bytes(bytes), do: from_raw(ExAutomerge.decode(bytes))
 
   @doc """
@@ -53,7 +53,7 @@ defmodule LocalCents.Tracking.BookDocument do
   The write half of the codec bridge: `to_raw/1` then `ExAutomerge.reconcile/3`.
   `time` (unix seconds) stamps the resulting change.
   """
-  @spec to_bytes(t(), binary(), integer()) :: binary()
+  @spec to_bytes(t(), prior_bytes :: binary(), time :: integer()) :: binary()
   def to_bytes(%__MODULE__{} = document, prior_bytes, time) do
     ExAutomerge.reconcile(prior_bytes, to_raw(document), time)
   end
@@ -91,7 +91,7 @@ defmodule LocalCents.Tracking.BookDocument do
   Returns `{:ok, document, expense}` with the created Expense, or
   `{:error, changeset}` if `attrs` fail validation.
   """
-  @spec add_expense(t(), map(), Expense.id(), Date.t()) ::
+  @spec add_expense(t(), attrs :: map(), Expense.id(), today :: Date.t()) ::
           {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t()}
   def add_expense(%__MODULE__{} = document, attrs, id, %Date{} = today) do
     changeset = Expense.changeset(%Expense{id: id}, attrs, today)
@@ -113,7 +113,7 @@ defmodule LocalCents.Tracking.BookDocument do
   Returns `{:ok, document, expense}` with the updated Expense, `{:error, changeset}`
   on invalid `attrs`, or `{:error, :not_found}` if no Expense has that `id`.
   """
-  @spec edit_expense(t(), Expense.id(), map(), Date.t()) ::
+  @spec edit_expense(t(), Expense.id(), attrs :: map(), today :: Date.t()) ::
           {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t()} | {:error, :not_found}
   def edit_expense(%__MODULE__{} = document, id, attrs, %Date{} = today) do
     case Enum.find_index(document.expenses, &(&1.id == id)) do
@@ -151,7 +151,7 @@ defmodule LocalCents.Tracking.BookDocument do
   @doc """
   Sets the Book's name. Returns `{:ok, document}`.
   """
-  @spec rename(t(), String.t()) :: {:ok, t()}
+  @spec rename(t(), new_name :: String.t()) :: {:ok, t()}
   def rename(%__MODULE__{} = document, new_name) when is_binary(new_name) do
     {:ok, %{document | name: new_name}}
   end

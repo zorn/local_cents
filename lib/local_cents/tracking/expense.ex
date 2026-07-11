@@ -66,7 +66,7 @@ defmodule LocalCents.Tracking.Expense do
   non-negative (`0` is allowed). `attrs` may use string or atom keys; a blank
   string for `date` or `cost` is treated as absent.
   """
-  @spec changeset(t(), map(), Date.t()) :: Ecto.Changeset.t()
+  @spec changeset(t(), attrs :: map(), today :: Date.t()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = expense, attrs, %Date{} = today) do
     expense
     |> cast(normalize(attrs), @cast_fields)
