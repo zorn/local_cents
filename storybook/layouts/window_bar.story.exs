@@ -25,12 +25,6 @@ defmodule Storybook.Layouts.WindowBar do
         template: paper("<.psb-variation/>")
       },
       %Variation{
-        id: :document,
-        description: "A document window titled by its Book.",
-        attributes: %{title: "Family Expenses"},
-        template: paper("<.psb-variation/>")
-      },
-      %Variation{
         id: :untitled,
         description: "No title — a bare draggable strip.",
         attributes: %{},
