@@ -99,8 +99,9 @@ and `LocalCents.Tracking` has an exemplar of each; use them as templates.
   the runtime model, and how callers identify and refer to entities. Spend words
   here. ("Public API" always names this module, never the context as a whole —
   the context is the whole territory; this is the door into it.)
-- **The private implementation** (`LocalCents.Tracking.BookServer`,
-  `LocalCents.Tracking.BookStore`, `LocalCents.Tracking.ExAutomerge`,
+- **The private implementation** (`LocalCents.Tracking.BookDocument`,
+  `LocalCents.Tracking.BookServer`, `LocalCents.Tracking.BookStore`,
+  `LocalCents.Tracking.ExAutomerge`, `LocalCents.Tracking.UUID`,
   `LocalCents.Tracking.Supervisor`) — everything behind that front door. Open by
   stating that the module is private to its context and _why_ (the `Boundary`
   compiler enforces it; see [Module Boundaries](module-boundaries.html)), then

@@ -17,7 +17,7 @@ and calling a helper buried three modules deep:
 
 ```elixir
 # We do NOT want call sites doing this:
-LocalCents.Tracking.ExAutomerge.add_expense(book, "Coffee", 450)
+LocalCents.Tracking.ExAutomerge.decode(book_bytes)
 ```
 
 That kind of call couples the caller to an implementation detail. If we later
@@ -161,7 +161,7 @@ Now the build fails, because the boundary violation is promoted to an error.
 which *is* allowed from `LocalCentsWeb`:
 
 ```elixir
-_ = LocalCents.Tracking.new_book()
+_ = LocalCents.Tracking.create_book("Family Expenses")
 ```
 
 Recompile and the warning is gone. **Remember to revert the demo edit** — it was

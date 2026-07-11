@@ -34,6 +34,13 @@ therefore take a `time` (unix seconds) and record it via
 seconds — the resolution Automerge records. `merge/2` takes no time: it integrates
 changes that already carry their own.
 
+> **Update (#62):** the per-operation `rename/3` and `add_expense/4` NIFs named above
+> were replaced by a single `reconcile/3` mutation NIF when the tracking context
+> moved to a functional-core / process-shell design (see
+> [ADR 0014](0014-functional-core-process-shell.html)). The clock-ownership
+> mechanism this ADR records is unchanged — `new_document/2` and `reconcile/3` take
+> the `time` and stamp it via `CommitOptions::with_time/1` exactly as described.
+
 `updated_at` surfaces on the `LocalCents.Tracking.Book` struct as a
 `DateTime.t() | nil` in **UTC**, converted once at the context boundary so the
 seconds-vs-milliseconds hazard lives in one place. It is `nil` when no change
