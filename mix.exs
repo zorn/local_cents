@@ -113,6 +113,7 @@ defmodule LocalCents.MixProject do
       "docs/adr/0010-cost-as-decimal-string.md",
       "docs/adr/0011-pubsub-topic-naming.md",
       "docs/adr/0012-book-last-updated-timestamp.md",
+      "docs/adr/0013-transparent-native-title-bar.md",
       "docs/research/automerge-last-updated.md"
     ]
   end

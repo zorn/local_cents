@@ -153,6 +153,14 @@
     radial-gradient(ellipse at 50% 5%, rgba(34, 51, 92, 0.35) 0%, transparent 58%);
 }
 
+/* Window title in the marbled title bar. Dims when the window is in the background,
+   matching the macOS norm — the native traffic lights dim via the same key-window
+   state. `app.js` toggles `.window-inactive` on <html> from the WKWebView's window
+   focus/blur (WebKit's CSS `:window-inactive` was unreliable here). */
+.window-inactive .bond-window-title {
+  color: rgba(255, 255, 255, 0.35);
+}
+
 /* Ink utilities — apply a per-instance accent ("ink") to paper. Driven by
    --bond-ink / --bond-ink-strong, which callers set inline
    (e.g. `--bond-ink: var(--color-primary-800)`). */

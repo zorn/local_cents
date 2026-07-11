@@ -39,7 +39,7 @@ defmodule LocalCentsWeb.BookLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} window_title={@book.name}>
       <div class="mx-auto max-w-2xl p-4">
         <h1 class="text-xl font-semibold">{@book.name}</h1>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">

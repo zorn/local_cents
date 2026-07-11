@@ -21,10 +21,7 @@ defmodule LocalCentsWeb.Bond.Layouts.DesktopWindow do
       class="bond-window-paper rounded-xl overflow-hidden shadow-lg"
       style="border: 1px solid var(--color-surface-400); box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--color-primary-800) 20%, transparent); --bond-ink: var(--color-primary-800); --bond-ink-strong: var(--color-primary-900)"
     >
-      <div
-        class="bond-marble relative flex items-center pl-3 pr-4 py-2 select-none"
-        style="border-bottom: 1px solid var(--color-surface-950)"
-      >
+      <div class="bond-marble relative flex items-center pl-3 pr-4 py-2 select-none border-b border-surface-950">
         <div class="flex items-center gap-2 z-10">
           <button class="w-3 h-3 rounded-full border border-black/20 bg-mac-os-close"></button>
           <button class="w-3 h-3 rounded-full border border-black/20 bg-mac-os-minimize"></button>

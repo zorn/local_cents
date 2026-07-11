@@ -50,6 +50,18 @@ liveSocket.connect()
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+// Dim the title bar when the native window is in the background, matching macOS
+// (the native traffic lights dim via the same key-window state). WebKit's CSS
+// :window-inactive proved unreliable on non-::selection elements in WKWebView, so
+// we mirror the WKWebView's window focus/blur into a class the title bar keys off
+// (see Bond.Layouts.WindowBar / bond.css). hasFocus() reflects the real state, so
+// the same handler serves both events and the initial paint.
+const syncWindowFocus = () =>
+  document.documentElement.classList.toggle("window-inactive", !document.hasFocus())
+window.addEventListener("focus", syncWindowFocus)
+window.addEventListener("blur", syncWindowFocus)
+syncWindowFocus()
+
 // The lines below enable quality of life phoenix_live_reload
 // development features:
 //
