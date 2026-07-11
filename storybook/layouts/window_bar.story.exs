@@ -7,6 +7,10 @@ defmodule Storybook.Layouts.WindowBar do
   # In the app the real macOS traffic lights sit on this marble bar; the catalog has
   # no native chrome, so each variation wraps the bar over a paper body to stand in
   # for the window it tops.
+  @dots_note "No red/amber/green dots here — those are the real macOS window controls, drawn " <>
+               "by the OS on top of this strip because the shell makes the native title bar " <>
+               "transparent (ADR 0013). Storybook has no native chrome, so the bar renders alone."
+
   defp paper(inner) do
     """
     <div class="bond-window-paper rounded-lg overflow-hidden" style="width: 520px;">
@@ -20,7 +24,7 @@ defmodule Storybook.Layouts.WindowBar do
     [
       %Variation{
         id: :default,
-        description: "The library window's title bar.",
+        description: "The library window's title bar. #{@dots_note}",
         attributes: %{title: "Library"},
         template: paper("<.psb-variation/>")
       },
