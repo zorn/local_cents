@@ -1,15 +1,36 @@
 use automerge::transaction::CommitOptions;
 use automerge::AutoCommit;
-use autosurgeon::{hydrate, reconcile, Hydrate, Reconcile};
+use autosurgeon::{hydrate, Hydrate, Reconcile};
 use rustler::{Binary, Env, NewBinary, NifMap};
 
+// One expense as stored in a Book's Automerge document.
+//
+// `id` is an Elixir-generated UUID and is marked `#[key]` so `autosurgeon`
+// reconciles the expenses list **by identity, not by position**. That is what
+// makes edits and deletes merge cleanly across devices: deleting a middle expense
+// removes exactly that element's object (rather than rewriting every following
+// slot), and a concurrent edit to a different expense survives the merge. Without
+// the key, autosurgeon cannot tell "inserted at the front" from "changed the first
+// item" and rewrites objects in place, corrupting concurrent edits (see ADR 0015).
+//
+// `date` is an ISO-8601 calendar date string (e.g. "2026-07-11"); `cost` is an
+// optional decimal string (e.g. "12.34"), `None`/absent when unknown — never
+// defaulted to "0" (see ADRs 0008 and 0010). All domain rules live in Elixir's
+// `BookDocument`; this struct is a dumb data carrier.
 #[derive(Reconcile, Hydrate, Clone, Debug, NifMap)]
 pub struct Expense {
+    #[key]
+    pub id: String,
+    pub date: String,
     pub description: String,
-    pub amount: i64,
+    pub cost: Option<String>,
 }
 
-#[derive(Reconcile, Hydrate, Clone, Debug)]
+// The full decoded contents of a Book document: its name plus its expenses. This
+// is the plain data the Elixir side (`ExAutomerge.decode/1` /
+// `ExAutomerge.reconcile/3`) exchanges with the functional core — Rust owns no domain
+// logic, only the CRDT encoding (see ADR 0014).
+#[derive(Reconcile, Hydrate, Clone, Debug, NifMap)]
 struct BookDoc {
     name: String,
     expenses: Vec<Expense>,
@@ -47,7 +68,7 @@ fn commit_at(doc: &mut AutoCommit, time: i64) {
 #[rustler::nif]
 fn new_document<'a>(env: Env<'a>, name: String, time: i64) -> Result<Binary<'a>, rustler::Error> {
     let mut doc = AutoCommit::new();
-    reconcile(&mut doc, &BookDoc::empty(name)).map_err(to_badarg)?;
+    autosurgeon::reconcile(&mut doc, &BookDoc::empty(name)).map_err(to_badarg)?;
     commit_at(&mut doc, time);
     Ok(binary_from_bytes(env, &doc.save()))
 }
@@ -79,45 +100,38 @@ fn document_updated_at(doc_bytes: Binary) -> Result<Option<i64>, rustler::Error>
     Ok(latest)
 }
 
+// Decodes a document's bytes into its plain domain contents (name + expenses) for
+// the functional core to work on. This is the read half of the codec (see
+// ADR 0014); it never mutates.
 #[rustler::nif]
-fn rename<'a>(
-    env: Env<'a>,
-    doc_bytes: Binary,
-    name: String,
-    time: i64,
-) -> Result<Binary<'a>, rustler::Error> {
-    let mut doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
-    let mut state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
-    state.name = name;
-    reconcile(&mut doc, &state).map_err(to_badarg)?;
-    commit_at(&mut doc, time);
-    Ok(binary_from_bytes(env, &doc.save()))
-}
-
-#[rustler::nif]
-fn add_expense<'a>(
-    env: Env<'a>,
-    doc_bytes: Binary,
-    description: String,
-    amount: i64,
-    time: i64,
-) -> Result<Binary<'a>, rustler::Error> {
-    let mut doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
-    let mut state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
-    state.expenses.push(Expense {
-        description,
-        amount,
-    });
-    reconcile(&mut doc, &state).map_err(to_badarg)?;
-    commit_at(&mut doc, time);
-    Ok(binary_from_bytes(env, &doc.save()))
-}
-
-#[rustler::nif]
-fn list_expenses(doc_bytes: Binary) -> Result<Vec<Expense>, rustler::Error> {
+fn decode(doc_bytes: Binary) -> Result<BookDoc, rustler::Error> {
     let doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
     let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
-    Ok(state.expenses)
+    Ok(state)
+}
+
+// Reconciles a whole new document state onto the prior bytes and returns the
+// updated bytes. This is the single mutation path (write half of the codec,
+// ADR 0014): the Elixir functional core computes `new_state` in domain terms — add,
+// edit, delete an expense, or rename the Book — and hands it here to be reconciled
+// onto the existing CRDT history.
+//
+// Loading the prior document first preserves the change history (so merges and
+// `updated_at` keep working); `autosurgeon::reconcile` diffs the hydrated state
+// against `new_state` and records only the minimal operations. `time` (unix
+// seconds) stamps the resulting change. The document is never mutated in place — a
+// new binary is returned.
+#[rustler::nif]
+fn reconcile<'a>(
+    env: Env<'a>,
+    prior_bytes: Binary,
+    new_state: BookDoc,
+    time: i64,
+) -> Result<Binary<'a>, rustler::Error> {
+    let mut doc = AutoCommit::load(prior_bytes.as_slice()).map_err(to_badarg)?;
+    autosurgeon::reconcile(&mut doc, &new_state).map_err(to_badarg)?;
+    commit_at(&mut doc, time);
+    Ok(binary_from_bytes(env, &doc.save()))
 }
 
 #[rustler::nif]

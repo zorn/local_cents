@@ -114,6 +114,9 @@ defmodule LocalCents.MixProject do
       "docs/adr/0011-pubsub-topic-naming.md",
       "docs/adr/0012-book-last-updated-timestamp.md",
       "docs/adr/0013-transparent-native-title-bar.md",
+      "docs/adr/0014-functional-core-process-shell.md",
+      "docs/adr/0015-expense-identity-and-date-encoding.md",
+      "docs/adr/0016-ecto-embedded-validation-no-repo.md",
       "docs/research/automerge-last-updated.md"
     ]
   end
@@ -281,6 +284,15 @@ defmodule LocalCents.MixProject do
 
       # For JSON encoding and decoding.
       {:jason, "~> 1.2"},
+
+      # For embedded-schema validation and casting of the domain model (e.g. the
+      # `Expense` editor form). Used *without* a database or `ecto_sql` — the store
+      # is the Automerge document, not SQL (see ADR 0007). See ADR 0016.
+      {:ecto, "~> 3.14"},
+
+      # Exact decimal arithmetic for an Expense's `Cost`, which is stored as a
+      # decimal string in the Automerge document (see ADR 0010).
+      {:decimal, "~> 2.0 or ~> 3.0"},
 
       # For clustering nodes via DNS.
       {:dns_cluster, "~> 0.2.0"},
