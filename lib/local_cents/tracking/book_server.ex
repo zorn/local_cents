@@ -187,16 +187,20 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   # Confirm the loaded bytes are a valid Book document before the server starts
-  # serving from them. A readable-but-corrupt `.lcbook` would otherwise start
-  # fine and only blow up later when a NIF raised `ArgumentError` on a `:name`/
-  # `:list_expenses` call — crashing the server and exiting the caller. Decoding the
-  # whole document exercises the parse, so validating here makes `open_book/1` fail
-  # deterministically instead.
+  # serving from them. A readable-but-corrupt or legacy `.lcbook` would otherwise
+  # start fine and only blow up later on a `:name`/`:list_expenses` call — crashing
+  # the server and exiting the caller. Fully decoding the document here exercises the
+  # whole parse, so `open_book/1` fails deterministically instead.
+  #
+  # Any exception from `from_bytes/1` means the file is not a Book we can serve, so
+  # rescue broadly: the Automerge NIF raises `ArgumentError` on bad bytes, but the
+  # domain parse can also raise elsewhere — e.g. `Decimal.new/1` raises
+  # `Decimal.Error` on a non-decimal cost string, which a narrower rescue would miss.
   defp validate_document(doc) do
     _ = BookDocument.from_bytes(doc)
     :ok
   rescue
-    ArgumentError -> {:error, :invalid_document}
+    _exception -> {:error, :invalid_document}
   end
 
   @impl GenServer
