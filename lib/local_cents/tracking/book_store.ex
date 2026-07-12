@@ -43,19 +43,11 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Returns a new, random Book id (a version-4 UUID string).
 
-  We generate this ourselves rather than pull in a UUID dependency; the value only
-  needs to be a collision-resistant, filesystem-safe file name.
+  Uses `Ecto.UUID.generate/0` — the same generator as Expense ids — so Book and
+  Expense ids share one scheme.
   """
   @spec generate_id() :: Book.id()
-  def generate_id do
-    <<a::32, b::16, c::16, d::16, e::48>> = :crypto.strong_rand_bytes(16)
-    # Set the version (4) and variant (RFC 4122) bits.
-    c = Bitwise.bor(Bitwise.band(c, 0x0FFF), 0x4000)
-    d = Bitwise.bor(Bitwise.band(d, 0x3FFF), 0x8000)
-
-    formatted = :io_lib.format("~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b", [a, b, c, d, e])
-    IO.iodata_to_binary(formatted)
-  end
+  def generate_id, do: Ecto.UUID.generate()
 
   @doc """
   Writes the document `bytes` for `id` to its `.lcbook` file.

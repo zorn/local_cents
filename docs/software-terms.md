@@ -56,3 +56,18 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
 > model by making all objects look the same. 
 
 [Domain-Driven Design]: https://www.goodreads.com/book/show/179133.Domain_Driven_Design
+
+## Raw vs. plain data
+
+* **Raw** -- a domain value in its stored, _untyped_ form: the shape it takes
+  inside the Automerge document before the domain parses it. In the tracking
+  context an expense's `date` and `cost` are *raw* strings (`"2026-07-11"`,
+  `"12.34"`) that `LocalCents.Tracking.BookDocument` parses into typed values
+  (`Date`, `Decimal`); `LocalCents.Tracking.ExAutomerge`'s `state` / `raw_expense`
+  are the raw maps (atom keys, string values). Use **raw** whenever you mean this
+  stored, un-parsed form.
+* **Plain data** -- plain, immutable Elixir values (structs, maps, lists) as
+  opposed to process state — the "plain data in, plain data out" property of the
+  functional core (see [ADR 0014](adr/0014-functional-core-process-shell.md)).
+  This is about *where* the data lives (not a process), not whether it is typed, so
+  it is a different axis from **raw**.

@@ -13,7 +13,7 @@ defmodule LocalCents.Tracking.BookServerTest do
     {:ok, book} = Tracking.create_book("Family")
     :ok = Tracking.subscribe(book.id)
 
-    :ok = Tracking.add_expense(book.id, %Tracking.Expense{description: "Coffee", amount: 500})
+    {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     assert_receive {:book_updated, id}
     assert id == book.id
@@ -28,7 +28,7 @@ defmodule LocalCents.Tracking.BookServerTest do
     File.chmod!(dir, 0o555)
 
     assert {:error, _reason} =
-             Tracking.add_expense(book.id, %Tracking.Expense{description: "Coffee", amount: 500})
+             Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     # Restore write access so the temp-dir cleanup can remove the directory.
     File.chmod!(dir, 0o755)
@@ -40,17 +40,13 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert BookServer.alive?(book.id)
   end
 
-  test "a command with an out-of-range amount errors without crashing the server" do
+  test "an invalid command returns a changeset without crashing the server" do
     {:ok, book} = Tracking.create_book("Family")
-    over_i64 = 9_223_372_036_854_775_807 + 1
 
-    assert {:error, _reason} =
-             Tracking.add_expense(book.id, %Tracking.Expense{
-               description: "Over",
-               amount: over_i64
-             })
+    # A missing description fails validation in the functional core.
+    assert {:error, %Ecto.Changeset{}} = Tracking.add_expense(book.id, %{cost: "5.00"})
 
-    # The badarg was caught: the server is still alive and holds no expense.
+    # The server is still alive and holds no expense.
     assert BookServer.alive?(book.id)
     assert Tracking.list_expenses(book.id) == []
   end
@@ -84,7 +80,7 @@ defmodule LocalCents.Tracking.BookServerTest do
 
   test "state persists across an explicit close and reopen" do
     {:ok, book} = Tracking.create_book("Family")
-    :ok = Tracking.add_expense(book.id, %Tracking.Expense{description: "Coffee", amount: 500})
+    {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     assert BookServer.alive?(book.id)
     :ok = Tracking.close_book(book.id)
@@ -92,7 +88,6 @@ defmodule LocalCents.Tracking.BookServerTest do
 
     :ok = Tracking.open_book(book.id)
 
-    assert [%Tracking.Expense{description: "Coffee", amount: 500}] =
-             Tracking.list_expenses(book.id)
+    assert [%Tracking.Expense{description: "Coffee"}] = Tracking.list_expenses(book.id)
   end
 end

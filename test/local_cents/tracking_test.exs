@@ -51,7 +51,8 @@ defmodule LocalCents.TrackingTest do
     test "adding an expense advances updated_at" do
       {:ok, book} = Tracking.create_book("Family", @created)
 
-      :ok = Tracking.add_expense(book.id, %Expense{description: "Coffee", amount: 500}, @edited)
+      {:ok, _expense} =
+        Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"}, @edited)
 
       assert %Book{updated_at: ~U[2026-06-02 15:10:05Z]} = Tracking.get_book(book.id)
     end
@@ -76,34 +77,52 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "add_expense/2 and list_expenses/1" do
-    test "adds an expense and returns it as an Expense struct" do
+    test "adds an expense from attrs and returns it as an Expense struct" do
       {:ok, book} = Tracking.create_book("Family")
 
-      :ok = Tracking.add_expense(book.id, %Expense{description: "Coffee", amount: 500})
+      assert {:ok, %Expense{id: id, date: ~D[2026-06-02], description: "Coffee"}} =
+               Tracking.add_expense(book.id, %{
+                 date: ~D[2026-06-02],
+                 description: "Coffee",
+                 cost: "5.00"
+               })
 
-      assert [%Expense{description: "Coffee", amount: 500}] = Tracking.list_expenses(book.id)
+      assert byte_size(id) > 0
+
+      assert [%Expense{description: "Coffee", cost: cost}] = Tracking.list_expenses(book.id)
+      assert Decimal.equal?(cost, Decimal.new("5.00"))
+    end
+
+    test "an absent cost is stored as nil" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      {:ok, _} = Tracking.add_expense(book.id, %{description: "Gift"})
+
+      assert [%Expense{description: "Gift", cost: nil}] = Tracking.list_expenses(book.id)
+    end
+
+    test "invalid attrs return a changeset without persisting anything" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert {:error, %Ecto.Changeset{}} = Tracking.add_expense(book.id, %{cost: "5.00"})
+      assert Tracking.list_expenses(book.id) == []
     end
 
     test "all added expenses are present" do
       {:ok, book} = Tracking.create_book("Family")
 
-      :ok = Tracking.add_expense(book.id, %Expense{description: "Coffee", amount: 500})
-      :ok = Tracking.add_expense(book.id, %Expense{description: "Lunch", amount: 1200})
-      :ok = Tracking.add_expense(book.id, %Expense{description: "Bus", amount: 250})
+      {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee"})
+      {:ok, _} = Tracking.add_expense(book.id, %{description: "Lunch"})
+      {:ok, _} = Tracking.add_expense(book.id, %{description: "Bus"})
 
-      expenses = Tracking.list_expenses(book.id)
-      assert length(expenses) == 3
-      assert %Expense{description: "Coffee", amount: 500} in expenses
-      assert %Expense{description: "Lunch", amount: 1200} in expenses
-      assert %Expense{description: "Bus", amount: 250} in expenses
+      descriptions = Enum.map(Tracking.list_expenses(book.id), & &1.description)
+      assert descriptions == ["Coffee", "Lunch", "Bus"]
     end
 
     test "returns {:error, :not_open} when the book's process is not running" do
       id = "11111111-1111-4111-8111-111111111111"
 
-      assert {:error, :not_open} =
-               Tracking.add_expense(id, %Expense{description: "Coffee", amount: 500})
-
+      assert {:error, :not_open} = Tracking.add_expense(id, %{description: "Coffee"})
       assert {:error, :not_open} = Tracking.list_expenses(id)
     end
 
@@ -112,6 +131,71 @@ defmodule LocalCents.TrackingTest do
       :ok = Tracking.close_book(book.id)
 
       assert {:error, :not_open} = Tracking.list_expenses(book.id)
+    end
+  end
+
+  describe "edit_expense/3" do
+    test "replaces the fields of an existing expense" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
+
+      assert {:ok, %Expense{id: id, description: "Latte"}} =
+               Tracking.edit_expense(book.id, expense.id, %{
+                 description: "Latte",
+                 cost: "6.50",
+                 date: ~D[2026-06-03]
+               })
+
+      assert id == expense.id
+
+      assert [%Expense{description: "Latte", cost: cost}] = Tracking.list_expenses(book.id)
+      assert Decimal.equal?(cost, Decimal.new("6.50"))
+    end
+
+    test "returns {:error, :not_found} for an unknown expense id" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert {:error, :not_found} =
+               Tracking.edit_expense(book.id, "no-such-id", %{description: "X"})
+    end
+
+    test "returns {:error, :not_open} when the book's process is not running" do
+      id = "11111111-1111-4111-8111-111111111111"
+
+      assert {:error, :not_open} = Tracking.edit_expense(id, "e", %{description: "X"})
+    end
+  end
+
+  describe "delete_expense/2" do
+    test "removes the expense" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
+
+      assert :ok = Tracking.delete_expense(book.id, expense.id)
+      assert Tracking.list_expenses(book.id) == []
+    end
+
+    test "returns {:error, :not_found} for an unknown expense id" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert {:error, :not_found} = Tracking.delete_expense(book.id, "no-such-id")
+    end
+
+    test "broadcasts the change to subscribers" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
+      :ok = Tracking.subscribe(book.id)
+
+      assert :ok = Tracking.delete_expense(book.id, expense.id)
+
+      assert_receive {:book_updated, id}
+      assert id == book.id
+    end
+
+    test "returns {:error, :not_open} when the book's process is not running" do
+      id = "11111111-1111-4111-8111-111111111111"
+
+      assert {:error, :not_open} = Tracking.delete_expense(id, "e")
     end
   end
 
@@ -197,12 +281,13 @@ defmodule LocalCents.TrackingTest do
   describe "open_book/1 and close_book/1" do
     test "reopening a closed book still reads its persisted expenses" do
       {:ok, book} = Tracking.create_book("Family")
-      :ok = Tracking.add_expense(book.id, %Expense{description: "Coffee", amount: 500})
+      {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
       :ok = Tracking.close_book(book.id)
       :ok = Tracking.open_book(book.id)
 
-      assert [%Expense{description: "Coffee", amount: 500}] = Tracking.list_expenses(book.id)
+      assert [%Expense{description: "Coffee", cost: cost}] = Tracking.list_expenses(book.id)
+      assert Decimal.equal?(cost, Decimal.new("5.00"))
     end
 
     test "open_book/1 errors for an unknown id" do

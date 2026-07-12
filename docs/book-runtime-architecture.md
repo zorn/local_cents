@@ -14,9 +14,13 @@ A Book is persisted as a single Automerge document in a `.lcbook` file. While a 
 is **open**, one `LocalCents.Tracking.BookServer` process holds that document in
 memory and is the *single source of truth* for it. LiveViews never hold Book state;
 they **subscribe** to the Book over `Phoenix.PubSub` and send **commands** to its
-process. The process **persists each change first and, only once it is on disk,
-commits it in memory and broadcasts** so every subscriber re-renders; a failed write
-is returned to the caller rather than silently dropped. This is what lets several
+process. The process holds no domain rules itself: it decodes the document into a
+pure functional core (`LocalCents.Tracking.BookDocument`) that computes the change,
+re-encodes through the CRDT codec (`LocalCents.Tracking.ExAutomerge`), and then
+**persists each change first and, only once it is on disk, commits it in memory and
+broadcasts** so every subscriber re-renders; a failed write (or an invalid command)
+is returned to the caller rather than silently dropped (see
+[ADR 0014](0014-functional-core-process-shell.html)). This is what lets several
 viewers share one Book without divergence — the property the future web version
 needs.
 
@@ -71,26 +75,32 @@ graph TD
 | `LocalCents.Tracking.Supervisor` | `Supervisor` (named) | Roots the context's runtime; boots the registry and dynamic supervisor. |
 | `LocalCents.Tracking.BookRegistry` | `Registry`, `:unique` (named) | Maps a Book **id → BookServer pid** so callers reach a Book's process by id. |
 | `LocalCents.Tracking.BookSupervisor` | `DynamicSupervisor` (named) | Starts/stops one `BookServer` per open Book. |
-| `LocalCents.Tracking.BookServer` | `GenServer` (one per open Book) | Owns the in-memory Automerge document; applies commands, persists, broadcasts. |
+| `LocalCents.Tracking.BookServer` | `GenServer` (one per open Book) | Holds the in-memory Automerge document; runs each command through the functional core (`BookDocument`), persists, and broadcasts. Owns no domain rules itself. |
 
 ## Data flow of a change
 
 Everything a viewer does routes through the `LocalCents.Tracking` public API, which
-forwards to the Book's process. The process is the only thing that touches the
-Automerge document (`ExAutomerge`) and the file (`BookStore`).
+forwards to the Book's process. The process owns no domain rules: it decodes the
+document into the pure functional core (`BookDocument`), runs the command there,
+re-encodes through the CRDT codec (`ExAutomerge`), and persists (`BookStore`) before
+broadcasting — the process shell around the functional core (see
+[ADR 0014](0014-functional-core-process-shell.html)). `BookDocument` and
+`ExAutomerge` are plain modules, not processes.
 
 ```mermaid
 graph LR
     LV["LiveView<br/><small>a viewer</small>"]
     API["LocalCents.Tracking<br/><small>public API</small>"]
-    BSrv["BookServer<br/><small>owns the document</small>"]
-    Auto["ExAutomerge<br/><small>Rust NIF, CRDT ops</small>"]
+    BSrv["BookServer<br/><small>process shell</small>"]
+    BD["BookDocument<br/><small>functional core, pure</small>"]
+    Auto["ExAutomerge<br/><small>Rust NIF, CRDT codec</small>"]
     Store["BookStore<br/><small>.lcbook file I/O</small>"]
     PS["Phoenix.PubSub<br/><small>topic book:ID</small>"]
 
     LV -->|command| API
     API -->|GenServer.call| BSrv
-    BSrv -->|apply change| Auto
+    BSrv -->|run command| BD
+    BSrv -->|decode / reconcile| Auto
     BSrv -->|persist| Store
     BSrv -->|broadcast| PS
     PS -->|re-render| LV
@@ -98,34 +108,47 @@ graph LR
 
 ### Sequence: adding an expense
 
+The `id` for the new expense and the `today` date default are generated in the shell
+(`Tracking`) and passed in, keeping the core free of side effects and clocks.
+
 ```mermaid
 sequenceDiagram
     participant LV as LiveView viewer
     participant T as LocalCents.Tracking
     participant BS as BookServer
-    participant EA as ExAutomerge NIF
+    participant BD as BookDocument (pure core)
+    participant EA as ExAutomerge codec
     participant St as BookStore
     participant PS as Phoenix.PubSub
 
     Note over LV: already subscribed to topic book:ID
-    LV->>T: add_expense(id, %Expense{...})
-    T->>BS: GenServer.call({:add_expense, desc, amount})
-    BS->>EA: add_expense(doc, desc, amount)
-    EA-->>BS: new document bytes
-    BS->>St: save(id, new bytes)
-    alt write succeeds (persist-then-commit)
-        St-->>BS: :ok
-        BS->>BS: commit new doc to state
-        BS->>PS: broadcast(book:ID, {:book_updated, id})
-        BS-->>T: :ok
-        T-->>LV: :ok
-        PS-->>LV: {:book_updated, id}
-        Note over LV: re-reads via list_expenses(id) and re-renders
-    else write fails
-        St-->>BS: {:error, reason}
-        Note over BS: state unchanged, no broadcast
-        BS-->>T: {:error, reason}
-        T-->>LV: {:error, reason}
+    LV->>T: add_expense(id, attrs)
+    T->>BS: GenServer.call({:add_expense, attrs, expense_id, today, time})
+    BS->>EA: decode(doc bytes)
+    EA-->>BS: document state
+    BS->>BD: add_expense(document, attrs, expense_id, today)
+    alt attrs valid
+        BD-->>BS: {:ok, document, expense}
+        BS->>EA: reconcile(prior bytes, new state, time)
+        EA-->>BS: new document bytes
+        BS->>St: save(id, new bytes)
+        alt write succeeds (persist-then-commit)
+            St-->>BS: :ok
+            BS->>BS: commit new doc to state
+            BS->>PS: broadcast(book:ID, {:book_updated, id})
+            BS-->>T: {:ok, expense}
+            T-->>LV: {:ok, expense}
+            PS-->>LV: {:book_updated, id}
+            Note over LV: re-reads via list_expenses(id) and re-renders
+        else write fails
+            St-->>BS: {:error, reason}
+            Note over BS: state unchanged, no broadcast
+            BS-->>T: {:error, reason}
+        end
+    else attrs invalid
+        BD-->>BS: {:error, changeset}
+        Note over BS: no persist, no broadcast
+        BS-->>T: {:error, changeset}
     end
 ```
 

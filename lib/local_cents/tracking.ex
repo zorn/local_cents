@@ -149,7 +149,7 @@ defmodule LocalCents.Tracking do
         # Announce the change on the Book's topic after the file is gone, so a
         # subscriber that re-reads finds it absent. Best-effort: the delete has
         # already succeeded, so the broadcast result is not our concern.
-        _ = Phoenix.PubSub.broadcast(LocalCents.PubSub, BookServer.topic(id), {:book_updated, id})
+        _ = BookServer.broadcast_deleted(id)
         :ok
 
       {:error, reason} ->
@@ -189,32 +189,81 @@ defmodule LocalCents.Tracking do
   # Renames a closed Book by rewriting its file. No `BookServer` owns the document,
   # so disk is the source of truth and no process needs to start just to rename.
   defp rename_on_disk(id, new_name, seconds) do
-    with {:ok, doc} <- BookStore.load(id) do
-      BookStore.save(id, ExAutomerge.rename(doc, new_name, seconds))
+    with {:ok, bytes} <- BookStore.load(id) do
+      # A rename only touches the Book's name, so we set it on the raw decoded state
+      # directly rather than routing through `BookDocument.rename/2` (which would also
+      # re-introduce a `BookDocument` dependency here). NOTE: this stays equivalent to
+      # the open-Book path only while `BookDocument.rename/2` is a pure name-set — if
+      # it ever grows logic (validation, derived fields), this closed-Book path must
+      # be routed through the core too, or the two rename paths will diverge.
+      state = %{ExAutomerge.decode(bytes) | name: new_name}
+      BookStore.save(id, ExAutomerge.reconcile(bytes, state, seconds))
     end
   rescue
-    # A readable-but-corrupt `.lcbook` makes the rename NIF raise; report it rather
+    # A readable-but-corrupt `.lcbook` makes the decode NIF raise; report it rather
     # than crash the caller, matching how `read_book/1` tolerates bad files.
     ArgumentError -> {:error, :invalid_document}
   end
 
   @doc """
-  Adds an expense to an open Book.
+  Adds an expense to an open Book from a map of `attrs` (`:date`, `:description`,
+  `:cost`), returning the created `Expense`.
 
-  Returns `{:error, :not_open}` if the Book's process is not running
-  (`open_book/1`), or `{:error, reason}` if persisting the change fails.
+  Returns `{:error, changeset}` if `attrs` fail validation (see
+  `LocalCents.Tracking.Expense`), `{:error, :not_open}` if the Book's process is
+  not running (`open_book/1`), or `{:error, reason}` if persisting the change
+  fails. The new Expense's `id` is generated here (a side effect kept out of the
+  functional core — see [ADR 0014](0014-functional-core-process-shell.html)).
 
-  `now` stamps the change so the Book's `updated_at` advances; it defaults to the
-  current time and is injectable for tests.
+  `now` stamps the change so the Book's `updated_at` advances (UTC). `today` seeds a
+  blank date and must be the *user's* local date — on the desktop that is the
+  machine's date (the default); a future web caller supplies the browser's date.
+  Both are injectable for tests.
   """
-  @spec add_expense(Book.id(), Expense.t(), now :: DateTime.t()) :: :ok | {:error, term()}
-  def add_expense(
-        id,
-        %Expense{description: description, amount: amount},
-        now \\ DateTime.utc_now()
-      )
-      when is_binary(id) do
-    BookServer.add_expense(id, description, amount, unix_seconds(now))
+  @spec add_expense(Book.id(), attrs :: map(), now :: DateTime.t(), today :: Date.t()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def add_expense(id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
+      when is_binary(id) and is_map(attrs) do
+    BookServer.add_expense(id, attrs, Ecto.UUID.generate(), today, unix_seconds(now))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Edits the Expense `expense_id` in an open Book, replacing its editable fields with
+  `attrs` (a full replace). Returns the updated `Expense`.
+
+  Returns `{:error, changeset}` on invalid `attrs`, `{:error, :not_found}` for an
+  unknown `expense_id`, `{:error, :not_open}` if the Book's process is not running,
+  or `{:error, reason}` if persisting fails. `now`/`today` behave as in
+  `add_expense/4`.
+  """
+  @spec edit_expense(
+          Book.id(),
+          Expense.id(),
+          attrs :: map(),
+          now :: DateTime.t(),
+          today :: Date.t()
+        ) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def edit_expense(id, expense_id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
+      when is_binary(id) and is_binary(expense_id) and is_map(attrs) do
+    BookServer.edit_expense(id, expense_id, attrs, today, unix_seconds(now))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Hard-deletes the Expense `expense_id` from an open Book.
+
+  Returns `:ok`, `{:error, :not_found}` for an unknown `expense_id`,
+  `{:error, :not_open}` if the Book's process is not running, or `{:error, reason}`
+  if persisting fails. `now` stamps the change so `updated_at` advances.
+  """
+  @spec delete_expense(Book.id(), Expense.id(), now :: DateTime.t()) :: :ok | {:error, term()}
+  def delete_expense(id, expense_id, now \\ DateTime.utc_now())
+      when is_binary(id) and is_binary(expense_id) do
+    BookServer.delete_expense(id, expense_id, unix_seconds(now))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -222,17 +271,14 @@ defmodule LocalCents.Tracking do
   @doc """
   Lists the expenses of an open Book.
 
-  Returns `{:error, :not_open}` if the Book's process is not running
-  (`open_book/1`), matching `add_expense/2` and `rename_book/2` rather than
-  crashing the caller.
+  The list order is not a contract callers should rely on (it is not stable across
+  a CRDT merge); sort in the view for display. Returns `{:error, :not_open}` if the
+  Book's process is not running (`open_book/1`), matching the mutating functions
+  rather than crashing the caller.
   """
   @spec list_expenses(Book.id()) :: [Expense.t()] | {:error, :not_open}
   def list_expenses(id) when is_binary(id) do
-    id
-    |> BookServer.list_expenses()
-    |> Enum.map(fn %{description: description, amount: amount} ->
-      %Expense{description: description, amount: amount}
-    end)
+    BookServer.list_expenses(id)
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -244,9 +290,13 @@ defmodule LocalCents.Tracking do
   the Book changes and should re-read via `list_expenses/1`.
   """
   @spec subscribe(Book.id()) :: :ok | {:error, term()}
-  def subscribe(id) when is_binary(id) do
-    Phoenix.PubSub.subscribe(LocalCents.PubSub, BookServer.topic(id))
-  end
+  def subscribe(id) when is_binary(id), do: BookServer.subscribe(id)
+
+  # The user's local calendar date, used as the default when an expense is saved
+  # without a date. On the desktop the server and user share a machine, so the
+  # machine's local date is the user's; a future web caller must pass the browser's
+  # date explicitly rather than rely on this (the server's zone is not the user's).
+  defp local_today, do: NaiveDateTime.to_date(NaiveDateTime.local_now())
 
   # The change stamp we hand the NIFs is whole unix seconds — the resolution
   # Automerge records — so a Book's `updated_at` round-trips at the same precision

@@ -11,9 +11,11 @@ defmodule LocalCents.Tracking.ExAutomerge do
   use Rustler, otp_app: :local_cents, crate: "ex_automerge"
 
   # When your NIF is loaded, it will override these functions.
-  def new_document, do: :erlang.nif_error(:nif_not_loaded)
-  def add_expense(_doc_bytes, _description, _amount), do: :erlang.nif_error(:nif_not_loaded)
-  def list_expenses(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def new_document(_name, _time), do: :erlang.nif_error(:nif_not_loaded)
+  def document_name(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def document_updated_at(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def decode(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def reconcile(_prior_bytes, _new_state, _time), do: :erlang.nif_error(:nif_not_loaded)
   def merge(_left_bytes, _right_bytes), do: :erlang.nif_error(:nif_not_loaded)
 end
 ```

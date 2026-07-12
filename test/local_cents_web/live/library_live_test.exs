@@ -43,10 +43,10 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       |> assert_has("#books", text: "Last Updated: 06-02-2026 1:34 PM")
 
     # An edit from the Book's own document window broadcasts to the library.
-    :ok =
+    {:ok, _expense} =
       Tracking.add_expense(
         book.id,
-        %Tracking.Expense{description: "Coffee", amount: 500},
+        %{description: "Coffee", cost: "5.00"},
         ~U[2026-06-02 15:10:05Z]
       )
 

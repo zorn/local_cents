@@ -24,7 +24,12 @@ authoritative ordering (see
 [ADR 0012](docs/adr/0012-book-last-updated-timestamp.md)).
 
 **Expense**:
-A financial transaction that represents money the user has spent.
+A financial transaction that represents money the user has spent. Its **Cost**,
+when recorded, is non-negative — the MVP tracks spending only, so refunds, credits,
+and income are out of scope. A missing Cost is left _absent_ rather than recorded as
+zero, so totals stay honest and a genuine zero-Cost Expense is distinct from one
+whose amount simply has not been entered yet (see
+[ADR 0008](docs/adr/0008-mvp-expense-shape.md)).
 
 **Category**:
 A classification of an Expense that answers "what kind of spending is this?" An
