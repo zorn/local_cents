@@ -39,7 +39,6 @@ defmodule LocalCents.Tracking do
   alias LocalCents.Tracking.BookStore
   alias LocalCents.Tracking.ExAutomerge
   alias LocalCents.Tracking.Expense
-  alias LocalCents.Tracking.UUID
 
   require Logger
 
@@ -225,7 +224,7 @@ defmodule LocalCents.Tracking do
           {:ok, Expense.t()} | {:error, term()}
   def add_expense(id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
       when is_binary(id) and is_map(attrs) do
-    BookServer.add_expense(id, attrs, UUID.generate(), today, unix_seconds(now))
+    BookServer.add_expense(id, attrs, Ecto.UUID.generate(), today, unix_seconds(now))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end

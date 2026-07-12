@@ -21,7 +21,6 @@ defmodule LocalCents.Tracking.BookStore do
   """
 
   alias LocalCents.Tracking.Book
-  alias LocalCents.Tracking.UUID
 
   @extension ".lcbook"
 
@@ -44,10 +43,11 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Returns a new, random Book id (a version-4 UUID string).
 
-  Delegates to `LocalCents.Tracking.UUID` so Book and Expense ids share one scheme.
+  Uses `Ecto.UUID.generate/0` — the same generator as Expense ids — so Book and
+  Expense ids share one scheme.
   """
   @spec generate_id() :: Book.id()
-  def generate_id, do: UUID.generate()
+  def generate_id, do: Ecto.UUID.generate()
 
   @doc """
   Writes the document `bytes` for `id` to its `.lcbook` file.

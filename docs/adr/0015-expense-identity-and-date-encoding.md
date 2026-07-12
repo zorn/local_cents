@@ -13,9 +13,9 @@ sticky (they live in users' `.lcbook` files), so they are recorded deliberately.
 
 **Identity: each Expense carries a UUID `id`, generated in Elixir at creation.**
 Expenses are addressed by that `id` for edit and delete — never by list position.
-The id is produced by `LocalCents.Tracking.UUID.generate/0` (the same scheme Book
-ids use) in the process shell and handed to the functional core as an argument, so
-the core stays pure (see [ADR 0014](0014-functional-core-process-shell.md)).
+The id is produced by `Ecto.UUID.generate/0` (the same scheme Book ids use) in the
+process shell and handed to the functional core as an argument, so the core stays
+pure (see [ADR 0014](0014-functional-core-process-shell.md)).
 
 Positional identity (the Automerge list index) was rejected: an index shifts as
 expenses are inserted or removed and, critically, is **not stable under a CRDT
