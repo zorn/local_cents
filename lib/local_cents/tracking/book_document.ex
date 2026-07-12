@@ -59,6 +59,14 @@ defmodule LocalCents.Tracking.BookDocument do
   end
 
   @doc """
+  Reads only the Book's name from document `doc_bytes`, without decoding the whole
+  document. Cheaper and more robust than `from_bytes/1` when only the name is
+  needed, since it does not parse the expenses.
+  """
+  @spec name(doc_bytes :: binary()) :: String.t()
+  def name(doc_bytes), do: ExAutomerge.document_name(doc_bytes)
+
+  @doc """
   Builds a `BookDocument` from the raw state map produced by
   `LocalCents.Tracking.ExAutomerge.decode/1`, parsing each expense's stored `date`
   string into a `Date` and `cost` string into a `Decimal` (`nil` stays `nil`).

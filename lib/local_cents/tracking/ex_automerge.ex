@@ -58,11 +58,10 @@ defmodule LocalCents.Tracking.ExAutomerge do
   use Rustler, otp_app: :local_cents, crate: "ex_automerge"
 
   @typedoc """
-  The decoded contents of a Book document as plain data: the Book `name` and its
-  list of raw expense maps (each with `:id`, `:date`, `:description`, and `:cost`
-  string keys, `cost` being `nil` when absent). This is the shape `decode/1`
-  returns and `reconcile/3` accepts; `LocalCents.Tracking.BookDocument` gives it
-  domain meaning.
+  The decoded contents of a Book document as plain data: the Book `name` (a string)
+  and its list of raw expense maps (`t:raw_expense/0` — atom keys, string values).
+  This is the shape `decode/1` returns and `reconcile/3` accepts;
+  `LocalCents.Tracking.BookDocument` gives it domain meaning.
   """
   @type state() :: %{name: String.t(), expenses: [raw_expense()]}
 

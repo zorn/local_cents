@@ -201,7 +201,7 @@ defmodule LocalCents.Tracking.BookServer do
 
   @impl GenServer
   def handle_call(:name, _from, state) do
-    {:reply, decode(state).name, state}
+    {:reply, BookDocument.name(state.doc), state}
   end
 
   def handle_call(:list_expenses, _from, state) do
