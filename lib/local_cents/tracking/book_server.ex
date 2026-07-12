@@ -79,7 +79,10 @@ defmodule LocalCents.Tracking.BookServer do
   @spec name(Book.id()) :: Book.name()
   def name(id), do: GenServer.call(via(id), :name)
 
-  @doc "Returns the Book's expenses, in insertion order."
+  @doc """
+  Returns the Book's expenses. The list order is not a contract callers should
+  rely on (it is not stable across a CRDT merge); the view sorts for display.
+  """
   @spec list_expenses(Book.id()) :: [Expense.t()]
   def list_expenses(id), do: GenServer.call(via(id), :list_expenses)
 

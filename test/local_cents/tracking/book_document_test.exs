@@ -10,16 +10,24 @@ defmodule LocalCents.Tracking.BookDocumentTest do
   @today ~D[2026-07-11]
   @id "11111111-1111-4111-8111-111111111111"
 
-  defp empty(name \\ "Family"), do: %BookDocument{name: name, expenses: []}
+  defp empty_document(name \\ "Family"), do: %BookDocument{name: name, expenses: []}
 
-  defp error_fields(%Ecto.Changeset{errors: errors}),
-    do: Enum.map(errors, fn {field, _} -> field end)
+  # Mirrors the `errors_on/1` helper common in Phoenix projects: expands a
+  # changeset's errors into `%{field => [interpolated messages]}` so tests can
+  # assert on the actual message, not just which field failed.
+  defp errors_on(changeset) do
+    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+      Regex.replace(~r/%\{(\w+)\}/, message, fn _whole, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+  end
 
   describe "add_expense/4" do
     test "appends a validated Expense and returns it" do
       assert {:ok, document, expense} =
                BookDocument.add_expense(
-                 empty(),
+                 empty_document(),
                  %{date: ~D[2026-06-02], description: "Coffee", cost: "12.34"},
                  @id,
                  @today
@@ -32,18 +40,18 @@ defmodule LocalCents.Tracking.BookDocumentTest do
 
     test "a blank date defaults to the injected today" do
       assert {:ok, _document, %Expense{date: @today}} =
-               BookDocument.add_expense(empty(), %{description: "Coffee"}, @id, @today)
+               BookDocument.add_expense(empty_document(), %{description: "Coffee"}, @id, @today)
     end
 
     test "an absent cost is nil, not zero" do
       assert {:ok, _document, %Expense{cost: nil}} =
-               BookDocument.add_expense(empty(), %{description: "Coffee"}, @id, @today)
+               BookDocument.add_expense(empty_document(), %{description: "Coffee"}, @id, @today)
     end
 
     test "a genuine zero cost is allowed and distinct from nil" do
       assert {:ok, _document, %Expense{cost: cost}} =
                BookDocument.add_expense(
-                 empty(),
+                 empty_document(),
                  %{description: "Free sample", cost: "0"},
                  @id,
                  @today
@@ -55,36 +63,42 @@ defmodule LocalCents.Tracking.BookDocumentTest do
     test "a negative cost is rejected" do
       assert {:error, changeset} =
                BookDocument.add_expense(
-                 empty(),
+                 empty_document(),
                  %{description: "Refund", cost: "-5"},
                  @id,
                  @today
                )
 
-      assert :cost in error_fields(changeset)
+      assert "must be zero or greater" in errors_on(changeset).cost
     end
 
     test "a missing description is rejected" do
       assert {:error, changeset} =
-               BookDocument.add_expense(empty(), %{cost: "5"}, @id, @today)
+               BookDocument.add_expense(empty_document(), %{cost: "5"}, @id, @today)
 
-      assert :description in error_fields(changeset)
+      assert "can't be blank" in errors_on(changeset).description
     end
 
     test "a whitespace-only description is rejected" do
       assert {:error, changeset} =
-               BookDocument.add_expense(empty(), %{description: "   "}, @id, @today)
+               BookDocument.add_expense(empty_document(), %{description: "   "}, @id, @today)
 
-      assert :description in error_fields(changeset)
+      assert "can't be blank" in errors_on(changeset).description
     end
 
     test "the description is trimmed" do
       assert {:ok, _document, %Expense{description: "Coffee"}} =
-               BookDocument.add_expense(empty(), %{description: "  Coffee  "}, @id, @today)
+               BookDocument.add_expense(
+                 empty_document(),
+                 %{description: "  Coffee  "},
+                 @id,
+                 @today
+               )
     end
 
     test "appends in insertion order" do
-      {:ok, document, _} = BookDocument.add_expense(empty(), %{description: "First"}, "a", @today)
+      {:ok, document, _} =
+        BookDocument.add_expense(empty_document(), %{description: "First"}, "a", @today)
 
       {:ok, document, _} =
         BookDocument.add_expense(document, %{description: "Second"}, "b", @today)
@@ -97,7 +111,7 @@ defmodule LocalCents.Tracking.BookDocumentTest do
     setup do
       {:ok, document, _} =
         BookDocument.add_expense(
-          empty(),
+          empty_document(),
           %{date: ~D[2026-06-02], description: "Coffee", cost: "5.00"},
           @id,
           @today
@@ -139,14 +153,14 @@ defmodule LocalCents.Tracking.BookDocumentTest do
       assert {:error, changeset} =
                BookDocument.edit_expense(document, @id, %{description: ""}, @today)
 
-      assert :description in error_fields(changeset)
+      assert "can't be blank" in errors_on(changeset).description
     end
   end
 
   describe "delete_expense/2" do
     setup do
       {:ok, document, _} =
-        BookDocument.add_expense(empty(), %{description: "Coffee"}, @id, @today)
+        BookDocument.add_expense(empty_document(), %{description: "Coffee"}, @id, @today)
 
       %{document: document}
     end
@@ -164,12 +178,12 @@ defmodule LocalCents.Tracking.BookDocumentTest do
   describe "rename/2" do
     test "changes the name" do
       assert {:ok, %BookDocument{name: "Household"}} =
-               BookDocument.rename(empty("Family"), "Household")
+               BookDocument.rename(empty_document("Family"), "Household")
     end
   end
 
   describe "from_raw/1 and to_raw/1" do
-    test "round-trips name and expenses, parsing and dumping date and cost" do
+    test "round-trips name and expenses, converting date and cost to and from raw form" do
       raw = %{
         name: "Family",
         expenses: [

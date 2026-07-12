@@ -87,7 +87,11 @@ defmodule LocalCents.Tracking.BookDocument do
   end
 
   @doc """
-  Returns the document's expenses, in insertion order.
+  Returns the document's expenses.
+
+  The list follows the order stored in the document; that order is **not** a
+  contract callers should rely on (it is not stable across a CRDT merge).
+  Presentation ordering — e.g. sorting by date — is the view's concern.
   """
   @spec expenses(t()) :: [Expense.t()]
   def expenses(%__MODULE__{expenses: expenses}), do: expenses
@@ -100,7 +104,7 @@ defmodule LocalCents.Tracking.BookDocument do
   `{:error, changeset}` if `attrs` fail validation.
   """
   @spec add_expense(t(), attrs :: map(), Expense.id(), today :: Date.t()) ::
-          {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t(Expense.t())}
   def add_expense(%__MODULE__{} = document, attrs, id, %Date{} = today) do
     changeset = Expense.changeset(%Expense{id: id}, attrs, today)
 
@@ -122,7 +126,7 @@ defmodule LocalCents.Tracking.BookDocument do
   on invalid `attrs`, or `{:error, :not_found}` if no Expense has that `id`.
   """
   @spec edit_expense(t(), Expense.id(), attrs :: map(), today :: Date.t()) ::
-          {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t()} | {:error, :not_found}
+          {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t(Expense.t())} | {:error, :not_found}
   def edit_expense(%__MODULE__{} = document, id, attrs, %Date{} = today) do
     case Enum.find_index(document.expenses, &(&1.id == id)) do
       nil ->
@@ -169,17 +173,17 @@ defmodule LocalCents.Tracking.BookDocument do
       id: id,
       date: Date.from_iso8601!(date),
       description: description,
-      cost: parse_cost(cost)
+      cost: cost_from_raw(cost)
     }
   end
 
-  defp parse_cost(nil), do: nil
-  defp parse_cost(cost) when is_binary(cost), do: Decimal.new(cost)
+  defp cost_from_raw(nil), do: nil
+  defp cost_from_raw(cost) when is_binary(cost), do: Decimal.new(cost)
 
   defp expense_to_raw(%Expense{id: id, date: date, description: description, cost: cost}) do
-    %{id: id, date: Date.to_iso8601(date), description: description, cost: dump_cost(cost)}
+    %{id: id, date: Date.to_iso8601(date), description: description, cost: cost_to_raw(cost)}
   end
 
-  defp dump_cost(nil), do: nil
-  defp dump_cost(%Decimal{} = cost), do: Decimal.to_string(cost, :normal)
+  defp cost_to_raw(nil), do: nil
+  defp cost_to_raw(%Decimal{} = cost), do: Decimal.to_string(cost, :normal)
 end

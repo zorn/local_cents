@@ -1,7 +1,8 @@
 defmodule LocalCents.Tracking.ExAutomerge do
   @moduledoc """
-  The Rust bridge that backs the tracking context with an [Automerge](https://automerge.org)
-  CRDT document — a **dumb codec**, not a place for domain logic.
+  The Rust bridge that stores the tracking context's data as an
+  [Automerge](https://automerge.org) CRDT document. It only **encodes and decodes**
+  those documents — and merges them — holding no domain logic of its own.
 
   This module is the private implementation of `LocalCents.Tracking`. It is
   **not** part of the tracking boundary's public API — nothing outside the
@@ -22,17 +23,18 @@ defmodule LocalCents.Tracking.ExAutomerge do
   [ADR 0007](0007-book-runtime-and-persistence.html), which places the name
   *inside* the document while the Book id lives in the file name).
 
-  ## Codec, not brain
+  ## Encode and decode, no domain logic
 
   This module deliberately owns **no domain rules** (see
-  [ADR 0014](0014-functional-core-process-shell.html)). It exposes two halves of a
-  codec:
+  [ADR 0014](0014-functional-core-process-shell.html)). It is just the two halves
+  of an encode/decode round-trip between document bytes and the _raw_ state map the
+  functional core works on:
 
-    * `decode/1` turns document bytes into the plain state map
-      (`%{name:, expenses:}`) that the functional core
+    * `decode/1` turns document bytes into the raw state map
+      (`%{name:, expenses:}`, see `t:state/0`) that the functional core
       (`LocalCents.Tracking.BookDocument`) reasons about, and
-    * `reconcile/3` takes a whole *new* state the core has computed and reconciles
-      it onto the prior bytes, returning the new bytes.
+    * `reconcile/3` takes a whole *new* raw state the core has computed and
+      reconciles it onto the prior bytes, returning the new bytes.
 
   There is a single mutation path — `reconcile/3`. Adding, editing, or deleting an
   expense and renaming the Book are all just "compute a new state and apply it";
@@ -58,10 +60,10 @@ defmodule LocalCents.Tracking.ExAutomerge do
   use Rustler, otp_app: :local_cents, crate: "ex_automerge"
 
   @typedoc """
-  The decoded contents of a Book document as plain data: the Book `name` (a string)
+  The decoded contents of a Book document in _raw_ form: the Book `name` (a string)
   and its list of raw expense maps (`t:raw_expense/0` — atom keys, string values).
   This is the shape `decode/1` returns and `reconcile/3` accepts;
-  `LocalCents.Tracking.BookDocument` gives it domain meaning.
+  `LocalCents.Tracking.BookDocument` parses it into typed domain values.
   """
   @type state() :: %{name: String.t(), expenses: [raw_expense()]}
 
@@ -107,8 +109,8 @@ defmodule LocalCents.Tracking.ExAutomerge do
   def document_updated_at(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
-  Decodes the document bytes into the plain `t:state/0` map the functional core
-  operates on. The read half of the codec; it never mutates.
+  Decodes the document bytes into the raw `t:state/0` map the functional core
+  parses into domain values. The read half of the round-trip; it never mutates.
   """
   @spec decode(doc_bytes :: binary()) :: state()
   def decode(_doc_bytes), do: :erlang.nif_error(:nif_not_loaded)

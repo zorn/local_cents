@@ -8,10 +8,10 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
   alias LocalCents.Tracking.ExAutomerge
 
-  # Fixed unix-seconds stamps for deterministic change times. `@t2` is later than
-  # `@t1` so tests can assert the "most recent" behavior.
-  @t1 1_700_000_000
-  @t2 1_700_000_500
+  # Fixed unix-seconds stamps for deterministic change times. `@later` is later than
+  # `@earlier` so tests can assert the "most recent" behavior.
+  @earlier 1_700_000_000
+  @later 1_700_000_500
 
   defp expense(id, date, description, cost) do
     %{id: id, date: date, description: description, cost: cost}
@@ -21,7 +21,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
   describe "new_document/2, document_name/1 and decode/1" do
     test "a new document carries its name and has no expenses" do
-      doc = ExAutomerge.new_document("Family Expenses", @t1)
+      doc = ExAutomerge.new_document("Family Expenses", @earlier)
 
       assert byte_size(doc) > 0
       assert ExAutomerge.document_name(doc) == "Family Expenses"
@@ -35,46 +35,46 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
   describe "reconcile/3" do
     test "reconciles a new state onto the prior bytes and round-trips it" do
-      doc = ExAutomerge.new_document("Book", @t1)
+      doc = ExAutomerge.new_document("Book", @earlier)
 
       state =
         doc
         |> ExAutomerge.decode()
         |> with_expenses([expense("id1", "2026-07-11", "Coffee", "12.34")])
 
-      updated = ExAutomerge.reconcile(doc, state, @t2)
+      updated = ExAutomerge.reconcile(doc, state, @later)
 
       assert ExAutomerge.decode(updated) == state
     end
 
     test "an absent cost round-trips as nil" do
-      doc = ExAutomerge.new_document("Book", @t1)
+      doc = ExAutomerge.new_document("Book", @earlier)
 
       state =
         doc
         |> ExAutomerge.decode()
         |> with_expenses([expense("id1", "2026-07-11", "Gift", nil)])
 
-      updated = ExAutomerge.reconcile(doc, state, @t2)
+      updated = ExAutomerge.reconcile(doc, state, @later)
 
       assert %{expenses: [%{cost: nil}]} = ExAutomerge.decode(updated)
     end
 
     test "a rename via new state preserves expenses" do
-      doc = ExAutomerge.new_document("Old Name", @t1)
+      doc = ExAutomerge.new_document("Old Name", @earlier)
 
       with_expense =
         ExAutomerge.reconcile(
           doc,
           with_expenses(ExAutomerge.decode(doc), [expense("id1", "2026-07-11", "Coffee", "5.00")]),
-          @t1
+          @earlier
         )
 
       renamed =
         ExAutomerge.reconcile(
           with_expense,
           %{ExAutomerge.decode(with_expense) | name: "New Name"},
-          @t2
+          @later
         )
 
       assert %{name: "New Name", expenses: [%{description: "Coffee"}]} =
@@ -93,20 +93,20 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "a new document reports the time it was created with" do
-      doc = ExAutomerge.new_document("Book", @t1)
-      assert ExAutomerge.document_updated_at(doc) == @t1
+      doc = ExAutomerge.new_document("Book", @earlier)
+      assert ExAutomerge.document_updated_at(doc) == @earlier
     end
 
     test "reports the time of the most recent change" do
-      doc = "Book" |> ExAutomerge.new_document(@t1) |> apply_expense("Coffee", @t2)
-      assert ExAutomerge.document_updated_at(doc) == @t2
+      doc = "Book" |> ExAutomerge.new_document(@earlier) |> apply_expense("Coffee", @later)
+      assert ExAutomerge.document_updated_at(doc) == @later
     end
 
     test "reports the latest stamp even when a later edit carries an earlier time" do
       # Change times are advisory and can arrive out of order (device clock skew);
       # we surface the max, not the last-written value.
-      doc = "Book" |> ExAutomerge.new_document(@t2) |> apply_expense("Coffee", @t1)
-      assert ExAutomerge.document_updated_at(doc) == @t2
+      doc = "Book" |> ExAutomerge.new_document(@later) |> apply_expense("Coffee", @earlier)
+      assert ExAutomerge.document_updated_at(doc) == @later
     end
 
     test "returns nil when no change carries a usable (non-zero) time" do
@@ -115,13 +115,13 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "after a merge, reflects the most recent change from either side" do
-      base = ExAutomerge.new_document("Book", @t1)
+      base = ExAutomerge.new_document("Book", @earlier)
 
-      fork_a = apply_expense(base, "Lunch", @t1)
-      fork_b = apply_expense(base, "Bus", @t2)
+      fork_a = apply_expense(base, "Lunch", @earlier)
+      fork_b = apply_expense(base, "Bus", @later)
 
       merged = ExAutomerge.merge(fork_a, fork_b)
-      assert ExAutomerge.document_updated_at(merged) == @t2
+      assert ExAutomerge.document_updated_at(merged) == @later
     end
   end
 
@@ -136,10 +136,10 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "merging two documents preserves expenses from both" do
-      base = ExAutomerge.new_document("Book", @t1)
+      base = ExAutomerge.new_document("Book", @earlier)
 
-      fork_a = fork(base, "a", "Lunch", @t1)
-      fork_b = fork(base, "b", "Bus", @t1)
+      fork_a = fork(base, "a", "Lunch", @earlier)
+      fork_b = fork(base, "b", "Bus", @earlier)
 
       descriptions =
         fork_a
@@ -154,10 +154,10 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "merge is commutative for the resulting expense set" do
-      base = ExAutomerge.new_document("Book", @t1)
+      base = ExAutomerge.new_document("Book", @earlier)
 
-      fork_a = fork(base, "a", "A", @t1)
-      fork_b = fork(base, "b", "B", @t1)
+      fork_a = fork(base, "a", "A", @earlier)
+      fork_b = fork(base, "b", "B", @earlier)
 
       set_ab =
         fork_a
@@ -182,7 +182,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       # device deleting the middle expense and another editing a *different* one
       # both survive the merge. Position-based matching would rewrite the wrong
       # objects and lose the concurrent edit.
-      base = ExAutomerge.new_document("Book", @t1)
+      base = ExAutomerge.new_document("Book", @earlier)
 
       base =
         ExAutomerge.reconcile(
@@ -192,7 +192,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
             expense("b", "2026-07-11", "Lunch", nil),
             expense("c", "2026-07-11", "Bus", nil)
           ]),
-          @t1
+          @earlier
         )
 
       # Device 1 deletes the middle expense (b).
@@ -203,7 +203,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
             expense("a", "2026-07-11", "Coffee", nil),
             expense("c", "2026-07-11", "Bus", nil)
           ]),
-          @t2
+          @later
         )
 
       # Device 2 edits a different expense (c), changing its description and cost.
@@ -215,7 +215,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
             expense("b", "2026-07-11", "Lunch", nil),
             expense("c", "2026-07-11", "Train", "9.99")
           ]),
-          @t2
+          @later
         )
 
       by_id =

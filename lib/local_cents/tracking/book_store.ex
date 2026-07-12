@@ -42,7 +42,7 @@ defmodule LocalCents.Tracking.BookStore do
   end
 
   @doc """
-  Returns a new, random Book id (a version-4 UUID string, also its file name).
+  Returns a new, random Book id (a version-4 UUID string).
 
   Delegates to `LocalCents.Tracking.UUID` so Book and Expense ids share one scheme.
   """

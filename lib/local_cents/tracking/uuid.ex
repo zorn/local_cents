@@ -4,8 +4,12 @@ defmodule LocalCents.Tracking.UUID do
 
   Both Book ids (their `.lcbook` file names) and Expense ids come from here, so
   there is one collision-resistant, filesystem-safe identifier scheme rather than
-  two. We generate these ourselves rather than pull in a UUID dependency — the
-  value only needs to be unique, not to carry meaning.
+  two, and one place to swap the implementation.
+
+  Backed by `Ecto.UUID` (a dependency since the `Expense` schema — see
+  [ADR 0016](0016-ecto-embedded-validation-no-repo.html)), so we no longer
+  hand-roll the bytes. This module stays as the tracking-scoped name so callers do
+  not spread a direct `Ecto.UUID` dependency.
 
   This is a private helper of `LocalCents.Tracking`. Generating a UUID reads the
   system CSPRNG, so it is a side effect that belongs in the process shell; the pure
@@ -17,13 +21,5 @@ defmodule LocalCents.Tracking.UUID do
   Returns a new, random version-4 UUID string.
   """
   @spec generate() :: String.t()
-  def generate do
-    <<a::32, b::16, c::16, d::16, e::48>> = :crypto.strong_rand_bytes(16)
-    # Set the version (4) and variant (RFC 4122) bits.
-    c = Bitwise.bor(Bitwise.band(c, 0x0FFF), 0x4000)
-    d = Bitwise.bor(Bitwise.band(d, 0x3FFF), 0x8000)
-
-    formatted = :io_lib.format("~8.16.0b-~4.16.0b-~4.16.0b-~4.16.0b-~12.16.0b", [a, b, c, d, e])
-    IO.iodata_to_binary(formatted)
-  end
+  def generate, do: Ecto.UUID.generate()
 end

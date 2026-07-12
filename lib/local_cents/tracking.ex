@@ -192,7 +192,11 @@ defmodule LocalCents.Tracking do
   defp rename_on_disk(id, new_name, seconds) do
     with {:ok, bytes} <- BookStore.load(id) do
       # A rename only touches the Book's name, so we set it on the raw decoded state
-      # directly — no need to route through the functional core's domain parsing.
+      # directly rather than routing through `BookDocument.rename/2` (which would also
+      # re-introduce a `BookDocument` dependency here). NOTE: this stays equivalent to
+      # the open-Book path only while `BookDocument.rename/2` is a pure name-set — if
+      # it ever grows logic (validation, derived fields), this closed-Book path must
+      # be routed through the core too, or the two rename paths will diverge.
       state = %{ExAutomerge.decode(bytes) | name: new_name}
       BookStore.save(id, ExAutomerge.reconcile(bytes, state, seconds))
     end
@@ -266,10 +270,12 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
-  Lists the expenses of an open Book, in insertion order.
+  Lists the expenses of an open Book.
 
-  Returns `{:error, :not_open}` if the Book's process is not running
-  (`open_book/1`), matching the mutating functions rather than crashing the caller.
+  The list order is not a contract callers should rely on (it is not stable across
+  a CRDT merge); sort in the view for display. Returns `{:error, :not_open}` if the
+  Book's process is not running (`open_book/1`), matching the mutating functions
+  rather than crashing the caller.
   """
   @spec list_expenses(Book.id()) :: [Expense.t()] | {:error, :not_open}
   def list_expenses(id) when is_binary(id) do
