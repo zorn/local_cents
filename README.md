@@ -27,9 +27,11 @@ In addition to providing an end product (which I myself am interested in using),
 
 AI coding is a complex and heavily debated tool for modern developers. For those looking to avoid products and libraries that utilize AI, I want to share a notice here explaining my own use to help people make a more informed decision if they want to use this work.
 
-I do not use AI coding to generate large swaths of code. This is not a vibe-coded project. I tend to use AI to check my work, offer typeahead suggestions (honoring the patterns I've chosen with intent), and explore ideas. At the end of the day, I am responsible for the code I ship.
+~~I do not use AI coding to generate large swaths of code. This is not a vibe-coded project. I tend to use AI to check my work, offer typeahead suggestions (honoring the patterns I've chosen with intent), and explore ideas. At the end of the day, I am responsible for the code I ship.~~
 
 For more on my thoughts on AI see [my blog](https://mikezornek.com/posts/2026/5/moral-struggles-of-ai-coding/).
+
+**Update July 2026:** Since kicking off this project, I've used this space to more heavily experiment with larger AI code generation, primarily utilizing the workflow of [Matt Pocock](https://github.com/mattpocock/skills). I still do see myself as personally responsible for this code. You can see some of that via PR conversation artifacts but there is also a lot of stuff done locally as well. Things are continuing to evolve at a rapid pace. I'll try to do some snapshot updates on how I use AI on my blog, but wanted to update this inline note sooner since things have changed since it was originally composed.
 
 ## Tech Stack
 
@@ -37,9 +39,11 @@ Since the end goal is a cross-platform binary along with the ability to run the 
 
 ### Phase One Goals
 
-> **Note:** This section describes the broader Phase One *vision*. The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See [the MVP proposal](docs/proposals/mvp.md) for the exact in-scope build and what is deferred.
+> **Note:** This section describes the broader Phase One *vision*. 
 
-The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
+The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See the original [the MVP proposal](docs/proposals/mvp.md) and [epic issue](https://github.com/zorn/local_cents/issues/58) for the exact in-scope build and what is deferred.
+
+**Next Up.** The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
 
 Aside: Deploying a [Tauri iOS app](https://tauri.app/start/prerequisites/#ios) requires CocoaPods, and since that is [a dead technology](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), I am not going to use it.
 
@@ -59,17 +63,31 @@ You will also need [Rust](https://www.rust-lang.org/tools/install) installed, as
 
 Run `mix setup` from the project root folder to download the Elixir dependencies and various asset tooling.
 
-To run the app as a **standard Phoenix application** use `mix phx.server` or inside IEx with `iex -S mix phx.server`. Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+To run the app as a **standard Phoenix application**, from the project root folder:
 
-To run the app as a **macOS application bundle** use `cargo tauri dev` from the project root folder.
+```bash
+iex -S mix phx.server
+```
+
+Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+To run the app as a **macOS application bundle**, from the project root folder:
+
+```bash
+cargo tauri dev
+```
 
 ## Release builds 
 
-To make a release application bundle run: `cargo tauri build` from the project root folder.
+To make a release application bundle, from the project root folder run:
+
+```bash
+cargo tauri build
+```
 
 Then you can run the following to launch the production bundle with logs going to the console. (Note: This is using Fish-specific syntax if you use a different shell you might need to edit.)
 
-```fish
+```bash
 open -W --stderr (tty) --stdout (tty) tauri/target/release/bundle/macos/local-cents.app
 ```
 
