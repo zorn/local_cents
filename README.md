@@ -27,7 +27,7 @@ In addition to providing an end product (which I myself am interested in using),
 
 AI coding is a complex and heavily debated tool for modern developers. For those looking to avoid products and libraries that utilize AI, I want to share a notice here explaining my own use to help people make a more informed decision if they want to use this work.
 
-~~I do not use AI coding to generate large swaths of code. This is not a vibe-coded project. I tend to use AI to check my work, offer typeahead suggestions (honoring the patterns I've chosen with intent), and explore ideas. At the end of the day, I am responsible for the code I ship.~~
+> This note originally read: "I do not use AI coding to generate large swaths of code. This is not a vibe-coded project. I tend to use AI to check my work, offer typeahead suggestions (honoring the patterns I've chosen with intent), and explore ideas. At the end of the day, I am responsible for the code I ship." See the update below for how my use has since evolved.
 
 For more on my thoughts on AI see [my blog](https://mikezornek.com/posts/2026/5/moral-struggles-of-ai-coding/).
 
@@ -39,11 +39,11 @@ Since the end goal is a cross-platform binary along with the ability to run the 
 
 ### Phase One Goals
 
-> **Note:** This section describes the broader Phase One *vision*. 
+> **Note:** This section describes the broader Phase One *vision*. The **MVP** described below is the deliberately narrower first slice.
 
-The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See the original [the MVP proposal](docs/proposals/mvp.md) and [epic issue](https://github.com/zorn/local_cents/issues/58) for the exact in-scope build and what is deferred.
+The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See the original [MVP proposal](docs/proposals/mvp.md) and [epic issue](https://github.com/zorn/local_cents/issues/58) for the exact in-scope build and what is deferred.
 
-**Next Up.** The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
+**Phase One scope.** The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
 
 Aside: Deploying a [Tauri iOS app](https://tauri.app/start/prerequisites/#ios) requires CocoaPods, and since that is [a dead technology](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), I am not going to use it.
 
@@ -77,7 +77,7 @@ To run the app as a **macOS application bundle**, from the project root folder:
 cargo tauri dev
 ```
 
-## Release builds 
+## Release builds
 
 To make a release application bundle, from the project root folder run:
 
