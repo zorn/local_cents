@@ -71,40 +71,47 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
 
   @spec category_row(Socket.assigns()) :: Rendered.t()
   def category_row(%{editing: true} = assigns) do
+    assigns = assign(assigns, :name_error, name_error(assigns.form))
+
     ~H"""
-    <%!-- `items-start` keeps the Save/✕ group pinned to the input's top line; the
-    validation error hangs below the input inside its own wrapper without dragging
-    the buttons down with it. The button group is `items-center` at the input's
-    height so both read as aligned with the field. --%>
+    <%!-- The input, Save, and ✕ share one `items-center` line of constant height so
+    the field's text aligns with the button labels; the validation error is a
+    separate line below the row, so it never shifts that alignment. The input is
+    rendered field-less (name/value/error unpacked here) precisely so its error does
+    not live inside the input wrapper and grow the row. --%>
     <.form
       for={@form}
       id={@id}
       phx-submit={@on_save}
       phx-change={@on_change}
-      class="flex w-full items-start gap-2 px-4 py-2"
+      class="w-full px-4 py-2"
     >
-      <label for={@input_id} class="sr-only">Category name</label>
-      <Bond.input
-        field={@form[:name]}
-        id={@input_id}
-        class="flex-1"
-        placeholder="Category name"
-        phx-hook=".InlineEditKeys"
-        data-on-cancel={@on_cancel}
-        autocomplete="off"
-      />
-      <div class="flex shrink-0 items-center gap-2 py-0.5">
+      <div class="flex w-full items-center gap-2">
+        <label for={@input_id} class="sr-only">Category name</label>
+        <Bond.input
+          id={@input_id}
+          name={@form[:name].name}
+          value={@form[:name].value}
+          class="flex-1"
+          placeholder="Category name"
+          phx-hook=".InlineEditKeys"
+          data-on-cancel={@on_cancel}
+          autocomplete="off"
+        />
         <Bond.button type="submit">{@submit_label}</Bond.button>
         <button
           type="button"
           phx-click={@on_cancel}
           aria-label="Cancel"
-          class="text-surface-500 hover:text-primary-800 transition-colors"
+          class="shrink-0 text-surface-500 hover:text-primary-800 transition-colors"
         >
           <.icon name="hero-x-mark" class="w-5 h-5" />
           <span class="sr-only">Cancel</span>
         </button>
       </div>
+      <p :if={@name_error} class="mt-1 pl-1 text-xs" style="color: var(--color-error-600)">
+        {@name_error}
+      </p>
     </.form>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".InlineEditKeys">
       export default {
@@ -165,4 +172,24 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
   defp count_label(0), do: "No expenses"
   defp count_label(1), do: "1 expense"
   defp count_label(count), do: "#{count} expenses"
+
+  # The first validation error for the name, gated on interaction like
+  # `Bond.Elements.Input` does — a pristine required field shows no error. Rendered
+  # below the row (not inside the input) to keep the edit line's height constant.
+  defp name_error(form) do
+    field = form[:name]
+
+    if Phoenix.Component.used_input?(field) do
+      field.errors |> List.first() |> translate_error()
+    end
+  end
+
+  defp translate_error(nil), do: nil
+
+  defp translate_error({msg, opts}) do
+    case opts[:count] do
+      nil -> Gettext.dgettext(LocalCentsWeb.Gettext, "errors", msg, opts)
+      count -> Gettext.dngettext(LocalCentsWeb.Gettext, "errors", msg, msg, count, opts)
+    end
+  end
 end
