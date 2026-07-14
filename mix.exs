@@ -290,9 +290,8 @@ defmodule LocalCents.MixProject do
       # is the Automerge document, not SQL (see ADR 0007). See ADR 0016.
       {:ecto, "~> 3.14"},
 
-      # The `Phoenix.HTML.FormData` binding for `Ecto.Changeset`, so an Expense
-      # changeset drops straight into the editor via `to_form/1` (see ADR 0016).
-      # This is form integration only — no `ecto_sql`, no `Repo`, no database.
+      # Allows for changeset -> to_form logic. Form integration only — no
+      # `ecto_sql`, no `Repo`, no database (see ADR 0016).
       {:phoenix_ecto, "~> 4.6"},
 
       # Exact decimal arithmetic for an Expense's `Cost`, which is stored as a

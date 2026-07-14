@@ -34,9 +34,6 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
       <span class="flex-1 text-sm font-medium text-surface-800">
         {@description}
       </span>
-      <%!-- The single optional Category, rendered inline as its own pill —
-      deliberately NOT the tag_pill element, which encodes the retired multi-tag
-      idea (categories, not tags — see ADR 0005). --%>
       <div class="flex items-center gap-1.5">
         <span
           :if={@category}

@@ -86,7 +86,8 @@ defmodule LocalCentsWeb.BookLive do
           title={editor_title(@editor)}
           on_close="close_editor"
         >
-          <form
+          <.form
+            for={@form}
             id="expense-form"
             phx-submit="save_expense"
             phx-change="validate_expense"
@@ -115,18 +116,18 @@ defmodule LocalCentsWeb.BookLive do
             <div class="flex items-center justify-between pt-2">
               <%!-- Delete only exists for a saved expense; a spacer keeps Save pinned
               right when adding, since the row is justify-between. --%>
-              <button
+              <Bond.button
                 :if={match?({:edit, _}, @editor)}
                 type="button"
+                variant={:danger}
                 phx-click="request_delete"
-                class="text-sm font-bold text-error-400 hover:text-error-300 transition-colors"
               >
                 Delete
-              </button>
+              </Bond.button>
               <span :if={match?({:new, _}, @editor)}></span>
               <Bond.button type="submit">Save</Bond.button>
             </div>
-          </form>
+          </.form>
         </Bond.side_panel>
       </div>
 
@@ -354,14 +355,14 @@ defmodule LocalCentsWeb.BookLive do
   defp editor_title({:edit, _expense}), do: "Edit Expense"
 
   # Builds the editor form from the Expense changeset (see ADR 0016 — Ecto for
-  # validation, with `phoenix_ecto` supplying the form binding). On open (empty
-  # params, nil action) `used_input?/1` keeps errors hidden until a field is
-  # touched; `:validate` surfaces them on change and on a failed submit.
+  # validation, with `phoenix_ecto` supplying the form binding). The form action
+  # is a UI concern, so it lives here at the call site rather than in the domain
+  # changeset: a nil action (on open) hides errors, `:validate` surfaces them on
+  # change and on a failed submit.
   defp editor_form(expense, today, params \\ %{}, action \\ nil) do
     expense
     |> Expense.changeset(params, today)
-    |> Map.put(:action, action)
-    |> to_form()
+    |> to_form(action: action)
   end
 
   defp format_date(%Date{} = date), do: Calendar.strftime(date, "%m/%d/%Y")
