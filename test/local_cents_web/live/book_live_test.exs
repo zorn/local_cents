@@ -59,4 +59,119 @@ defmodule LocalCentsWeb.BookLiveTest do
     |> assert_has("#flash-error", text: "This book was deleted.")
     |> assert_path(~p"/library")
   end
+
+  describe "expense list" do
+    test "shows an empty state before any expense exists", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> assert_has("p", text: "No expenses yet")
+    end
+
+    test "lists a book's expenses, newest first", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-05-01],
+          description: "Older coffee",
+          cost: "3"
+        })
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-06-01],
+          description: "Newer lunch",
+          cost: "12.5"
+        })
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> assert_has("#expenses", text: "Newer lunch")
+      |> assert_has("#expenses", text: "$12.50")
+      |> assert_has("#expenses", text: "Older coffee")
+      # Sorted by date, newest first. Each expense row renders as a <button>, so
+      # `#expenses button` selects the rows in document order; `at:` pins which one
+      # (1-indexed) must carry which text — the June row before the May row.
+      |> assert_has("#expenses button", at: 1, text: "Newer lunch")
+      |> assert_has("#expenses button", at: 2, text: "Older coffee")
+    end
+  end
+
+  describe "full editor" do
+    test "adding an expense through the editor lists it", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> click_button("New Expense")
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> fill_in("Date", with: "2026-06-10")
+        |> fill_in("Description", with: "Coffee")
+        |> fill_in("Cost", with: "4.75")
+        |> click_button("Create")
+      end)
+      |> assert_has("#expenses", text: "Coffee")
+      |> assert_has("#expenses", text: "$4.75")
+    end
+
+    test "editing an expense through the editor updates it", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-06-01],
+          description: "Cofee typo",
+          cost: "4"
+        })
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> within("#expenses", fn list -> click_button(list, "Cofee typo") end)
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> fill_in("Description", with: "Coffee")
+        |> fill_in("Cost", with: "4.50")
+        |> click_button("Save")
+      end)
+      |> assert_has("#expenses", text: "Coffee")
+      |> assert_has("#expenses", text: "$4.50")
+      |> refute_has("#expenses", text: "Cofee typo")
+    end
+
+    test "deleting an expense behind a confirmation removes it", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-06-01],
+          description: "Mistake",
+          cost: "9.99"
+        })
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> within("#expenses", fn list -> click_button(list, "Mistake") end)
+      |> within("#expense-editor", fn editor -> click_button(editor, "Delete") end)
+      |> within("#delete-expense-modal", fn modal -> click_button(modal, "Delete") end)
+      |> refute_has("#expenses", text: "Mistake")
+      |> assert_has("p", text: "No expenses yet")
+    end
+
+    test "an expense with a blank description shows a validation error", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> click_button("New Expense")
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> fill_in("Cost", with: "5.00")
+        |> click_button("Create")
+      end)
+      |> assert_has("#expense-editor", text: "can't be blank")
+    end
+  end
 end

@@ -290,6 +290,10 @@ defmodule LocalCents.MixProject do
       # is the Automerge document, not SQL (see ADR 0007). See ADR 0016.
       {:ecto, "~> 3.14"},
 
+      # Allows for changeset -> to_form logic. Form integration only — no
+      # `ecto_sql`, no `Repo`, no database (see ADR 0016).
+      {:phoenix_ecto, "~> 4.6"},
+
       # Exact decimal arithmetic for an Expense's `Cost`, which is stored as a
       # decimal string in the Automerge document (see ADR 0010).
       {:decimal, "~> 2.0 or ~> 3.0"},

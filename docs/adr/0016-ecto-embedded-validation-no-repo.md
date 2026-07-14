@@ -37,3 +37,8 @@ that does not imply a database.
   proposed, that is a separate, larger decision (and would reopen ADR 0007).
 - Pre-deployment, adding the dependency is low-risk; the project is not yet
   shipped and the schema is still churning.
+- **Update (#63):** the editor uses `to_form/1` on the changeset as this ADR
+  intended. That binding is not built into `ecto` — it comes from `phoenix_ecto`,
+  which the #63 editor added. `phoenix_ecto` is form integration only (a
+  `Phoenix.HTML.FormData` implementation for `Ecto.Changeset`); it is neither
+  `ecto_sql` nor a `Repo`, so the line above still holds.

@@ -7,26 +7,22 @@ defmodule Storybook.Composites.ExpenseCell do
   def variations do
     [
       %Variation{
-        id: :with_tags,
-        description: "Expense row with multiple tag pills.",
+        id: :categorized,
+        description: "Expense row with a single category.",
         attributes: %{
-          date: "2025-06-15",
+          date: "06/15/2025",
           description: "Whole Foods Market",
           amount: "$87.43",
-          tags: [
-            %{label: "groceries", color: "#3f7fd6"},
-            %{label: "household", color: "#e6b53c"}
-          ]
+          category: %{label: "groceries", color: "#3f7fd6"}
         }
       },
       %Variation{
-        id: :no_tags,
-        description: "Expense row with no tags.",
+        id: :uncategorized,
+        description: "Expense row with no category.",
         attributes: %{
-          date: "2025-06-18",
+          date: "06/18/2025",
           description: "Netflix",
-          amount: "$15.99",
-          tags: []
+          amount: "$15.99"
         }
       }
     ]

@@ -159,7 +159,7 @@ defmodule Storybook.Demos.FamilyExpenses do
                 date={expense.date}
                 description={expense.description}
                 amount={expense.amount}
-                tags={Enum.map(expense.tags, &%{label: &1, color: tag_swatch(&1)})}
+                category={demo_category(expense.tags)}
                 phx-click="select_expense"
                 phx-value-id={expense.id}
               />
@@ -247,6 +247,11 @@ defmodule Storybook.Demos.FamilyExpenses do
       _ -> date
     end
   end
+
+  # The demo row now shows a single Category (ADR 0005); collapse the old tag list
+  # to its first tag as a stand-in until the demo is reworked for categories (#70).
+  defp demo_category([]), do: nil
+  defp demo_category([label | _rest]), do: %{label: label, color: tag_swatch(label)}
 
   defp tag_swatch(label) do
     case label do
