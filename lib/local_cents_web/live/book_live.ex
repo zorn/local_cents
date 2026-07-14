@@ -54,12 +54,11 @@ defmodule LocalCentsWeb.BookLive do
         <h1 class="sr-only">{@book.name}</h1>
 
         <div class="flex min-h-0 flex-1 flex-col">
-          <p
+          <Bond.empty_state
             :if={@expenses == []}
-            class="m-4 rounded-lg border border-dashed border-surface-400 px-4 py-10 text-center text-sm text-surface-600"
-          >
-            No expenses yet — add one below to get started.
-          </p>
+            message="No expenses yet"
+            hint="Add one below to get started."
+          />
 
           <div :if={@expenses != []} id="expenses" class="flex min-h-0 flex-1 flex-col">
             <Bond.list_view fill>

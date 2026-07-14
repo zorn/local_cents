@@ -72,12 +72,16 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
   @spec category_row(Socket.assigns()) :: Rendered.t()
   def category_row(%{editing: true} = assigns) do
     ~H"""
+    <%!-- `items-start` keeps the Save/✕ group pinned to the input's top line; the
+    validation error hangs below the input inside its own wrapper without dragging
+    the buttons down with it. The button group is `items-center` at the input's
+    height so both read as aligned with the field. --%>
     <.form
       for={@form}
       id={@id}
       phx-submit={@on_save}
       phx-change={@on_change}
-      class="flex w-full items-center gap-2 px-4 py-2"
+      class="flex w-full items-start gap-2 px-4 py-2"
     >
       <label for={@input_id} class="sr-only">Category name</label>
       <Bond.input
@@ -89,16 +93,18 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
         data-on-cancel={@on_cancel}
         autocomplete="off"
       />
-      <Bond.button type="submit">{@submit_label}</Bond.button>
-      <button
-        type="button"
-        phx-click={@on_cancel}
-        aria-label="Cancel"
-        class="shrink-0 text-surface-500 hover:text-primary-800 transition-colors"
-      >
-        <.icon name="hero-x-mark" class="w-5 h-5" />
-        <span class="sr-only">Cancel</span>
-      </button>
+      <div class="flex shrink-0 items-center gap-2 py-0.5">
+        <Bond.button type="submit">{@submit_label}</Bond.button>
+        <button
+          type="button"
+          phx-click={@on_cancel}
+          aria-label="Cancel"
+          class="text-surface-500 hover:text-primary-800 transition-colors"
+        >
+          <.icon name="hero-x-mark" class="w-5 h-5" />
+          <span class="sr-only">Cancel</span>
+        </button>
+      </div>
     </.form>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".InlineEditKeys">
       export default {
