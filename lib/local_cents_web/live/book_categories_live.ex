@@ -328,6 +328,11 @@ defmodule LocalCentsWeb.BookCategoriesLive do
     end
   end
 
+  # Category commands also emit `:categories_updated` (see ADR 0018), but this view
+  # already reloads its category list on the `:book_updated` those commands emit
+  # too, so the extra signal is redundant here — ignore it rather than reload twice.
+  def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
+
   # A change elsewhere may have deleted the category currently open for rename;
   # drop the stale editor rather than let a Save act on a phantom. An open add row
   # (`:new`) has no target, so it is left alone.

@@ -251,7 +251,7 @@ defmodule Storybook.Demos.FamilyExpenses do
   # The demo row now shows a single Category (ADR 0005); collapse the old tag list
   # to its first tag as a stand-in until the demo is reworked for categories (#70).
   defp demo_category([]), do: nil
-  defp demo_category([label | _rest]), do: %{label: label, color: tag_swatch(label)}
+  defp demo_category([label | _rest]), do: label
 
   defp tag_swatch(label) do
     case label do

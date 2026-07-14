@@ -174,4 +174,111 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> assert_has("#expense-editor", text: "can't be blank")
     end
   end
+
+  describe "category selection" do
+    test "filing a new expense under a category shows its badge in the list", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, _} = Tracking.add_category(book.id, %{name: "Groceries"})
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> click_button("New Expense")
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> fill_in("Date", with: "2026-06-10")
+        |> fill_in("Description", with: "Whole Foods")
+        |> fill_in("Cost", with: "42.00")
+        |> select("Category", option: "Groceries")
+        |> click_button("Create")
+      end)
+      |> assert_has("#expenses", text: "Whole Foods")
+      |> assert_has("#expenses", text: "Groceries")
+    end
+
+    test "editing an expense files it under a category", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, _} = Tracking.add_category(book.id, %{name: "Groceries"})
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{date: ~D[2026-06-01], description: "Milk", cost: "3"})
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> within("#expenses", fn list -> click_button(list, "Milk") end)
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> select("Category", option: "Groceries")
+        |> click_button("Save")
+      end)
+      |> assert_has("#expenses", text: "Groceries")
+    end
+
+    test "editing an expense reassigns it from one category to another", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
+      {:ok, _transit} = Tracking.add_category(book.id, %{name: "Transit"})
+
+      {:ok, expense} =
+        Tracking.add_expense(book.id, %{date: ~D[2026-06-01], description: "Milk", cost: "3"})
+
+      {:ok, _} = Tracking.assign_category(book.id, expense.id, groceries.id)
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> assert_has("#expenses", text: "Groceries")
+      |> within("#expenses", fn list -> click_button(list, "Milk") end)
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> select("Category", option: "Transit")
+        |> click_button("Save")
+      end)
+      |> assert_has("#expenses", text: "Transit")
+      |> refute_has("#expenses", text: "Groceries")
+    end
+
+    test "editing an expense unassigns its category via the blank option", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
+
+      {:ok, expense} =
+        Tracking.add_expense(book.id, %{date: ~D[2026-06-01], description: "Milk", cost: "3"})
+
+      {:ok, _} = Tracking.assign_category(book.id, expense.id, groceries.id)
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> assert_has("#expenses", text: "Groceries")
+      |> within("#expenses", fn list -> click_button(list, "Milk") end)
+      |> within("#expense-editor", fn editor ->
+        editor
+        |> select("Category", option: "")
+        |> click_button("Save")
+      end)
+      |> refute_has("#expenses", text: "Groceries")
+    end
+
+    test "the editor shows a hint, not a picker, when the book has no categories", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> click_button("New Expense")
+      |> assert_has("#expense-editor", text: "No categories yet")
+      |> refute_has("#expense-editor label", text: "Category")
+    end
+
+    test "a category added elsewhere appears live in the open editor's picker", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      session =
+        conn
+        |> visit(~p"/books/#{book.id}")
+        |> click_button("New Expense")
+        |> assert_has("#expense-editor", text: "No categories yet")
+
+      {:ok, _} = Tracking.add_category(book.id, %{name: "Groceries"})
+
+      assert_has(session, "#expense-editor option", text: "Groceries", timeout: 100)
+    end
+  end
 end

@@ -49,6 +49,13 @@ defmodule LocalCents.Tracking.BookServer do
   @registry LocalCents.Tracking.BookRegistry
   @supervisor LocalCents.Tracking.BookSupervisor
 
+  # The extra signal category commands emit on top of `:book_updated`. It is additive
+  # and coarse (noun-level, `{:categories_updated, book_id}`): a subscriber that only
+  # cares about the Book's *category set* — e.g. the expense editor's picker — can
+  # refresh on this and ignore the far more frequent `:book_updated` from expense
+  # edits (see [ADR 0018](0018-category-assignment-through-the-editor.html)).
+  @category_signals [:categories_updated]
+
   # Client
 
   @doc """
@@ -308,15 +315,15 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   def handle_call({:add_category, attrs, category_id, time}, _from, state) do
-    run(state, time, &BookDocument.add_category(&1, attrs, category_id))
+    run(state, time, &BookDocument.add_category(&1, attrs, category_id), @category_signals)
   end
 
   def handle_call({:rename_category, category_id, attrs, time}, _from, state) do
-    run(state, time, &BookDocument.rename_category(&1, category_id, attrs))
+    run(state, time, &BookDocument.rename_category(&1, category_id, attrs), @category_signals)
   end
 
   def handle_call({:delete_category, category_id, time}, _from, state) do
-    run(state, time, &BookDocument.delete_category(&1, category_id))
+    run(state, time, &BookDocument.delete_category(&1, category_id), @category_signals)
   end
 
   def handle_call({:assign_category, expense_id, category_id, time}, _from, state) do
@@ -332,10 +339,13 @@ defmodule LocalCents.Tracking.BookServer do
   # logic lives in `BookDocument`; the server only orchestrates decode → apply →
   # persist → broadcast (see ADR 0014). A NIF badarg raises `ArgumentError`; catch
   # it so a bad command returns an error rather than crashing the process.
-  defp run(state, time, command) do
+  #
+  # `extra_signals` are additional broadcast messages emitted alongside the standard
+  # `:book_updated` on success — see `category_signals/0`.
+  defp run(state, time, command, extra_signals \\ []) do
     case command.(decode(state)) do
-      {:ok, document, result} -> commit(state, document, time, {:ok, result})
-      {:ok, document} -> commit(state, document, time, :ok)
+      {:ok, document, result} -> commit(state, document, time, {:ok, result}, extra_signals)
+      {:ok, document} -> commit(state, document, time, :ok, extra_signals)
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   rescue
@@ -348,17 +358,22 @@ defmodule LocalCents.Tracking.BookServer do
   # subscribers notified) only if it reached disk. A failed write — e.g. a full
   # disk — leaves the in-memory state untouched and returns the error to the
   # caller, rather than crashing and losing the change on restart.
-  defp commit(state, document, time, reply) do
+  defp commit(state, document, time, reply, extra_signals) do
     new_doc = BookDocument.to_bytes(document, state.doc, time)
 
     case BookStore.save(state.id, new_doc) do
       :ok ->
-        Phoenix.PubSub.broadcast(LocalCents.PubSub, topic(state.id), {:book_updated, state.id})
+        broadcast(state.id, {:book_updated, state.id})
+        Enum.each(extra_signals, &broadcast(state.id, {&1, state.id}))
         {:reply, reply, %{state | doc: new_doc}}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
+  end
+
+  defp broadcast(id, message) do
+    Phoenix.PubSub.broadcast(LocalCents.PubSub, topic(id), message)
   end
 
   @doc """

@@ -10,10 +10,9 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   attr :description, :string, required: true, doc: "The expense description"
   attr :amount_display, :string, required: true, doc: "The formatted expense amount"
 
-  attr :category, :map,
+  attr :category, :string,
     default: nil,
-    doc:
-      "The expense's single category as %{label: string, color: string}, or nil when Uncategorized"
+    doc: "The expense's single category name, or nil when Uncategorized"
 
   attr :rest, :global, doc: "HTML attributes passed through to the row element (e.g. phx-click)"
 
@@ -37,10 +36,9 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
       <div class="flex items-center gap-1.5">
         <span
           :if={@category}
-          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-50 border border-surface-200 text-surface-800"
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-50 border border-surface-200 text-surface-800"
         >
-          <span class="w-2 h-2 rounded-full shrink-0" style={"background: #{@category.color}"}></span>
-          {@category.label}
+          {@category}
         </span>
       </div>
       <span class="shrink-0 text-sm font-bold tabular-nums w-16 text-right text-success-600">
