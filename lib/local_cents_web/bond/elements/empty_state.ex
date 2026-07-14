@@ -2,10 +2,10 @@ defmodule LocalCentsWeb.Bond.Elements.EmptyState do
   @moduledoc """
   A dashed-outline placeholder shown where a list would be, when it is empty.
 
-  The domain-agnostic version of the ad-hoc "No expenses yet" note the document
-  window used to inline: a centered `message` naming what's missing, with an
-  optional quieter `hint` line pointing at how to add the first item. Callers pass
-  copy; the component owns the look so empty lists read the same across screens.
+  A centered `message` naming what's missing, with an optional quieter `hint` line
+  pointing at how to add the first item. Callers pass the copy; the component owns
+  the look, so empty lists read the same across screens (it factors out the kind of
+  ad-hoc "nothing here yet" note screens would otherwise inline by hand).
   """
 
   use Phoenix.Component

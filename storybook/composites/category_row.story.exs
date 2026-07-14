@@ -52,6 +52,7 @@ defmodule Storybook.Composites.CategoryRow do
           editing: true,
           input_id: "category-name-new",
           form: name_form(%Category{}, %{}),
+          submit_label: "Create",
           on_save: "save_category",
           on_cancel: "cancel_edit"
         }

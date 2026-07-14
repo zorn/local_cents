@@ -7,8 +7,9 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
   expenses, and pencil/trash affordances that push `on_edit`/`on_delete` (each
   tagged with `category_id`). In **edit** mode — used for both renaming an existing
   category and adding a new one — the name is replaced by a form field with an
-  explicit **Save** and a **✕** cancel, following the GitHub inline-edit pattern
-  (no commit-on-blur, so keyboard and assistive-tech users act deliberately). The
+  explicit submit (**Create** when adding, **Save** when renaming) and a **✕**
+  cancel, following the GitHub inline-edit pattern (no commit-on-blur, so keyboard
+  and assistive-tech users act deliberately; Escape also closes the row). The
   edit field autofocuses on mount via a colocated hook; the caller re-keys
   `input_id` to refocus it after a successful add.
 
@@ -63,6 +64,11 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
     default: nil,
     doc: "Edit mode: form change event, for live validation (submit still commits)"
 
+  attr :submit_label, :string,
+    default: "Save",
+    doc:
+      ~s|Edit mode: submit button label — "Create" when adding, "Save" when renaming (see docs/ui-language.md)|
+
   @spec category_row(Socket.assigns()) :: Rendered.t()
   def category_row(%{editing: true} = assigns) do
     ~H"""
@@ -79,10 +85,11 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
         id={@input_id}
         class="flex-1"
         placeholder="Category name"
-        phx-hook=".AutoFocus"
+        phx-hook=".InlineEditKeys"
+        data-on-cancel={@on_cancel}
         autocomplete="off"
       />
-      <Bond.button type="submit">Save</Bond.button>
+      <Bond.button type="submit">{@submit_label}</Bond.button>
       <button
         type="button"
         phx-click={@on_cancel}
@@ -93,13 +100,25 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
         <span class="sr-only">Cancel</span>
       </button>
     </.form>
-    <script :type={Phoenix.LiveView.ColocatedHook} name=".AutoFocus">
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".InlineEditKeys">
       export default {
         mounted() {
           this.el.focus()
           // Put the cursor at the end so a rename appends rather than selects.
           const end = this.el.value.length
           this.el.setSelectionRange(end, end)
+          // Escape closes the inline add/rename row (the ✕ button's counterpart),
+          // matching the deliberate no-blur-commit editing model.
+          this._onKeydown = (e) => {
+            if (e.key === "Escape") {
+              e.preventDefault()
+              this.pushEvent(this.el.dataset.onCancel)
+            }
+          }
+          this.el.addEventListener("keydown", this._onKeydown)
+        },
+        destroyed() {
+          this.el.removeEventListener("keydown", this._onKeydown)
         }
       }
     </script>

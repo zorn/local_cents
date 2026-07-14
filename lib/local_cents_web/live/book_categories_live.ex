@@ -78,6 +78,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
                 editing
                 input_id={"category-name-new-#{@add_nonce}"}
                 form={@form}
+                submit_label="Create"
                 on_save="save_category"
                 on_change="validate_category"
                 on_cancel="cancel_edit"

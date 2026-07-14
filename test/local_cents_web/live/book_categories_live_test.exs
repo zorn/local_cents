@@ -64,7 +64,7 @@ defmodule LocalCentsWeb.BookCategoriesLiveTest do
       |> visit(~p"/books/#{book.id}/categories")
       |> click_button("New Category")
       |> fill_in("Category name", with: "Groceries")
-      |> click_button("Save")
+      |> click_button("Create")
       |> assert_has("#categories", text: "Groceries")
       |> refute_has("p", text: "No categories yet")
     end
@@ -76,10 +76,10 @@ defmodule LocalCentsWeb.BookCategoriesLiveTest do
       |> visit(~p"/books/#{book.id}/categories")
       |> click_button("New Category")
       |> fill_in("Category name", with: "Groceries")
-      |> click_button("Save")
+      |> click_button("Create")
       |> assert_has("#categories", text: "Groceries")
       |> fill_in("Category name", with: "Rent")
-      |> click_button("Save")
+      |> click_button("Create")
       |> assert_has("#categories", text: "Rent")
       |> assert_has("#categories", text: "Groceries")
     end
@@ -91,7 +91,7 @@ defmodule LocalCentsWeb.BookCategoriesLiveTest do
       |> visit(~p"/books/#{book.id}/categories")
       |> click_button("New Category")
       |> fill_in("Category name", with: "")
-      |> click_button("Save")
+      |> click_button("Create")
       |> assert_has("#categories", text: "can't be blank")
     end
 
