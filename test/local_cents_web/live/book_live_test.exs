@@ -105,13 +105,13 @@ defmodule LocalCentsWeb.BookLiveTest do
 
       conn
       |> visit(~p"/books/#{book.id}")
-      |> click_button("Add Expense")
+      |> click_button("New Expense")
       |> within("#expense-editor", fn editor ->
         editor
         |> fill_in("Date", with: "2026-06-10")
         |> fill_in("Description", with: "Coffee")
         |> fill_in("Cost", with: "4.75")
-        |> click_button("Save")
+        |> click_button("Create")
       end)
       |> assert_has("#expenses", text: "Coffee")
       |> assert_has("#expenses", text: "$4.75")
@@ -165,11 +165,11 @@ defmodule LocalCentsWeb.BookLiveTest do
 
       conn
       |> visit(~p"/books/#{book.id}")
-      |> click_button("Add Expense")
+      |> click_button("New Expense")
       |> within("#expense-editor", fn editor ->
         editor
         |> fill_in("Cost", with: "5.00")
-        |> click_button("Save")
+        |> click_button("Create")
       end)
       |> assert_has("#expense-editor", text: "can't be blank")
     end

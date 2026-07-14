@@ -77,7 +77,7 @@ defmodule LocalCentsWeb.BookLive do
         </div>
 
         <div class="p-4">
-          <Bond.button phx-click="new_expense">Add Expense</Bond.button>
+          <Bond.button phx-click="new_expense">New Expense</Bond.button>
         </div>
 
         <Bond.side_panel
@@ -125,7 +125,7 @@ defmodule LocalCentsWeb.BookLive do
                 Delete
               </Bond.button>
               <span :if={match?({:new, _}, @editor)}></span>
-              <Bond.button type="submit">Save</Bond.button>
+              <Bond.button type="submit">{submit_label(@editor)}</Bond.button>
             </div>
           </.form>
         </Bond.side_panel>
@@ -351,8 +351,13 @@ defmodule LocalCentsWeb.BookLive do
 
   defp editor_base({_mode, %Expense{} = expense}), do: expense
 
-  defp editor_title({:new, _base}), do: "Add Expense"
+  defp editor_title({:new, _base}), do: "New Expense"
   defp editor_title({:edit, _expense}), do: "Edit Expense"
+
+  # "Create" for the new-expense form submit, "Save" for edits — the house UI
+  # vocabulary (see docs/ui-language.md: "New" to initiate, "Create" to submit).
+  defp submit_label({:new, _base}), do: "Create"
+  defp submit_label({:edit, _expense}), do: "Save"
 
   # Builds the editor form from the Expense changeset (see ADR 0016 — Ecto for
   # validation, with `phoenix_ecto` supplying the form binding). The form action

@@ -128,12 +128,14 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         false -> []
       end
 
-    # Assign, not assign_new: the nil defaults mean these keys already exist.
+    # Assign, not assign_new: the nil defaults mean these keys already exist. A
+    # nil-check (not `||`) lets an explicit falsy override — e.g. value={false} or
+    # a caller-supplied "" — win over the field binding rather than fall through.
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
     |> assign(:errors, Enum.map(errors, &translate_error(&1)))
-    |> assign(:name, assigns.name || field.name)
-    |> assign(:value, assigns.value || field.value)
+    |> assign(:name, override_or_field(assigns.name, field.name))
+    |> assign(:value, override_or_field(assigns.value, field.value))
     |> input()
   end
 
@@ -237,6 +239,11 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
 
   defp label_color_class("frosted"), do: "text-primary-400"
   defp label_color_class(_), do: "text-surface-600"
+
+  # Prefer an explicit caller value; fall back to the field's only when none was
+  # given (nil), so an intentional falsy value (false, "") still overrides.
+  defp override_or_field(nil, from_field), do: from_field
+  defp override_or_field(override, _from_field), do: override
 
   defp translate_error({msg, opts}) do
     case opts[:count] do
