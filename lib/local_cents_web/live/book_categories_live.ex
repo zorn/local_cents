@@ -24,17 +24,14 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   alias LocalCentsWeb.DesktopShell
 
   @impl Phoenix.LiveView
-  def mount(%{"id" => id}, _session, socket) do
-    # Mirrors `BookLive.mount/3`: both `open_book/1` (no file) and `get_book/1` (a
-    # delete race) mean "no Book to show", so both redirect to the library and
-    # `@book` is only ever a real struct by the time `render/1` runs.
-    with :ok <- Tracking.open_book(id),
-         %Tracking.Book{} = book <- Tracking.get_book(id) do
-      if connected?(socket), do: Tracking.subscribe(id)
+  def mount(%{"id" => book_id}, _session, socket) do
+    with :ok <- Tracking.open_book(book_id),
+         %Tracking.Book{} = book <- Tracking.get_book(book_id) do
+      if connected?(socket), do: Tracking.subscribe(book_id)
 
       socket
       |> assign(book: book, page_title: book.name, editing: nil, form: nil)
-      |> assign(confirm_delete: nil, add_nonce: 0, categories: load_categories(id))
+      |> assign(confirm_delete: nil, add_nonce: 0, categories: load_categories(book_id))
       |> ok()
     else
       _ ->
