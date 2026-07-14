@@ -6,9 +6,9 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
-  attr :date, :string, required: true, doc: "The formatted expense date"
+  attr :date_display, :string, required: true, doc: "The formatted expense date"
   attr :description, :string, required: true, doc: "The expense description"
-  attr :amount, :string, required: true, doc: "The formatted expense amount"
+  attr :amount_display, :string, required: true, doc: "The formatted expense amount"
 
   attr :category, :map,
     default: nil,
@@ -29,7 +29,7 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
       {@rest}
     >
       <span class="shrink-0 text-sm tabular-nums w-24 text-surface-600">
-        {@date}
+        {@date_display}
       </span>
       <span class="flex-1 text-sm font-medium text-surface-800">
         {@description}
@@ -44,7 +44,7 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
         </span>
       </div>
       <span class="shrink-0 text-sm font-bold tabular-nums w-16 text-right text-success-600">
-        {@amount}
+        {@amount_display}
       </span>
     </button>
     """

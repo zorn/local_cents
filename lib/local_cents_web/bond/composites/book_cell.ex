@@ -8,9 +8,10 @@ defmodule LocalCentsWeb.Bond.Composites.BookCell do
 
   attr :name, :string, required: true, doc: "Book title displayed as the primary text"
 
-  attr :last_updated, :string,
+  attr :last_updated_display, :string,
     default: nil,
-    doc: "Optional subtitle showing when the book was last updated; omit to render no subtitle"
+    doc:
+      "Optional subtitle showing the formatted time the book was last updated; omit to render no subtitle"
 
   attr :rest, :global, doc: "HTML attributes passed through to the row element (e.g. phx-click)"
 
@@ -29,8 +30,8 @@ defmodule LocalCentsWeb.Bond.Composites.BookCell do
         <p class="truncate text-base font-semibold leading-snug text-surface-800">
           {@name}
         </p>
-        <p :if={@last_updated} class="text-xs mt-0.5 text-surface-600">
-          Last Updated: {@last_updated}
+        <p :if={@last_updated_display} class="text-xs mt-0.5 text-surface-600">
+          Last Updated: {@last_updated_display}
         </p>
       </div>
       <div :if={@actions != []} class="flex shrink-0 items-center gap-2">

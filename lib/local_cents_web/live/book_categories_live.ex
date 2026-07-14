@@ -96,7 +96,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
                     id={"category-row-#{category.id}"}
                     category_id={category.id}
                     name={category.name}
-                    count_label={expense_count_label(category.count)}
+                    count_display={expense_count_label(category.count)}
                     on_edit="edit_category"
                     on_delete="request_delete"
                   />

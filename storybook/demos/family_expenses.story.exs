@@ -156,9 +156,9 @@ defmodule Storybook.Demos.FamilyExpenses do
               <Bond.expense_cell
                 :for={expense <- @expenses}
                 id={"demo-expense-row-#{expense.id}"}
-                date={expense.date}
+                date_display={expense.date}
                 description={expense.description}
-                amount={expense.amount}
+                amount_display={expense.amount}
                 category={demo_category(expense.tags)}
                 phx-click="select_expense"
                 phx-value-id={expense.id}
