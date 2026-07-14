@@ -2,7 +2,6 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   @moduledoc "An expense row displaying date, description, an optional category, and amount."
 
   use Phoenix.Component
-  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -14,18 +13,19 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   attr :category, :map,
     default: nil,
     doc:
-      "The expense's single category as %{label: string, color: string}, or nil when Uncategorized (LocalCents uses one Category per Expense, not tags — see ADR 0005)"
+      "The expense's single category as %{label: string, color: string}, or nil when Uncategorized"
 
   attr :rest, :global, doc: "HTML attributes passed through to the row element (e.g. phx-click)"
 
   @spec expense_cell(Socket.assigns()) :: Rendered.t()
   def expense_cell(assigns) do
     ~H"""
-    <div
-      class="flex items-center gap-4 px-4 py-3 bond-ink-hover-row transition-colors cursor-pointer"
+    <%!-- A real <button> (not a clickable <div>) so each row is reachable and
+    activatable by keyboard and assistive tech, not just the mouse. --%>
+    <button
+      type="button"
+      class="flex w-full items-center gap-4 px-4 py-3 bond-ink-hover-row transition-colors text-left cursor-pointer"
       style="--bond-ink: var(--color-primary-800)"
-      role="button"
-      tabindex="0"
       {@rest}
     >
       <span class="shrink-0 text-sm tabular-nums w-24 text-surface-600">
@@ -34,17 +34,22 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
       <span class="flex-1 text-sm font-medium text-surface-800">
         {@description}
       </span>
+      <%!-- The single optional Category, rendered inline as its own pill —
+      deliberately NOT the tag_pill element, which encodes the retired multi-tag
+      idea (categories, not tags — see ADR 0005). --%>
       <div class="flex items-center gap-1.5">
-        <Bond.Elements.TagPill.tag_pill
+        <span
           :if={@category}
-          label={@category.label}
-          color={@category.color}
-        />
+          class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-surface-50 border border-surface-200 text-surface-800"
+        >
+          <span class="w-2 h-2 rounded-full shrink-0" style={"background: #{@category.color}"}></span>
+          {@category.label}
+        </span>
       </div>
       <span class="shrink-0 text-sm font-bold tabular-nums w-16 text-right text-success-600">
         {@amount}
       </span>
-    </div>
+    </button>
     """
   end
 end

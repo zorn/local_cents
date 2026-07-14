@@ -91,9 +91,11 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> assert_has("#expenses", text: "Newer lunch")
       |> assert_has("#expenses", text: "$12.50")
       |> assert_has("#expenses", text: "Older coffee")
-      # Sorted by date, newest first: the June row precedes the May row.
-      |> assert_has("#expenses [role='button']", at: 1, text: "Newer lunch")
-      |> assert_has("#expenses [role='button']", at: 2, text: "Older coffee")
+      # Sorted by date, newest first. Each expense row renders as a <button>, so
+      # `#expenses button` selects the rows in document order; `at:` pins which one
+      # (1-indexed) must carry which text — the June row before the May row.
+      |> assert_has("#expenses button", at: 1, text: "Newer lunch")
+      |> assert_has("#expenses button", at: 2, text: "Older coffee")
     end
   end
 

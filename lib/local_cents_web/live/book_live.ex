@@ -31,7 +31,7 @@ defmodule LocalCentsWeb.BookLive do
 
       socket
       |> assign(book: book, page_title: book.name, editor: nil, confirm_delete: nil)
-      |> assign(expenses: load_expenses(id))
+      |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
       |> ok()
     else
       _ ->
@@ -86,9 +86,6 @@ defmodule LocalCentsWeb.BookLive do
           title={editor_title(@editor)}
           on_close="close_editor"
         >
-          <%!-- The action row lives inside the form so Save is a real submit for it
-          (rather than an out-of-form button wired by a `form=` attribute), and Enter
-          in any field submits too. --%>
           <form
             id="expense-form"
             phx-submit="save_expense"
@@ -154,12 +151,13 @@ defmodule LocalCentsWeb.BookLive do
 
   @impl Phoenix.LiveView
   def handle_event("new_expense", _params, socket) do
-    # Seed a blank expense dated today so the field opens pre-filled; a genuine
-    # save re-reads the field, so this default only shows, never silently persists.
-    base = %Expense{date: Date.utc_today()}
+    # Seed a blank expense dated the user's local today so the field opens
+    # pre-filled; a genuine save re-reads the field, so this default only shows.
+    today = today(socket.assigns.time_zone)
+    base = %Expense{date: today}
 
     socket
-    |> assign(editor: {:new, base}, form: editor_form(base))
+    |> assign(editor: {:new, base}, form: editor_form(base, today))
     |> noreply()
   end
 
@@ -167,19 +165,36 @@ defmodule LocalCentsWeb.BookLive do
     case find_expense(socket, expense_id) do
       %Expense{} = expense ->
         socket
-        |> assign(editor: {:edit, expense}, form: editor_form(expense))
+        |> assign(
+          editor: {:edit, expense},
+          form: editor_form(expense, today(socket.assigns.time_zone))
+        )
         |> noreply()
 
       nil ->
         # The row vanished (edited/deleted elsewhere); resync rather than open a
         # stale editor.
-        socket |> assign(expenses: load_expenses(socket.assigns.book.id)) |> noreply()
+        socket
+        |> assign(expenses: load_expenses(socket.assigns.book.id))
+        |> noreply()
     end
   end
 
+  # A concurrent `:book_updated` resync can close the editor before an in-flight
+  # `phx-change`/`phx-submit`/delete event arrives; these events tolerate a nil
+  # editor rather than crash the LiveView on a race.
   def handle_event("validate_expense", %{"expense" => params}, socket) do
-    base = editor_base(socket.assigns.editor)
-    socket |> assign(form: editor_form(base, params)) |> noreply()
+    case socket.assigns.editor do
+      nil ->
+        noreply(socket)
+
+      editor ->
+        base = editor_base(editor)
+
+        socket
+        |> assign(form: editor_form(base, today(socket.assigns.time_zone), params, :validate))
+        |> noreply()
+    end
   end
 
   def handle_event("save_expense", %{"expense" => params}, socket) do
@@ -187,20 +202,63 @@ defmodule LocalCentsWeb.BookLive do
   end
 
   def handle_event("close_editor", _params, socket) do
-    socket |> assign(editor: nil, confirm_delete: nil) |> noreply()
+    socket
+    |> assign(editor: nil, confirm_delete: nil)
+    |> noreply()
   end
 
   def handle_event("request_delete", _params, socket) do
-    {:edit, expense} = socket.assigns.editor
-    socket |> assign(confirm_delete: expense) |> noreply()
+    case socket.assigns.editor do
+      {:edit, expense} ->
+        socket
+        |> assign(confirm_delete: expense)
+        |> noreply()
+
+      _ ->
+        noreply(socket)
+    end
   end
 
   def handle_event("cancel_delete", _params, socket) do
-    socket |> assign(confirm_delete: nil) |> noreply()
+    socket
+    |> assign(confirm_delete: nil)
+    |> noreply()
   end
 
   def handle_event("confirm_delete", _params, socket) do
-    %Expense{} = expense = socket.assigns.confirm_delete
+    case socket.assigns.confirm_delete do
+      %Expense{} = expense -> delete_expense(socket, expense)
+      nil -> noreply(socket)
+    end
+  end
+
+  defp save_expense(socket, {:new, base}, params) do
+    book = socket.assigns.book
+    today = today(socket.assigns.time_zone)
+
+    case Tracking.add_expense(book.id, params, DateTime.utc_now(), today) do
+      {:ok, _expense} -> saved(socket, book.id)
+      {:error, %Ecto.Changeset{}} -> invalid(socket, base, params, today)
+      {:error, _reason} -> failed(socket, "Could not save the expense.")
+    end
+  end
+
+  # An edit is a full replace of the existing expense's editable fields.
+  defp save_expense(socket, {:edit, expense}, params) do
+    book = socket.assigns.book
+    today = today(socket.assigns.time_zone)
+
+    case Tracking.edit_expense(book.id, expense.id, params, DateTime.utc_now(), today) do
+      {:ok, _expense} -> saved(socket, book.id)
+      {:error, %Ecto.Changeset{}} -> invalid(socket, expense, params, today)
+      {:error, :not_found} -> saved(socket, book.id, "That expense no longer exists.")
+      {:error, _reason} -> failed(socket, "Could not save the expense.")
+    end
+  end
+
+  defp save_expense(socket, nil, _params), do: noreply(socket)
+
+  defp delete_expense(socket, %Expense{} = expense) do
     book = socket.assigns.book
 
     case Tracking.delete_expense(book.id, expense.id) do
@@ -217,28 +275,6 @@ defmodule LocalCentsWeb.BookLive do
     end
   end
 
-  defp save_expense(socket, {:new, base}, params) do
-    book = socket.assigns.book
-
-    case Tracking.add_expense(book.id, params) do
-      {:ok, _expense} -> saved(socket, book.id)
-      {:error, %Ecto.Changeset{}} -> invalid(socket, base, params)
-      {:error, _reason} -> failed(socket, "Could not save the expense.")
-    end
-  end
-
-  # An edit is a full replace of the existing expense's editable fields.
-  defp save_expense(socket, {:edit, expense}, params) do
-    book = socket.assigns.book
-
-    case Tracking.edit_expense(book.id, expense.id, params) do
-      {:ok, _expense} -> saved(socket, book.id)
-      {:error, %Ecto.Changeset{}} -> invalid(socket, expense, params)
-      {:error, :not_found} -> saved(socket, book.id, "That expense no longer exists.")
-      {:error, _reason} -> failed(socket, "Could not save the expense.")
-    end
-  end
-
   defp saved(socket, book_id, flash \\ nil) do
     socket
     |> maybe_flash(flash)
@@ -252,12 +288,16 @@ defmodule LocalCentsWeb.BookLive do
   # A submit that failed validation: rebuild the form from what the user typed so
   # their input survives and the changeset's errors surface (every field counts as
   # used on a submit, so `used_input?/1` lets them all show).
-  defp invalid(socket, base, params) do
-    socket |> assign(form: editor_form(base, params)) |> noreply()
+  defp invalid(socket, base, params, today) do
+    socket
+    |> assign(form: editor_form(base, today, params, :validate))
+    |> noreply()
   end
 
   defp failed(socket, message) do
-    socket |> put_flash(:error, message) |> noreply()
+    socket
+    |> put_flash(:error, message)
+    |> noreply()
   end
 
   @impl Phoenix.LiveView
@@ -313,29 +353,15 @@ defmodule LocalCentsWeb.BookLive do
   defp editor_title({:new, _base}), do: "Add Expense"
   defp editor_title({:edit, _expense}), do: "Edit Expense"
 
-  # Builds the editor form as a plain-map form. This project uses Ecto for
-  # validation without phoenix_ecto (see ADR 0016), so an `Ecto.Changeset` has no
-  # `Phoenix.HTML.FormData` implementation and cannot be handed to `to_form/1`
-  # directly. Instead the current params drive the field values and the changeset's
-  # errors ride along under `:errors`; the input component gates which show via
-  # `used_input?/1`, so nothing appears until a field is touched or the form submitted.
-  defp editor_form(%Expense{} = expense) do
-    to_form(initial_params(expense), as: :expense)
-  end
-
-  defp editor_form(%Expense{} = expense, params) do
-    changeset = Expense.changeset(expense, params, Date.utc_today())
-    to_form(params, as: :expense, errors: changeset.errors)
-  end
-
-  # The string-keyed params that seed the form when the editor opens, so the fields
-  # show the expense's current values (a new expense carries only today's date).
-  defp initial_params(%Expense{} = expense) do
-    %{
-      "date" => expense.date && Date.to_iso8601(expense.date),
-      "description" => expense.description,
-      "cost" => expense.cost && Decimal.to_string(expense.cost)
-    }
+  # Builds the editor form from the Expense changeset (see ADR 0016 — Ecto for
+  # validation, with `phoenix_ecto` supplying the form binding). On open (empty
+  # params, nil action) `used_input?/1` keeps errors hidden until a field is
+  # touched; `:validate` surfaces them on change and on a failed submit.
+  defp editor_form(expense, today, params \\ %{}, action \\ nil) do
+    expense
+    |> Expense.changeset(params, today)
+    |> Map.put(:action, action)
+    |> to_form()
   end
 
   defp format_date(%Date{} = date), do: Calendar.strftime(date, "%m/%d/%Y")
@@ -345,6 +371,25 @@ defmodule LocalCentsWeb.BookLive do
   # a dedicated currency display arrives in a later ticket.
   defp format_amount(nil), do: "—"
   defp format_amount(%Decimal{} = cost), do: "$" <> Decimal.to_string(Decimal.round(cost, 2))
+
+  # The IANA time zone the browser reported on connect (e.g. "America/New_York"),
+  # falling back to UTC on the static first render (no connect params yet).
+  defp connected_time_zone(socket) do
+    case get_connect_params(socket) do
+      %{"time_zone" => time_zone} when is_binary(time_zone) -> time_zone
+      _ -> "Etc/UTC"
+    end
+  end
+
+  # The user's *local* calendar date — the domain treats "today" as the user's
+  # date, not the server's (see `LocalCents.Tracking`), so a blank date defaults
+  # to the right day near midnight in any zone. Falls back to UTC on an unknown zone.
+  defp today(time_zone) do
+    case DateTime.now(time_zone) do
+      {:ok, now} -> DateTime.to_date(now)
+      {:error, _reason} -> Date.utc_today()
+    end
+  end
 
   defp redirect_missing(socket, message) do
     socket
