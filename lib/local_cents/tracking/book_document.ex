@@ -118,8 +118,8 @@ defmodule LocalCents.Tracking.BookDocument do
   @doc """
   Returns the document's categories, in insertion order.
 
-  As with expenses, that order is **not** stable across a CRDT merge; the
-  management view sorts for display.
+  As with expenses, that order is **not** stable across a CRDT merge; the view
+  sorts for display.
   """
   @spec categories(t()) :: [Category.t()]
   def categories(%__MODULE__{categories: categories}), do: categories
