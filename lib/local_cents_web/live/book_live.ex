@@ -54,12 +54,11 @@ defmodule LocalCentsWeb.BookLive do
         <h1 class="sr-only">{@book.name}</h1>
 
         <div class="flex min-h-0 flex-1 flex-col">
-          <p
+          <Bond.empty_state
             :if={@expenses == []}
-            class="m-4 rounded-lg border border-dashed border-surface-400 px-4 py-10 text-center text-sm text-surface-600"
-          >
-            No expenses yet — add one below to get started.
-          </p>
+            message="No expenses yet"
+            hint="Add one below to get started."
+          />
 
           <div :if={@expenses != []} id="expenses" class="flex min-h-0 flex-1 flex-col">
             <Bond.list_view fill>
@@ -76,7 +75,8 @@ defmodule LocalCentsWeb.BookLive do
           </div>
         </div>
 
-        <div class="p-4">
+        <div class="flex items-center justify-between p-4">
+          <Bond.button variant={:outline} phx-click="open_categories">Categories</Bond.button>
           <Bond.button phx-click="new_expense">New Expense</Bond.button>
         </div>
 
@@ -119,7 +119,7 @@ defmodule LocalCentsWeb.BookLive do
               <Bond.button
                 :if={match?({:edit, _}, @editor)}
                 type="button"
-                variant={:danger}
+                variant={:destructive}
                 phx-click="request_delete"
               >
                 Delete
@@ -151,6 +151,14 @@ defmodule LocalCentsWeb.BookLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("open_categories", _params, socket) do
+    # A Book's category management lives on its own page inside this same native
+    # window (see [ADR 0017](0017-in-window-secondary-views.html)).
+    socket
+    |> push_navigate(to: ~p"/books/#{socket.assigns.book.id}/categories")
+    |> noreply()
+  end
+
   def handle_event("new_expense", _params, socket) do
     # Seed a blank expense dated the user's local today so the field opens
     # pre-filled; a genuine save re-reads the field, so this default only shows.
@@ -184,7 +192,7 @@ defmodule LocalCentsWeb.BookLive do
   # A concurrent `:book_updated` resync can close the editor before an in-flight
   # `phx-change`/`phx-submit`/delete event arrives; these events tolerate a nil
   # editor rather than crash the LiveView on a race.
-  def handle_event("validate_expense", %{"expense" => params}, socket) do
+  def handle_event("validate_expense", %{"expense" => expense_params}, socket) do
     case socket.assigns.editor do
       nil ->
         noreply(socket)
@@ -193,13 +201,15 @@ defmodule LocalCentsWeb.BookLive do
         base = editor_base(editor)
 
         socket
-        |> assign(form: editor_form(base, today(socket.assigns.time_zone), params, :validate))
+        |> assign(
+          form: editor_form(base, today(socket.assigns.time_zone), expense_params, :validate)
+        )
         |> noreply()
     end
   end
 
-  def handle_event("save_expense", %{"expense" => params}, socket) do
-    save_expense(socket, socket.assigns.editor, params)
+  def handle_event("save_expense", %{"expense" => expense_params}, socket) do
+    save_expense(socket, socket.assigns.editor, expense_params)
   end
 
   def handle_event("close_editor", _params, socket) do
@@ -233,31 +243,31 @@ defmodule LocalCentsWeb.BookLive do
     end
   end
 
-  defp save_expense(socket, {:new, base}, params) do
+  defp save_expense(socket, {:new, base}, expense_params) do
     book = socket.assigns.book
     today = today(socket.assigns.time_zone)
 
-    case Tracking.add_expense(book.id, params, DateTime.utc_now(), today) do
+    case Tracking.add_expense(book.id, expense_params, DateTime.utc_now(), today) do
       {:ok, _expense} -> saved(socket, book.id)
-      {:error, %Ecto.Changeset{}} -> invalid(socket, base, params, today)
+      {:error, %Ecto.Changeset{}} -> invalid(socket, base, expense_params, today)
       {:error, _reason} -> failed(socket, "Could not save the expense.")
     end
   end
 
   # An edit is a full replace of the existing expense's editable fields.
-  defp save_expense(socket, {:edit, expense}, params) do
+  defp save_expense(socket, {:edit, expense}, expense_params) do
     book = socket.assigns.book
     today = today(socket.assigns.time_zone)
 
-    case Tracking.edit_expense(book.id, expense.id, params, DateTime.utc_now(), today) do
+    case Tracking.edit_expense(book.id, expense.id, expense_params, DateTime.utc_now(), today) do
       {:ok, _expense} -> saved(socket, book.id)
-      {:error, %Ecto.Changeset{}} -> invalid(socket, expense, params, today)
+      {:error, %Ecto.Changeset{}} -> invalid(socket, expense, expense_params, today)
       {:error, :not_found} -> saved(socket, book.id, "That expense no longer exists.")
       {:error, _reason} -> failed(socket, "Could not save the expense.")
     end
   end
 
-  defp save_expense(socket, nil, _params), do: noreply(socket)
+  defp save_expense(socket, nil, _expense_params), do: noreply(socket)
 
   defp delete_expense(socket, %Expense{} = expense) do
     book = socket.assigns.book
@@ -292,9 +302,9 @@ defmodule LocalCentsWeb.BookLive do
   # A submit that failed validation: rebuild the form from what the user typed so
   # their input survives and the changeset's errors surface (every field counts as
   # used on a submit, so `used_input?/1` lets them all show).
-  defp invalid(socket, base, params, today) do
+  defp invalid(socket, base, expense_params, today) do
     socket
-    |> assign(form: editor_form(base, today, params, :validate))
+    |> assign(form: editor_form(base, today, expense_params, :validate))
     |> noreply()
   end
 

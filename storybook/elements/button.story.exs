@@ -25,10 +25,9 @@ defmodule Storybook.Elements.Button do
         slots: ["?"]
       },
       %Variation{
-        id: :danger,
-        description:
-          "Borderless red text button for a destructive action (tuned for dark panels).",
-        attributes: %{variant: :danger},
+        id: :destructive,
+        description: "Filled red button for a destructive action (e.g. a delete confirmation).",
+        attributes: %{variant: :destructive},
         slots: ["Delete"]
       },
       %Variation{
