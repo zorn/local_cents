@@ -72,22 +72,22 @@ struct modules usually don't need one — their `@typedoc`s carry the weight.
 
 ## Moduledoc vs. inline comments vs. ADRs
 
-Three places hold "why," and each has a different job. Put each fact in exactly
-one of them and link rather than restate.
+Several places hold "why," and each has a different job. Put each fact in exactly
+one of them and link rather than restate. This guide owns the **moduledoc**; the
+full taxonomy — moduledoc, inline comment, ADR, and single-use PR review comment —
+lives in [`comment-style.md`](comment-style.md). In brief:
 
 - **Moduledoc** — the durable answer to "what is this module and why does it
   exist?" Its audience is someone scanning the module list who has never opened
   the file. Keep it about the module's role and contracts, not line-level
-  mechanics.
-- **Inline comments** — local, mechanical "why is _this line_ surprising?" notes.
-  `LocalCents.Tracking.ExAutomerge`'s comment explaining that the `:erlang.nif_error/1`
-  bodies are only a load-failure fallback is a model inline comment: it belongs
-  next to the code it explains, not in the moduledoc.
-- **ADRs** (`docs/adr/`) — the record of a decision: the problem, the option
-  chosen, the alternatives, and the consequences. A moduledoc **summarizes the
-  outcome in a sentence and links the ADR**; it never relitigates the decision.
-  `…the name is read from inside the document (see [ADR 0007](0007-….html))` is
-  the pattern.
+  mechanics. This is the one this guide governs.
+- **Inline comments**, **ADRs**, and **PR review comments** — the local "why is
+  _this_ surprising?" note, the record of a decision, and single-use
+  reviewer-facing rationale, respectively. See
+  [`comment-style.md`](comment-style.md) for where each goes. A moduledoc
+  **summarizes an ADR's outcome in a sentence and links it**
+  (`…the name is read from inside the document (see [ADR 0007](0007-….html))`); it
+  never relitigates the decision.
 
 ## How much is enough
 

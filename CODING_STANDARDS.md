@@ -18,6 +18,12 @@ gets its own guide or ADR.
   Audit every moduledoc you touch against it as an end-of-feature step, not only in
   review.
 
+- **Code comments** — follow [`docs/comment-style.md`](docs/comment-style.md): inline
+  comments carry durable _why_ and never restate the signature; single-use,
+  reviewer-facing rationale is posted as a PR review comment rather than baked into
+  the source; future-work asides become GitHub issues. Comments on private functions
+  are encouraged where they add non-obvious why, held to the same why-not-what bar.
+
 - **`@impl` names the behaviour; never `@impl true`.** Annotate callbacks with the
   explicit behaviour module — `@impl Phoenix.LiveView`, `@impl Phoenix.Component`,
   `@impl GenServer`, and so on. `@impl true` is ambiguous about which contract the
