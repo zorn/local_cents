@@ -276,10 +276,13 @@ defmodule LocalCentsWeb.BookLive do
     end
   end
 
+  # Clear `confirm_delete` alongside the editor: if the delete-confirm modal were
+  # open (via a race) when a save succeeds, leaving it set would strand the modal
+  # after the editor closed.
   defp saved(socket, book_id, flash \\ nil) do
     socket
     |> maybe_flash(flash)
-    |> assign(editor: nil, expenses: load_expenses(book_id))
+    |> assign(editor: nil, confirm_delete: nil, expenses: load_expenses(book_id))
     |> noreply()
   end
 
