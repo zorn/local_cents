@@ -35,7 +35,7 @@ defmodule LocalCentsWeb.BookLive do
       socket
       |> assign(book: book, page_title: book.name, editor: nil, confirm_delete: nil)
       |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
-      |> assign(categories: load_categories(id))
+      |> assign_categories(load_categories(id))
       |> ok()
     else
       _ ->
@@ -72,7 +72,7 @@ defmodule LocalCentsWeb.BookLive do
                 date_display={format_date(expense.date)}
                 description={expense.description}
                 amount_display={format_amount(expense.cost)}
-                category={category_name(@categories, expense.category_id)}
+                category={Map.get(@category_names, expense.category_id)}
                 phx-click="edit_expense"
                 phx-value-id={expense.id}
               />
@@ -349,10 +349,8 @@ defmodule LocalCentsWeb.BookLive do
   defp category_gone(socket, base, expense_params, today) do
     socket
     |> put_flash(:error, "That category no longer exists — it was cleared.")
-    |> assign(
-      categories: load_categories(socket.assigns.book.id),
-      form: blank_category_form(base, expense_params, today)
-    )
+    |> assign_categories(load_categories(socket.assigns.book.id))
+    |> assign(form: blank_category_form(base, expense_params, today))
     |> noreply()
   end
 
@@ -390,7 +388,7 @@ defmodule LocalCentsWeb.BookLive do
   # subsequent Save agree; the user's other in-progress input is preserved.
   def handle_info({:categories_updated, id}, socket) do
     socket
-    |> assign(categories: load_categories(id))
+    |> assign_categories(load_categories(id))
     |> reset_selected_category_if_gone()
     |> noreply()
   end
@@ -419,6 +417,17 @@ defmodule LocalCentsWeb.BookLive do
     end
   end
 
+  # Caches the sorted category list for the picker plus a `%{id => name}` map for
+  # badge lookup, so rendering an expense row is a single `Map.get/2` rather than a
+  # linear scan of the categories per row. Both derive from the same list, so they
+  # are assigned together wherever categories are (re)loaded.
+  defp assign_categories(socket, categories) do
+    assign(socket,
+      categories: categories,
+      category_names: Map.new(categories, &{&1.id, &1.name})
+    )
+  end
+
   # Sorted by name so the picker (and any future category display) reads
   # alphabetically; the document's insertion order is not a display contract.
   defp load_categories(id) do
@@ -431,17 +440,6 @@ defmodule LocalCentsWeb.BookLive do
   # The `<select>` options as `{name, id}` pairs; a blank option (Uncategorized) is
   # supplied by `Bond.select` itself.
   defp category_options(categories), do: Enum.map(categories, &{&1.name, &1.id})
-
-  # The name to show on an expense row, resolved from the cache by the expense's
-  # `category_id`; `nil` (Uncategorized, or a just-deleted category) renders no badge.
-  defp category_name(_categories, nil), do: nil
-
-  defp category_name(categories, category_id) do
-    case Enum.find(categories, &(&1.id == category_id)) do
-      nil -> nil
-      category -> category.name
-    end
-  end
 
   # If the open editor's selected category was just deleted, clear it to blank so the
   # picker and a later Save agree. Rebuild from the form's current params so the
