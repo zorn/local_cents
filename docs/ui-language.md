@@ -19,3 +19,19 @@ Use **"Delete"** for permanent removal of an entity. Use **"Remove"** only when 
 ## Acting on things
 
 Use **"Open"** when referencing the action of opening a Book in its document window.
+
+## Confirming destructive actions
+
+When a destructive action needs a confirmation dialog, follow Apple's long-standing
+alert guidance (unchanged from the 1992 *Macintosh Human Interface Guidelines*
+through the current HIG; see
+[research note](research/apple-hig-destructive-confirmation-alerts.md)):
+
+- **Title the buttons with verbs that name the result** — never "OK"/"Yes"/"No".
+  A delete confirmation uses **Cancel** and **Delete**, not "OK"/"Cancel".
+- **The destructive button is styled destructive (red) and is _not_ the default.**
+  The safe choice — **Cancel** — is the default/Escape action, so an absent-minded
+  Return or Escape cancels rather than destroys.
+- **Make the title specific** — a complete question naming the thing, e.g. *"Delete
+  the "Groceries" category?"* — and **state the consequence in the body** (e.g.
+  that affected expenses become Uncategorized).

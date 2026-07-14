@@ -76,7 +76,8 @@ defmodule LocalCentsWeb.BookLive do
           </div>
         </div>
 
-        <div class="p-4">
+        <div class="flex items-center justify-between p-4">
+          <Bond.button variant={:outline} phx-click="open_categories">Categories</Bond.button>
           <Bond.button phx-click="new_expense">New Expense</Bond.button>
         </div>
 
@@ -151,6 +152,14 @@ defmodule LocalCentsWeb.BookLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("open_categories", _params, socket) do
+    # A Book's category management lives on its own page inside this same native
+    # window (see [ADR 0017](0017-in-window-secondary-views.html)).
+    socket
+    |> push_navigate(to: ~p"/books/#{socket.assigns.book.id}/categories")
+    |> noreply()
+  end
+
   def handle_event("new_expense", _params, socket) do
     # Seed a blank expense dated the user's local today so the field opens
     # pre-filled; a genuine save re-reads the field, so this default only shows.

@@ -30,6 +30,7 @@ defmodule LocalCentsWeb.Router do
     live "/", HomeLive
     live "/library", LibraryLive
     live "/books/:id", BookLive
+    live "/books/:id/categories", BookCategoriesLive
 
     live_storybook("/storybook", backend_module: LocalCentsWeb.Storybook)
   end
