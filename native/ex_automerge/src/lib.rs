@@ -15,8 +15,12 @@ use rustler::{Binary, Env, NewBinary, NifMap};
 //
 // `date` is an ISO-8601 calendar date string (e.g. "2026-07-11"); `cost` is an
 // optional decimal string (e.g. "12.34"), `None`/absent when unknown — never
-// defaulted to "0" (see ADRs 0008 and 0010). All domain rules live in Elixir's
-// `BookDocument`; this struct is a dumb data carrier.
+// defaulted to "0" (see ADRs 0008 and 0010). `category_id` is the stable `id` of
+// the Category this expense is filed under, `None`/absent when Uncategorized (see
+// ADR 0005). Referencing the Category by id (not by embedding it) is what lets a
+// rename leave expenses untouched and a delete un-file them by nulling this field.
+// All domain rules live in Elixir's `BookDocument`; this struct is a dumb data
+// carrier.
 #[derive(Reconcile, Hydrate, Clone, Debug, NifMap)]
 pub struct Expense {
     #[key]
@@ -24,15 +28,30 @@ pub struct Expense {
     pub date: String,
     pub description: String,
     pub cost: Option<String>,
+    pub category_id: Option<String>,
 }
 
-// The full decoded contents of a Book document: its name plus its expenses. This
-// is the plain data the Elixir side (`ExAutomerge.decode/1` /
+// One category as stored in a Book's Automerge document: a stable `id` and a
+// user-facing `name` (see ADR 0005). Like `Expense`, `id` is marked `#[key]` so
+// autosurgeon reconciles the categories list **by identity, not by position** —
+// deleting a middle category removes exactly that element and a concurrent rename
+// of a different one survives the merge (same reasoning as ADR 0015). Expenses
+// point at a category by this `id`, so a rename never has to touch them.
+#[derive(Reconcile, Hydrate, Clone, Debug, NifMap)]
+pub struct Category {
+    #[key]
+    pub id: String,
+    pub name: String,
+}
+
+// The full decoded contents of a Book document: its name plus its categories and
+// expenses. This is the plain data the Elixir side (`ExAutomerge.decode/1` /
 // `ExAutomerge.reconcile/3`) exchanges with the functional core — Rust owns no domain
 // logic, only the CRDT encoding (see ADR 0014).
 #[derive(Reconcile, Hydrate, Clone, Debug, NifMap)]
 struct BookDoc {
     name: String,
+    categories: Vec<Category>,
     expenses: Vec<Expense>,
 }
 
@@ -40,6 +59,7 @@ impl BookDoc {
     fn empty(name: String) -> Self {
         Self {
             name,
+            categories: Vec::new(),
             expenses: Vec::new(),
         }
     }

@@ -36,6 +36,7 @@ defmodule LocalCents.Tracking.BookServer do
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.BookDocument
   alias LocalCents.Tracking.BookStore
+  alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.Expense
 
   @registry LocalCents.Tracking.BookRegistry
@@ -147,6 +148,70 @@ defmodule LocalCents.Tracking.BookServer do
     GenServer.call(via(id), {:rename, new_name, time})
   end
 
+  @doc """
+  Returns the Book's categories. The list order is not a contract callers should
+  rely on (it is not stable across a CRDT merge); the view sorts for display.
+  """
+  @spec list_categories(Book.id()) :: [Category.t()]
+  def list_categories(id), do: GenServer.call(via(id), :list_categories)
+
+  @doc """
+  Adds a category built from `attrs`, persists, and broadcasts. `id` is the Book's
+  id; `category_id` is the UUID assigned to the new Category (injected by the
+  caller). Returns `{:ok, Category.t()}`, `{:error, changeset}` on invalid `attrs`,
+  or `{:error, reason}` if the write fails.
+  """
+  @spec add_category(Book.id(), attrs :: map(), Category.id(), time :: integer()) ::
+          {:ok, Category.t()} | {:error, term()}
+  def add_category(id, attrs, category_id, time) when is_binary(id) do
+    GenServer.call(via(id), {:add_category, attrs, category_id, time})
+  end
+
+  @doc """
+  Renames the Category `category_id` from `attrs`, persists, and broadcasts. Returns
+  `{:ok, Category.t()}`, `{:error, changeset}` on invalid `attrs`,
+  `{:error, :not_found}` for an unknown `category_id`, or `{:error, reason}` if the
+  write fails.
+  """
+  @spec rename_category(Book.id(), Category.id(), attrs :: map(), time :: integer()) ::
+          {:ok, Category.t()} | {:error, term()}
+  def rename_category(id, category_id, attrs, time) when is_binary(id) do
+    GenServer.call(via(id), {:rename_category, category_id, attrs, time})
+  end
+
+  @doc """
+  Deletes the Category `category_id`, un-files its Expenses, persists, and
+  broadcasts. Returns `:ok`, `{:error, :not_found}` for an unknown `category_id`, or
+  `{:error, reason}` if the write fails.
+  """
+  @spec delete_category(Book.id(), Category.id(), time :: integer()) :: :ok | {:error, term()}
+  def delete_category(id, category_id, time) when is_binary(id) do
+    GenServer.call(via(id), {:delete_category, category_id, time})
+  end
+
+  @doc """
+  Files the Expense `expense_id` under the Category `category_id`, persists, and
+  broadcasts. Returns `{:ok, Expense.t()}`, `{:error, :expense_not_found}` or
+  `{:error, :category_not_found}` when either is unknown, or `{:error, reason}` if
+  the write fails.
+  """
+  @spec assign_category(Book.id(), Expense.id(), Category.id(), time :: integer()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def assign_category(id, expense_id, category_id, time) when is_binary(id) do
+    GenServer.call(via(id), {:assign_category, expense_id, category_id, time})
+  end
+
+  @doc """
+  Un-files the Expense `expense_id` (nulls its `category_id`), persists, and
+  broadcasts. Returns `{:ok, Expense.t()}`, `{:error, :expense_not_found}` for an
+  unknown `expense_id`, or `{:error, reason}` if the write fails.
+  """
+  @spec unassign_category(Book.id(), Expense.id(), time :: integer()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def unassign_category(id, expense_id, time) when is_binary(id) do
+    GenServer.call(via(id), {:unassign_category, expense_id, time})
+  end
+
   @doc "Stops the process. The document is already persisted after every change."
   @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
@@ -229,6 +294,30 @@ defmodule LocalCents.Tracking.BookServer do
 
   def handle_call({:rename, new_name, time}, _from, state) do
     run(state, time, &BookDocument.rename(&1, new_name))
+  end
+
+  def handle_call(:list_categories, _from, state) do
+    {:reply, BookDocument.categories(decode(state)), state}
+  end
+
+  def handle_call({:add_category, attrs, category_id, time}, _from, state) do
+    run(state, time, &BookDocument.add_category(&1, attrs, category_id))
+  end
+
+  def handle_call({:rename_category, category_id, attrs, time}, _from, state) do
+    run(state, time, &BookDocument.rename_category(&1, category_id, attrs))
+  end
+
+  def handle_call({:delete_category, category_id, time}, _from, state) do
+    run(state, time, &BookDocument.delete_category(&1, category_id))
+  end
+
+  def handle_call({:assign_category, expense_id, category_id, time}, _from, state) do
+    run(state, time, &BookDocument.assign_category(&1, expense_id, category_id))
+  end
+
+  def handle_call({:unassign_category, expense_id, time}, _from, state) do
+    run(state, time, &BookDocument.unassign_category(&1, expense_id))
   end
 
   # Decodes the current bytes into the functional core, runs one pure `command`, and
