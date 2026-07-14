@@ -13,11 +13,15 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
   @earlier 1_700_000_000
   @later 1_700_000_500
 
-  defp expense(id, date, description, cost) do
-    %{id: id, date: date, description: description, cost: cost}
+  defp expense(id, date, description, cost, category_id \\ nil) do
+    %{id: id, date: date, description: description, cost: cost, category_id: category_id}
   end
 
+  defp category(id, name), do: %{id: id, name: name}
+
   defp with_expenses(state, expenses), do: %{state | expenses: expenses}
+
+  defp with_categories(state, categories), do: %{state | categories: categories}
 
   describe "new_document/2, document_name/1 and decode/1" do
     test "a new document carries its name and has no expenses" do
@@ -25,7 +29,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
       assert byte_size(doc) > 0
       assert ExAutomerge.document_name(doc) == "Family Expenses"
-      assert ExAutomerge.decode(doc) == %{name: "Family Expenses", expenses: []}
+      assert ExAutomerge.decode(doc) == %{name: "Family Expenses", categories: [], expenses: []}
     end
 
     test "decode raises ArgumentError on bytes that are not a valid document" do
@@ -79,6 +83,67 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
       assert %{name: "New Name", expenses: [%{description: "Coffee"}]} =
                ExAutomerge.decode(renamed)
+    end
+
+    test "round-trips categories and an expense's category_id" do
+      doc = ExAutomerge.new_document("Book", @earlier)
+
+      state =
+        doc
+        |> ExAutomerge.decode()
+        |> with_categories([category("cat1", "Groceries")])
+        |> with_expenses([expense("id1", "2026-07-11", "Coffee", "12.34", "cat1")])
+
+      updated = ExAutomerge.reconcile(doc, state, @later)
+
+      assert ExAutomerge.decode(updated) == state
+    end
+  end
+
+  describe "merge/2 with categories" do
+    test "a concurrent rename and delete of different categories merge by identity" do
+      # The same identity-keyed merge guarantee expenses have (ADR 0015) applies to
+      # categories: `#[key]` on the category `id` means one device renaming category
+      # `a` and another deleting category `b` both survive the merge.
+      base = ExAutomerge.new_document("Book", @earlier)
+
+      base =
+        ExAutomerge.reconcile(
+          base,
+          with_categories(ExAutomerge.decode(base), [
+            category("a", "Groceries"),
+            category("b", "Transit")
+          ]),
+          @earlier
+        )
+
+      # Device 1 renames category a.
+      fork_1 =
+        ExAutomerge.reconcile(
+          base,
+          with_categories(ExAutomerge.decode(base), [
+            category("a", "Food"),
+            category("b", "Transit")
+          ]),
+          @later
+        )
+
+      # Device 2 deletes category b.
+      fork_2 =
+        ExAutomerge.reconcile(
+          base,
+          with_categories(ExAutomerge.decode(base), [category("a", "Groceries")]),
+          @later
+        )
+
+      by_id =
+        fork_1
+        |> ExAutomerge.merge(fork_2)
+        |> ExAutomerge.decode()
+        |> Map.fetch!(:categories)
+        |> Map.new(&{&1.id, &1.name})
+
+      assert by_id == %{"a" => "Food"}
     end
   end
 
