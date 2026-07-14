@@ -6,6 +6,7 @@ defmodule LocalCents.TrackingTest do
 
   alias LocalCents.Tracking
   alias LocalCents.Tracking.Book
+  alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.Expense
 
   setup :with_temp_books_dir
@@ -196,6 +197,107 @@ defmodule LocalCents.TrackingTest do
       id = "11111111-1111-4111-8111-111111111111"
 
       assert {:error, :not_open} = Tracking.delete_expense(id, "e")
+    end
+  end
+
+  describe "categories: add/list/rename/delete through the context" do
+    test "add_category/2 returns a Category and list_categories/1 sees it" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert {:ok, %Category{id: id, name: "Groceries"}} =
+               Tracking.add_category(book.id, %{name: "Groceries"})
+
+      assert byte_size(id) > 0
+      assert [%Category{name: "Groceries"}] = Tracking.list_categories(book.id)
+    end
+
+    test "a new book has no categories" do
+      {:ok, book} = Tracking.create_book("Family")
+      assert Tracking.list_categories(book.id) == []
+    end
+
+    test "a blank name returns a changeset without persisting" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert {:error, %Ecto.Changeset{}} = Tracking.add_category(book.id, %{name: "  "})
+      assert Tracking.list_categories(book.id) == []
+    end
+
+    test "rename_category/3 changes the name" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
+
+      assert {:ok, %Category{name: "Food"}} =
+               Tracking.rename_category(book.id, category.id, %{name: "Food"})
+
+      assert [%Category{name: "Food"}] = Tracking.list_categories(book.id)
+    end
+
+    test "delete_category/2 removes it and un-files its expenses" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Milk"})
+      {:ok, _} = Tracking.assign_category(book.id, expense.id, category.id)
+
+      assert :ok = Tracking.delete_category(book.id, category.id)
+      assert Tracking.list_categories(book.id) == []
+      assert [%Expense{category_id: nil}] = Tracking.list_expenses(book.id)
+    end
+
+    test "the category surface returns {:error, :not_open} for a book with no process" do
+      id = "11111111-1111-4111-8111-111111111111"
+
+      assert {:error, :not_open} = Tracking.list_categories(id)
+      assert {:error, :not_open} = Tracking.add_category(id, %{name: "X"})
+      assert {:error, :not_open} = Tracking.rename_category(id, "c", %{name: "X"})
+      assert {:error, :not_open} = Tracking.delete_category(id, "c")
+      assert {:error, :not_open} = Tracking.assign_category(id, "e", "c")
+      assert {:error, :not_open} = Tracking.unassign_category(id, "e")
+    end
+  end
+
+  describe "assign_category/3 and unassign_category/2 through the context" do
+    test "files an expense under a category and un-files it, surviving a reopen" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Milk"})
+
+      assert {:ok, %Expense{category_id: cat_id}} =
+               Tracking.assign_category(book.id, expense.id, category.id)
+
+      assert cat_id == category.id
+
+      # Reopen the book: the category_id is persisted in the document.
+      :ok = Tracking.close_book(book.id)
+      :ok = Tracking.open_book(book.id)
+      assert [%Expense{category_id: ^cat_id}] = Tracking.list_expenses(book.id)
+
+      assert {:ok, %Expense{category_id: nil}} =
+               Tracking.unassign_category(book.id, expense.id)
+
+      assert [%Expense{category_id: nil}] = Tracking.list_expenses(book.id)
+    end
+
+    test "assigning reports which side is unknown" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Milk"})
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
+
+      assert {:error, :expense_not_found} =
+               Tracking.assign_category(book.id, "no-such-expense", category.id)
+
+      assert {:error, :category_not_found} =
+               Tracking.assign_category(book.id, expense.id, "no-such-category")
+    end
+
+    test "adding a category advances updated_at" do
+      earlier = ~U[2026-06-01 12:00:00Z]
+      later = ~U[2026-06-02 12:00:00Z]
+      {:ok, book} = Tracking.create_book("Family", earlier)
+
+      {:ok, _} = Tracking.add_category(book.id, %{name: "Groceries"}, later)
+
+      assert %Book{updated_at: ^later} = Tracking.get_book(book.id)
     end
   end
 

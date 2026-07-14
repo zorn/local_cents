@@ -20,6 +20,13 @@ defmodule LocalCents.Tracking.Expense do
       non-negative — refunds/credits/income are out of MVP scope. Stored as a
       decimal string and handled with `Decimal` (see
       [ADR 0010](0010-cost-as-decimal-string.html)).
+    * `category_id` — the stable `id` of the `LocalCents.Tracking.Category` this
+      Expense is filed under, or `nil` when Uncategorized (see
+      [ADR 0005](0005-categories-not-tags.html)). It is **not** a `changeset/3`
+      field: `changeset/3` is the user-editable-text path, and category assignment
+      is a deliberate act done through separate `BookDocument` commands
+      (`assign_category`/`unassign_category`), so a full-replace edit of the other
+      fields leaves it untouched — the same reason `id` is never cast.
 
   This is an embedded `Ecto` schema used purely for casting and validation — there
   is no database (see [ADR 0016](0016-ecto-embedded-validation-no-repo.html)); the
@@ -40,8 +47,12 @@ defmodule LocalCents.Tracking.Expense do
           id: id() | nil,
           date: Date.t() | nil,
           description: String.t() | nil,
-          cost: Decimal.t() | nil
+          cost: Decimal.t() | nil,
+          category_id: LocalCents.Tracking.Category.id() | nil
         }
+
+  @typedoc "An `Ecto.Changeset` over an Expense, as returned by `changeset/3`."
+  @type changeset() :: Ecto.Changeset.t(t())
 
   @primary_key false
   embedded_schema do
@@ -49,6 +60,7 @@ defmodule LocalCents.Tracking.Expense do
     field(:date, :date)
     field(:description, :string)
     field(:cost, :decimal)
+    field(:category_id, :string)
   end
 
   @cast_fields [:date, :description, :cost]
@@ -66,7 +78,7 @@ defmodule LocalCents.Tracking.Expense do
   non-negative (`0` is allowed). `attrs` may use string or atom keys; a blank
   string for `date` or `cost` is treated as absent.
   """
-  @spec changeset(t(), attrs :: map(), today :: Date.t()) :: Ecto.Changeset.t()
+  @spec changeset(t(), attrs :: map(), today :: Date.t()) :: changeset()
   def changeset(%__MODULE__{} = expense, attrs, %Date{} = today) do
     expense
     |> cast(normalize(attrs), @cast_fields)

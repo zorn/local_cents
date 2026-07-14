@@ -19,7 +19,7 @@ defmodule LocalCents.Tracking.ExAutomerge do
   the NIFs.
 
   Each document is a single LocalCents Book. Its decoded contents are the Book's
-  human-readable `name` plus its list of expenses (see
+  human-readable `name` plus its lists of categories and expenses (see
   [ADR 0007](0007-book-runtime-and-persistence.html), which places the name
   *inside* the document while the Book id lives in the file name).
 
@@ -31,14 +31,15 @@ defmodule LocalCents.Tracking.ExAutomerge do
   functional core works on:
 
     * `decode/1` turns document bytes into the raw state map
-      (`%{name:, expenses:}`, see `t:state/0`) that the functional core
+      (`%{name:, categories:, expenses:}`, see `t:state/0`) that the functional core
       (`LocalCents.Tracking.BookDocument`) reasons about, and
     * `reconcile/3` takes a whole *new* raw state the core has computed and
       reconciles it onto the prior bytes, returning the new bytes.
 
   There is a single mutation path — `reconcile/3`. Adding, editing, or deleting an
-  expense and renaming the Book are all just "compute a new state and apply it";
-  Rust records the minimal Automerge operations by diffing the two.
+  expense or a category, filing an expense under a category, and renaming the Book
+  are all just "compute a new state and apply it"; Rust records the minimal
+  Automerge operations by diffing the two.
 
   Every mutating call (`new_document/2`, `reconcile/3`) takes a `time` — a unix-seconds
   stamp Elixir supplies — and records it on the Automerge change it produces.
@@ -60,22 +61,35 @@ defmodule LocalCents.Tracking.ExAutomerge do
   use Rustler, otp_app: :local_cents, crate: "ex_automerge"
 
   @typedoc """
-  The decoded contents of a Book document in _raw_ form: the Book `name` (a string)
-  and its list of raw expense maps (`t:raw_expense/0` — atom keys, string values).
-  This is the shape `decode/1` returns and `reconcile/3` accepts;
-  `LocalCents.Tracking.BookDocument` parses it into typed domain values.
+  The decoded contents of a Book document in _raw_ form: the Book `name` (a string),
+  its list of raw category maps (`t:raw_category/0`) and its list of raw expense maps
+  (`t:raw_expense/0` — atom keys, string values). This is the shape `decode/1`
+  returns and `reconcile/3` accepts; `LocalCents.Tracking.BookDocument` parses it
+  into typed domain values.
   """
-  @type state() :: %{name: String.t(), expenses: [raw_expense()]}
+  @type state() :: %{
+          name: String.t(),
+          categories: [raw_category()],
+          expenses: [raw_expense()]
+        }
+
+  @typedoc """
+  One category as stored in the document: a stable `id` and a user-facing `name`,
+  both strings (see ADR 0005).
+  """
+  @type raw_category() :: %{id: String.t(), name: String.t()}
 
   @typedoc """
   One expense as stored in the document: all string values, with `cost` `nil` when
-  absent (the decimal string otherwise). `date` is an ISO-8601 date string.
+  absent (the decimal string otherwise) and `category_id` `nil` when Uncategorized
+  (the referenced Category's `id` otherwise). `date` is an ISO-8601 date string.
   """
   @type raw_expense() :: %{
           id: String.t(),
           date: String.t(),
           description: String.t(),
-          cost: String.t() | nil
+          cost: String.t() | nil,
+          category_id: String.t() | nil
         }
 
   @doc """

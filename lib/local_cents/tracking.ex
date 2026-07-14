@@ -1,13 +1,15 @@
 defmodule LocalCents.Tracking do
   @moduledoc """
-  The tracking context's public API — creating and opening `Book`s and managing
-  the `Expense` entries inside them.
+  The tracking context's public API — creating and opening `Book`s, managing the
+  `Expense` entries inside them, and the `Category` list an Expense can be filed
+  under.
 
   Call sites must go through this module; the internal implementation
   (`LocalCents.Tracking.BookServer`, `LocalCents.Tracking.BookStore`,
-  `LocalCents.Tracking.ExAutomerge`) is private. The `Book` and `Expense` types
-  make up the data contract, and `LocalCents.Tracking.Supervisor` is exported
-  only so the application supervision tree can start the context's runtime.
+  `LocalCents.Tracking.ExAutomerge`) is private. The `Book`, `Expense`, and
+  `Category` types make up the data contract, and
+  `LocalCents.Tracking.Supervisor` is exported only so the application supervision
+  tree can start the context's runtime.
 
   ## How Books live at runtime
 
@@ -28,15 +30,16 @@ defmodule LocalCents.Tracking do
 
   # The tracking context boundary. It is a top-level boundary (a peer of the
   # core and web layers rather than nested inside `LocalCents`) so that other
-  # layers can depend on the context directly. It exports the `Book` and `Expense`
-  # types that make up its API contract, plus `Supervisor` so the application
-  # supervision tree can start the context's runtime; the remaining implementation
-  # modules (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
-  use Boundary, top_level?: true, deps: [], exports: [Book, Expense, Supervisor]
+  # layers can depend on the context directly. It exports the `Book`, `Expense`,
+  # and `Category` types that make up its API contract, plus `Supervisor` so the
+  # application supervision tree can start the context's runtime; the remaining
+  # implementation modules (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
+  use Boundary, top_level?: true, deps: [], exports: [Book, Category, Expense, Supervisor]
 
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.BookServer
   alias LocalCents.Tracking.BookStore
+  alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.ExAutomerge
   alias LocalCents.Tracking.Expense
 
@@ -279,6 +282,111 @@ defmodule LocalCents.Tracking do
   @spec list_expenses(Book.id()) :: [Expense.t()] | {:error, :not_open}
   def list_expenses(id) when is_binary(id) do
     BookServer.list_expenses(id)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Lists the categories of an open Book.
+
+  The list order is not a contract callers should rely on (it is not stable across a
+  CRDT merge); sort in the view for display. Returns `{:error, :not_open}` if the
+  Book's process is not running (`open_book/1`).
+  """
+  @spec list_categories(Book.id()) :: [Category.t()] | {:error, :not_open}
+  def list_categories(id) when is_binary(id) do
+    BookServer.list_categories(id)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Adds a category to an open Book from a map of `attrs` (`:name`), returning the
+  created `Category`.
+
+  Returns `{:error, changeset}` if `attrs` fail validation (a blank `name` — see
+  `LocalCents.Tracking.Category`), `{:error, :not_open}` if the Book's process is
+  not running, or `{:error, reason}` if persisting fails. The new Category's `id` is
+  generated here (a side effect kept out of the functional core — see
+  [ADR 0014](0014-functional-core-process-shell.html)). `now` stamps the change so
+  `updated_at` advances (UTC).
+  """
+  @spec add_category(Book.id(), attrs :: map(), now :: DateTime.t()) ::
+          {:ok, Category.t()} | {:error, term()}
+  def add_category(id, attrs, now \\ DateTime.utc_now())
+      when is_binary(id) and is_map(attrs) do
+    BookServer.add_category(id, attrs, Ecto.UUID.generate(), unix_seconds(now))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Renames the Category `category_id` in an open Book from `attrs` (`:name`),
+  returning the updated `Category`.
+
+  A rename touches only the Category — filed Expenses reference it by stable id and
+  are left untouched. Returns `{:error, changeset}` on invalid `attrs`,
+  `{:error, :not_found}` for an unknown `category_id`, `{:error, :not_open}` if the
+  Book's process is not running, or `{:error, reason}` if persisting fails.
+  """
+  @spec rename_category(Book.id(), Category.id(), attrs :: map(), now :: DateTime.t()) ::
+          {:ok, Category.t()} | {:error, term()}
+  def rename_category(id, category_id, attrs, now \\ DateTime.utc_now())
+      when is_binary(id) and is_binary(category_id) and is_map(attrs) do
+    BookServer.rename_category(id, category_id, attrs, unix_seconds(now))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Deletes the Category `category_id` from an open Book, un-filing every Expense
+  filed under it so they become Uncategorized (see
+  [ADR 0005](0005-categories-not-tags.html)).
+
+  Returns `:ok`, `{:error, :not_found}` for an unknown `category_id`,
+  `{:error, :not_open}` if the Book's process is not running, or `{:error, reason}`
+  if persisting fails. `now` stamps the change so `updated_at` advances.
+  """
+  @spec delete_category(Book.id(), Category.id(), now :: DateTime.t()) :: :ok | {:error, term()}
+  def delete_category(id, category_id, now \\ DateTime.utc_now())
+      when is_binary(id) and is_binary(category_id) do
+    BookServer.delete_category(id, category_id, unix_seconds(now))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Files the Expense `expense_id` under the Category `category_id` in an open Book
+  (replacing any prior Category — an Expense has at most one), returning the updated
+  `Expense`.
+
+  Returns `{:error, :expense_not_found}` or `{:error, :category_not_found}` when
+  either is unknown, `{:error, :not_open}` if the Book's process is not running, or
+  `{:error, reason}` if persisting fails. `now` stamps the change so `updated_at`
+  advances.
+  """
+  @spec assign_category(Book.id(), Expense.id(), Category.id(), now :: DateTime.t()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def assign_category(id, expense_id, category_id, now \\ DateTime.utc_now())
+      when is_binary(id) and is_binary(expense_id) and is_binary(category_id) do
+    BookServer.assign_category(id, expense_id, category_id, unix_seconds(now))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Un-files the Expense `expense_id` in an open Book (nulls its `category_id` so it
+  becomes Uncategorized), returning the updated `Expense`.
+
+  Returns `{:error, :expense_not_found}` for an unknown `expense_id`,
+  `{:error, :not_open}` if the Book's process is not running, or `{:error, reason}`
+  if persisting fails. `now` stamps the change so `updated_at` advances.
+  """
+  @spec unassign_category(Book.id(), Expense.id(), now :: DateTime.t()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def unassign_category(id, expense_id, now \\ DateTime.utc_now())
+      when is_binary(id) and is_binary(expense_id) do
+    BookServer.unassign_category(id, expense_id, unix_seconds(now))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
