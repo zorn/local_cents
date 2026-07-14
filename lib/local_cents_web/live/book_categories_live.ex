@@ -99,7 +99,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
                     id={"category-row-#{category.id}"}
                     category_id={category.id}
                     name={category.name}
-                    count={category.count}
+                    count_label={expense_count_label(category.count)}
                     on_edit="edit_category"
                     on_delete="request_delete"
                   />
@@ -124,7 +124,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
           <%= if @confirm_delete.count == 0 do %>
             This can't be undone.
           <% else %>
-            Its <span class="font-semibold">{expense_phrase(@confirm_delete.count)}</span>
+            Its <span class="font-semibold">{expense_count_label(@confirm_delete.count)}</span>
             will become Uncategorized. You can re-file them later.
           <% end %>
         </p>
@@ -401,8 +401,12 @@ defmodule LocalCentsWeb.BookCategoriesLive do
     |> to_form(action: action)
   end
 
-  defp expense_phrase(1), do: "1 expense"
-  defp expense_phrase(count), do: "#{count} expenses"
+  # The one place expense tallies become user-facing text — shared by the category
+  # rows and the delete-confirmation body. Zero reads as an honest "None" rather
+  # than "0 expenses"; one is singular.
+  defp expense_count_label(0), do: "No expenses"
+  defp expense_count_label(1), do: "1 expense"
+  defp expense_count_label(count), do: "#{count} expenses"
 
   defp redirect_missing(socket, message) do
     socket

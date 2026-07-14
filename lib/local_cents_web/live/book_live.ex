@@ -119,7 +119,7 @@ defmodule LocalCentsWeb.BookLive do
               <Bond.button
                 :if={match?({:edit, _}, @editor)}
                 type="button"
-                variant={:danger}
+                variant={:destructive}
                 phx-click="request_delete"
               >
                 Delete

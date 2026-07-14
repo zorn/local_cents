@@ -26,15 +26,8 @@ defmodule Storybook.Elements.Button do
       },
       %Variation{
         id: :destructive,
-        description: "Filled red button for the confirming action of a delete dialog.",
+        description: "Filled red button for a destructive action (e.g. a delete confirmation).",
         attributes: %{variant: :destructive},
-        slots: ["Delete"]
-      },
-      %Variation{
-        id: :danger,
-        description:
-          "Borderless red text button for a destructive action (tuned for dark panels).",
-        attributes: %{variant: :danger},
         slots: ["Delete"]
       },
       %Variation{

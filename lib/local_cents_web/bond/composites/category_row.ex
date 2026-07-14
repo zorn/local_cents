@@ -3,8 +3,9 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
   A single row in the category management view — one `LocalCents.Tracking.Category`
   in either its display or edit shape.
 
-  In **display** mode the row shows the category `name`, its `count` of filed
-  expenses, and pencil/trash affordances that push `on_edit`/`on_delete` (each
+  In **display** mode the row shows the category `name`, its `count_label` (a
+  preformatted expense tally), and pencil/trash affordances that push
+  `on_edit`/`on_delete` (each
   tagged with `category_id`). In **edit** mode — used for both renaming an existing
   category and adding a new one — the name is replaced by a form field with an
   explicit submit (**Create** when adding, **Save** when renaming) and a **✕**
@@ -19,7 +20,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  import LocalCentsWeb.CoreComponents, only: [icon: 1, translate_error: 1]
 
   alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
@@ -33,9 +34,10 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
 
   attr :name, :string, default: nil, doc: "Display mode: the category's name"
 
-  attr :count, :integer,
-    default: 0,
-    doc: "Display mode: number of expenses filed under the category"
+  attr :count_label, :string,
+    default: nil,
+    doc:
+      ~s|Display mode: the preformatted expense tally, e.g. "3 expenses" / "1 expense" / "No expenses"|
 
   attr :category_id, :string,
     default: nil,
@@ -102,7 +104,6 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
         <button
           type="button"
           phx-click={@on_cancel}
-          aria-label="Cancel"
           class="shrink-0 text-surface-500 hover:text-primary-800 transition-colors"
         >
           <.icon name="hero-x-mark" class="w-5 h-5" />
@@ -142,7 +143,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
     ~H"""
     <div id={@id} class="flex w-full items-center gap-4 px-4 py-3">
       <span class="flex-1 text-sm font-medium text-surface-800 truncate">{@name}</span>
-      <span class="shrink-0 text-xs tabular-nums text-surface-500">{count_label(@count)}</span>
+      <span class="shrink-0 text-xs tabular-nums text-surface-500">{@count_label}</span>
       <div class="flex items-center gap-1">
         <button
           type="button"
@@ -167,29 +168,18 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
     """
   end
 
-  # The expense tally as user-facing text. Zero reads as an honest "None" rather
-  # than "0 expenses"; one is singular.
-  defp count_label(0), do: "No expenses"
-  defp count_label(1), do: "1 expense"
-  defp count_label(count), do: "#{count} expenses"
-
   # The first validation error for the name, gated on interaction like
   # `Bond.Elements.Input` does — a pristine required field shows no error. Rendered
-  # below the row (not inside the input) to keep the edit line's height constant.
+  # below the row (not inside the input) to keep the edit line's height constant;
+  # translation goes through the shared `CoreComponents.translate_error/1`.
   defp name_error(form) do
     field = form[:name]
 
     if Phoenix.Component.used_input?(field) do
-      field.errors |> List.first() |> translate_error()
-    end
-  end
-
-  defp translate_error(nil), do: nil
-
-  defp translate_error({msg, opts}) do
-    case opts[:count] do
-      nil -> Gettext.dgettext(LocalCentsWeb.Gettext, "errors", msg, opts)
-      count -> Gettext.dngettext(LocalCentsWeb.Gettext, "errors", msg, msg, count, opts)
+      case field.errors do
+        [error | _] -> translate_error(error)
+        [] -> nil
+      end
     end
   end
 end

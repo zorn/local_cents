@@ -1,16 +1,12 @@
 defmodule LocalCentsWeb.Bond.Elements.Button do
   @moduledoc """
-  A button with primary, outline, square, destructive, and danger variants.
+  A button with primary, outline, square, and destructive variants.
 
-  `:primary`, `:outline`, `:square`, and `:destructive` are stamp-press buttons.
-  `:destructive` is a filled **red** button for the confirming action of a
-  destructive dialog (e.g. the Delete in a delete-confirmation modal) — the same
-  weight as `:primary` but colored to signal danger, per the house
-  destructive-action rule in `docs/ui-language.md`. `:danger` is a different
-  animal: a borderless red **text** button for a destructive *secondary* action
-  that should read as subordinate to the primary action beside it, tuned for dark
-  panel backgrounds (`Bond.Layouts.SidePanel`), matching `variant="frosted"`
-  inputs.
+  All four are stamp-press buttons. `:destructive` is a filled **red** button for a
+  destructive action (e.g. the Delete in a delete-confirmation modal, or a Delete
+  beside a Save) — the same weight as `:primary` but colored to signal danger, per
+  the house destructive-action rule in `docs/ui-language.md`. It is the app's single
+  "danger" treatment; a lighter/subordinate variant may return in a later UI pass.
   """
 
   use Phoenix.Component
@@ -20,11 +16,10 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
 
   attr :variant, :atom,
     default: :primary,
-    values: [:primary, :outline, :square, :destructive, :danger],
+    values: [:primary, :outline, :square, :destructive],
     doc: """
     Visual style — :primary (filled blue), :outline (bordered), :square (small
-    fixed-size square), :destructive (filled red for a confirm-delete action),
-    :danger (borderless red text for a subordinate destructive action)
+    fixed-size square), :destructive (filled red for a destructive action)
     """
 
   attr :type, :string,
@@ -63,11 +58,6 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   defp button_class(:destructive),
     do: "font-bold px-4 py-1.5 text-sm text-white rounded bond-stamp #{@disabled}"
 
-  # No stamp/border/background — a plain red text button that yields to the
-  # primary action beside it. error-400/300 read on the dark side-panel bg.
-  defp button_class(:danger),
-    do: "font-bold text-sm text-error-400 hover:text-error-300 transition-colors #{@disabled}"
-
   defp button_style(:primary),
     do:
       "--bond-stamp-shadow: var(--color-surface-900); background: var(--color-primary-800); border: 2px solid var(--color-primary-800)"
@@ -83,7 +73,4 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   defp button_style(:destructive),
     do:
       "--bond-stamp-shadow: var(--color-surface-900); background: var(--color-error-600); border: 2px solid var(--color-error-600)"
-
-  # The danger variant is styled entirely by its Tailwind classes.
-  defp button_style(:danger), do: nil
 end

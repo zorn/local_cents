@@ -15,7 +15,7 @@ defmodule Storybook.Composites.CategoryRow do
           id: "category-row-groceries",
           category_id: "cat-1",
           name: "Groceries",
-          count: 12,
+          count_label: "12 expenses",
           on_edit: "edit_category",
           on_delete: "request_delete"
         }
@@ -27,7 +27,7 @@ defmodule Storybook.Composites.CategoryRow do
           id: "category-row-rent",
           category_id: "cat-2",
           name: "Rent",
-          count: 1,
+          count_label: "1 expense",
           on_edit: "edit_category",
           on_delete: "request_delete"
         }
@@ -39,7 +39,7 @@ defmodule Storybook.Composites.CategoryRow do
           id: "category-row-travel",
           category_id: "cat-3",
           name: "Travel",
-          count: 0,
+          count_label: "No expenses",
           on_edit: "edit_category",
           on_delete: "request_delete"
         }
