@@ -24,7 +24,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   alias LocalCentsWeb.DesktopShell
 
   @impl Phoenix.LiveView
-  def mount(%{"id" => book_id}, _session, socket) do
+  def mount(%{"book_id" => book_id}, _session, socket) do
     with :ok <- Tracking.open_book(book_id),
          %Tracking.Book{} = book <- Tracking.get_book(book_id) do
       if connected?(socket), do: Tracking.subscribe(book_id)
