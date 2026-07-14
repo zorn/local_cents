@@ -128,11 +128,14 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
         false -> []
       end
 
+    # `name`/`value` carry a `nil` default, so `assign_new/3` would be a no-op here
+    # (the key already exists); assign them explicitly, letting an explicit caller
+    # value still win over the field's.
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
     |> assign(:errors, Enum.map(errors, &translate_error(&1)))
-    |> assign_new(:name, fn -> field.name end)
-    |> assign_new(:value, fn -> field.value end)
+    |> assign(:name, assigns.name || field.name)
+    |> assign(:value, assigns.value || field.value)
     |> input()
   end
 

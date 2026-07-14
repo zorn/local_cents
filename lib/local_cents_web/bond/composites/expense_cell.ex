@@ -1,5 +1,5 @@
 defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
-  @moduledoc "An expense row displaying date, description, tags, and amount."
+  @moduledoc "An expense row displaying date, description, an optional category, and amount."
 
   use Phoenix.Component
   alias LocalCentsWeb.Bond
@@ -7,13 +7,14 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
-  attr :date, :string, required: true, doc: "The expense date"
+  attr :date, :string, required: true, doc: "The formatted expense date"
   attr :description, :string, required: true, doc: "The expense description"
   attr :amount, :string, required: true, doc: "The formatted expense amount"
 
-  attr :tags, :list,
-    default: [],
-    doc: "List of %{label: string, color: string} maps; caller resolves color per label"
+  attr :category, :map,
+    default: nil,
+    doc:
+      "The expense's single category as %{label: string, color: string}, or nil when Uncategorized (LocalCents uses one Category per Expense, not tags — see ADR 0005)"
 
   attr :rest, :global, doc: "HTML attributes passed through to the row element (e.g. phx-click)"
 
@@ -23,6 +24,8 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
     <div
       class="flex items-center gap-4 px-4 py-3 bond-ink-hover-row transition-colors cursor-pointer"
       style="--bond-ink: var(--color-primary-800)"
+      role="button"
+      tabindex="0"
       {@rest}
     >
       <span class="shrink-0 text-sm tabular-nums w-24 text-surface-600">
@@ -32,9 +35,11 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseCell do
         {@description}
       </span>
       <div class="flex items-center gap-1.5">
-        <%= for tag <- @tags do %>
-          <Bond.Elements.TagPill.tag_pill label={tag.label} color={tag.color} />
-        <% end %>
+        <Bond.Elements.TagPill.tag_pill
+          :if={@category}
+          label={@category.label}
+          color={@category.color}
+        />
       </div>
       <span class="shrink-0 text-sm font-bold tabular-nums w-16 text-right text-success-600">
         {@amount}
