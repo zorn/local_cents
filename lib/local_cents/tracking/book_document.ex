@@ -132,7 +132,7 @@ defmodule LocalCents.Tracking.BookDocument do
   `{:error, changeset}` if `attrs` fail validation.
   """
   @spec add_expense(t(), attrs :: map(), Expense.id(), today :: Date.t()) ::
-          {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t(Expense.t())}
+          {:ok, t(), Expense.t()} | {:error, Expense.changeset()}
   def add_expense(%__MODULE__{} = document, attrs, id, %Date{} = today) do
     changeset = Expense.changeset(%Expense{id: id}, attrs, today)
 
@@ -154,7 +154,7 @@ defmodule LocalCents.Tracking.BookDocument do
   on invalid `attrs`, or `{:error, :not_found}` if no Expense has that `id`.
   """
   @spec edit_expense(t(), Expense.id(), attrs :: map(), today :: Date.t()) ::
-          {:ok, t(), Expense.t()} | {:error, Ecto.Changeset.t(Expense.t())} | {:error, :not_found}
+          {:ok, t(), Expense.t()} | {:error, Expense.changeset()} | {:error, :not_found}
   def edit_expense(%__MODULE__{} = document, id, attrs, %Date{} = today) do
     case Enum.find_index(document.expenses, &(&1.id == id)) do
       nil ->
@@ -203,7 +203,7 @@ defmodule LocalCents.Tracking.BookDocument do
   `{:error, changeset}` if `attrs` fail validation (a blank `name`).
   """
   @spec add_category(t(), attrs :: map(), Category.id()) ::
-          {:ok, t(), Category.t()} | {:error, Ecto.Changeset.t(Category.t())}
+          {:ok, t(), Category.t()} | {:error, Category.changeset()}
   def add_category(%__MODULE__{} = document, attrs, id) do
     changeset = Category.changeset(%Category{id: id}, attrs)
 
@@ -228,7 +228,7 @@ defmodule LocalCents.Tracking.BookDocument do
   """
   @spec rename_category(t(), Category.id(), attrs :: map()) ::
           {:ok, t(), Category.t()}
-          | {:error, Ecto.Changeset.t(Category.t())}
+          | {:error, Category.changeset()}
           | {:error, :not_found}
   def rename_category(%__MODULE__{} = document, id, attrs) do
     case Enum.find_index(document.categories, &(&1.id == id)) do

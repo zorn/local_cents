@@ -14,9 +14,8 @@ defmodule LocalCents.Tracking.Category do
     * `name` — required, human-readable, trimmed. Free-form and user-supplied; not
       required to be unique, mirroring Book names.
 
-  There is no "Uncategorized" Category: an Expense with no `category_id` is
-  *computed* into that bucket for totals, never filed under a record (see
-  ADR 0005). A Book starts with an empty category list — no seeded categories.
+  A new Book starts with an empty category list; Expenses left unfiled are
+  Uncategorized (see [ADR 0005](0005-categories-not-tags.html) for that model).
 
   Like `LocalCents.Tracking.Expense`, this is an embedded `Ecto` schema used purely
   for casting and validation — there is no database (see
@@ -34,13 +33,16 @@ defmodule LocalCents.Tracking.Category do
   @typedoc "A Category's identifier: a UUID string assigned at creation."
   @type id() :: String.t()
 
-  @typedoc "A Category's human-readable name, as shown in the management view."
+  @typedoc "A Category's human-readable name, as displayed to the user."
   @type name() :: String.t()
 
   @type t() :: %__MODULE__{
           id: id() | nil,
           name: name() | nil
         }
+
+  @typedoc "An `Ecto.Changeset` over a Category, as returned by `changeset/2`."
+  @type changeset() :: Ecto.Changeset.t(t())
 
   @primary_key false
   embedded_schema do
@@ -49,7 +51,7 @@ defmodule LocalCents.Tracking.Category do
   end
 
   @doc """
-  Casts and validates `attrs` onto `category`.
+  Builds the changeset that casts and validates `attrs` onto `category`.
 
   Shared by create and rename: for a create the caller seeds `category` with the
   freshly generated `id`; for a rename it is the existing Category, with `id`
@@ -57,7 +59,7 @@ defmodule LocalCents.Tracking.Category do
   whitespace-only name fails `validate_required`. `attrs` may use string or atom
   keys.
   """
-  @spec changeset(t(), attrs :: map()) :: Ecto.Changeset.t()
+  @spec changeset(t(), attrs :: map()) :: changeset()
   def changeset(%__MODULE__{} = category, attrs) do
     category
     |> cast(attrs, [:name])

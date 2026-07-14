@@ -139,12 +139,7 @@
           {Credo.Check.Refactor.MapJoin, []},
           {Credo.Check.Refactor.MapMap, []},
           {Credo.Check.Refactor.MatchInCondition, []},
-          # Raised 15 → 16 when Categories landed: `Tracking.BookServer` is the
-          # process shell that mirrors the whole context API, so it legitimately
-          # coordinates one domain type per concept (Book, Expense, Category) on top
-          # of the process/registry/pubsub infrastructure. It was sitting exactly at
-          # 15, so gaining Categories tipped it over.
-          {Credo.Check.Refactor.ModuleDependencies, [max_deps: 16]},
+          {Credo.Check.Refactor.ModuleDependencies, [max_deps: 15]},
           {Credo.Check.Refactor.NegatedConditionsInUnless, []},
           {Credo.Check.Refactor.NegatedConditionsWithElse, []},
           {Credo.Check.Refactor.NegatedIsNil, []},

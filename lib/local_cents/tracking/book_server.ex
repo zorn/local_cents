@@ -27,6 +27,13 @@ defmodule LocalCents.Tracking.BookServer do
   [issue #74](https://github.com/zorn/local_cents/issues/74).
   """
 
+  # BookServer is the process shell that mirrors the entire Tracking context API, so
+  # it legitimately depends on one type per domain concept (Book, Expense, Category)
+  # on top of the process/registry/pubsub infrastructure. That breadth is inherent to
+  # its coordinator role, not a smell to refactor away, so this module opts out of the
+  # project-wide dependency cap rather than inflating it for every module.
+  # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
+
   # `:transient` restart: a crash is recovered by the supervisor (the process
   # restarts and reloads the last persisted document), but an intentional
   # `close/1` — which stops with reason `:normal` — stays stopped. The default

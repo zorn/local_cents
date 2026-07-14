@@ -3,6 +3,18 @@ use automerge::AutoCommit;
 use autosurgeon::{hydrate, Hydrate, Reconcile};
 use rustler::{Binary, Env, NewBinary, NifMap};
 
+// Every carrier struct below (`Expense`, `Category`, `BookDoc`) derives the same
+// four traits, which together let a plain Rust struct cross both the Automerge and
+// the Elixir boundaries with no hand-written glue:
+//
+//   * `Reconcile` / `Hydrate` (autosurgeon) — the CRDT codec. `Reconcile` teaches
+//     autosurgeon how to *write* the struct into an Automerge document (the write
+//     half of `reconcile/3`); `Hydrate` how to *read* it back out (`decode/1`).
+//   * `NifMap` (rustler) — bridges the struct to/from an Elixir map at the NIF
+//     boundary, so Elixir sees `%{id: ..., name: ...}` and Rust sees the struct,
+//     with field names becoming atom keys.
+//   * `Clone` / `Debug` — ordinary Rust conveniences (copying state, test output).
+
 // One expense as stored in a Book's Automerge document.
 //
 // `id` is an Elixir-generated UUID and is marked `#[key]` so `autosurgeon`

@@ -51,6 +51,9 @@ defmodule LocalCents.Tracking.Expense do
           category_id: LocalCents.Tracking.Category.id() | nil
         }
 
+  @typedoc "An `Ecto.Changeset` over an Expense, as returned by `changeset/3`."
+  @type changeset() :: Ecto.Changeset.t(t())
+
   @primary_key false
   embedded_schema do
     field(:id, :string)
@@ -75,7 +78,7 @@ defmodule LocalCents.Tracking.Expense do
   non-negative (`0` is allowed). `attrs` may use string or atom keys; a blank
   string for `date` or `cost` is treated as absent.
   """
-  @spec changeset(t(), attrs :: map(), today :: Date.t()) :: Ecto.Changeset.t()
+  @spec changeset(t(), attrs :: map(), today :: Date.t()) :: changeset()
   def changeset(%__MODULE__{} = expense, attrs, %Date{} = today) do
     expense
     |> cast(normalize(attrs), @cast_fields)
