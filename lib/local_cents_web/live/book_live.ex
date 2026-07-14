@@ -143,7 +143,9 @@ defmodule LocalCentsWeb.BookLive do
         </p>
         <:actions>
           <Bond.button type="button" variant={:outline} phx-click="cancel_delete">Cancel</Bond.button>
-          <Bond.button type="button" phx-click="confirm_delete">Delete</Bond.button>
+          <Bond.button type="button" variant={:destructive} phx-click="confirm_delete">
+            Delete
+          </Bond.button>
         </:actions>
       </Bond.modal>
     </Layouts.app>
