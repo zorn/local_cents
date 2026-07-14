@@ -70,7 +70,7 @@ defmodule LocalCentsWeb.LibraryLive do
                 :for={book <- @books}
                 id={"book-#{book.id}"}
                 name={book.name}
-                last_updated={format_updated_at(book.updated_at, @time_zone)}
+                last_updated_display={format_updated_at(book.updated_at, @time_zone)}
               >
                 <:actions>
                   <Bond.menu id={"menu-#{book.id}"}>

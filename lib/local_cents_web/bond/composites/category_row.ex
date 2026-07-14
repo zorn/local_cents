@@ -3,7 +3,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
   A single row in the category management view — one `LocalCents.Tracking.Category`
   in either its display or edit shape.
 
-  In **display** mode the row shows the category `name`, its `count_label` (a
+  In **display** mode the row shows the category `name`, its `count_display` (a
   preformatted expense tally), and pencil/trash affordances that push
   `on_edit`/`on_delete` (each
   tagged with `category_id`). In **edit** mode — used for both renaming an existing
@@ -34,7 +34,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
 
   attr :name, :string, default: nil, doc: "Display mode: the category's name"
 
-  attr :count_label, :string,
+  attr :count_display, :string,
     default: nil,
     doc:
       ~s|Display mode: the preformatted expense tally, e.g. "3 expenses" / "1 expense" / "No expenses"|
@@ -143,7 +143,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
     ~H"""
     <div id={@id} class="flex w-full items-center gap-4 px-4 py-3">
       <span class="flex-1 text-sm font-medium text-surface-800 truncate">{@name}</span>
-      <span class="shrink-0 text-xs tabular-nums text-surface-500">{@count_label}</span>
+      <span class="shrink-0 text-xs tabular-nums text-surface-500">{@count_display}</span>
       <div class="flex items-center gap-1">
         <button
           type="button"

@@ -114,6 +114,17 @@ gets its own guide or ADR.
   the pre-decision "tags" design and need reworking to the single-Category model
   ([ADR 0005](docs/adr/0005-categories-not-tags.md)).
 
+- **A Bond attribute that takes a pre-formatted display string carries a `_display`
+  suffix.** When an attribute represents an underlying domain value — a `Date`,
+  `Decimal`, count, or timestamp — that the caller has already turned into a string
+  for display, name it `date_display`, `amount_display`, `count_display`, and so on.
+  The `_display` suffix reads as "the display form of X" and makes the contract
+  self-documenting, so a caller cannot mistake it for a slot that accepts the raw
+  `Date`/`Decimal`. Attributes that are inherently text — a `description`, `name`,
+  `title`, or button `label` — stay unsuffixed; the suffix is only for values the
+  caller formats. Chosen over `_label` (which reads like a form-field label) and
+  `formatted_*`.
+
 ## Architecture
 
 - **Module boundaries** — contexts are top-level boundaries that export only their

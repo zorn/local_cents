@@ -65,9 +65,9 @@ defmodule LocalCentsWeb.BookLive do
               <Bond.expense_cell
                 :for={expense <- @expenses}
                 id={"expense-#{expense.id}"}
-                date={format_date(expense.date)}
+                date_display={format_date(expense.date)}
                 description={expense.description}
-                amount={format_amount(expense.cost)}
+                amount_display={format_amount(expense.cost)}
                 phx-click="edit_expense"
                 phx-value-id={expense.id}
               />

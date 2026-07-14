@@ -10,9 +10,9 @@ defmodule Storybook.Composites.ExpenseCell do
         id: :categorized,
         description: "Expense row with a single category.",
         attributes: %{
-          date: "06/15/2025",
+          date_display: "06/15/2025",
           description: "Whole Foods Market",
-          amount: "$87.43",
+          amount_display: "$87.43",
           category: %{label: "groceries", color: "#3f7fd6"}
         }
       },
@@ -20,9 +20,9 @@ defmodule Storybook.Composites.ExpenseCell do
         id: :uncategorized,
         description: "Expense row with no category.",
         attributes: %{
-          date: "06/18/2025",
+          date_display: "06/18/2025",
           description: "Netflix",
-          amount: "$15.99"
+          amount_display: "$15.99"
         }
       }
     ]
