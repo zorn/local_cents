@@ -76,7 +76,10 @@ defmodule Storybook.Composites.CategoryRow do
           id: "category-row-invalid",
           editing: true,
           input_id: "category-name-invalid",
-          form: name_form(%Category{}, %{"name" => ""}),
+          # Errors only surface on a form whose changeset has an action, so build
+          # this one with :validate — mirroring how BookCategoriesLive does on a
+          # failed submit; without it phoenix_ecto hides the error and nothing shows.
+          form: name_form(%Category{}, %{"name" => ""}, :validate),
           on_save: "save_category",
           on_cancel: "cancel_edit"
         }
@@ -85,9 +88,11 @@ defmodule Storybook.Composites.CategoryRow do
   end
 
   # A form over the Category name field, mirroring how BookCategoriesLive builds it.
-  defp name_form(category, attrs) do
+  # The `action` matters: with `:validate`, phoenix_ecto surfaces changeset errors
+  # onto the form (as on a failed submit); nil keeps a pristine form error-free.
+  defp name_form(category, attrs, action \\ nil) do
     category
     |> Category.changeset(attrs)
-    |> Phoenix.Component.to_form()
+    |> Phoenix.Component.to_form(action: action)
   end
 end

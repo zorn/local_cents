@@ -167,23 +167,23 @@ defmodule LocalCentsWeb.BookCategoriesLive do
     end
   end
 
-  def handle_event("save_category", %{"category" => params}, socket) do
-    save_category(socket, socket.assigns.editing, params)
+  def handle_event("save_category", %{"category" => category_params}, socket) do
+    save_category(socket, socket.assigns.editing, category_params)
   end
 
   # Live validation as the user types. It rebuilds the form with a `:validate`
   # action so errors can surface, but never commits — only Save (submit) does. A
   # nil editor is tolerated in case a resync cleared it mid-keystroke.
-  def handle_event("validate_category", %{"category" => params}, socket) do
+  def handle_event("validate_category", %{"category" => category_params}, socket) do
     case socket.assigns.editing do
       :new ->
         socket
-        |> assign(form: category_form(%Category{}, params, :validate))
+        |> assign(form: category_form(%Category{}, category_params, :validate))
         |> noreply()
 
       {:edit, id} ->
         socket
-        |> assign(form: category_form(%Category{id: id}, params, :validate))
+        |> assign(form: category_form(%Category{id: id}, category_params, :validate))
         |> noreply()
 
       nil ->
@@ -226,10 +226,10 @@ defmodule LocalCentsWeb.BookCategoriesLive do
 
   # A new category: keep the add row open with a fresh blank form and bump the
   # nonce so the input re-keys and refocuses, letting the user rattle off several.
-  defp save_category(socket, :new, params) do
+  defp save_category(socket, :new, category_params) do
     book = socket.assigns.book
 
-    case Tracking.add_category(book.id, params) do
+    case Tracking.add_category(book.id, category_params) do
       {:ok, _category} ->
         socket
         |> assign(
@@ -241,7 +241,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
 
       {:error, %Ecto.Changeset{}} ->
         socket
-        |> assign(form: category_form(%Category{}, params, :validate))
+        |> assign(form: category_form(%Category{}, category_params, :validate))
         |> noreply()
 
       {:error, _reason} ->
@@ -249,10 +249,10 @@ defmodule LocalCentsWeb.BookCategoriesLive do
     end
   end
 
-  defp save_category(socket, {:edit, id}, params) do
+  defp save_category(socket, {:edit, id}, category_params) do
     book = socket.assigns.book
 
-    case Tracking.rename_category(book.id, id, params) do
+    case Tracking.rename_category(book.id, id, category_params) do
       {:ok, _category} ->
         socket
         |> assign(editing: nil, form: nil, categories: load_categories(book.id))
@@ -260,7 +260,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
 
       {:error, %Ecto.Changeset{}} ->
         socket
-        |> assign(form: category_form(%Category{id: id}, params, :validate))
+        |> assign(form: category_form(%Category{id: id}, category_params, :validate))
         |> noreply()
 
       {:error, :not_found} ->
@@ -276,7 +276,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
 
   # A concurrent `:book_updated` resync can clear `editing` before an in-flight
   # save arrives; tolerate a nil editor rather than crash.
-  defp save_category(socket, nil, _params), do: noreply(socket)
+  defp save_category(socket, nil, _category_params), do: noreply(socket)
 
   defp delete_category(socket, id) do
     book = socket.assigns.book
