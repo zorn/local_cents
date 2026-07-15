@@ -68,8 +68,8 @@ so a `#` comment is the _only_ way to leave a maintainer a note. The official
 guide encourages exactly that "whenever it will add relevant information." So:
 
 - **Comment a private function when it carries non-obvious _why_** — a race it
-  tolerates, an ordering guarantee, a domain rule the signature can't show. Much
-  of `LocalCents.Tracking` and the LiveViews does this well.
+  tolerates, an ordering guarantee, a domain rule the signature can't show. Many
+  parts of `LocalCents.Tracking` and the LiveViews do this well.
 - **Hold it to the same why-not-what bar** — a `defp` whose name already tells
   the whole story (`present?/1`, `find_expense/2`) needs no comment.
 - **A `defp` that needs _heavy_ explanation is a smell.** The Elixir community's
@@ -110,8 +110,8 @@ current reviewer, it's a PR comment.
 ## Future-work notes go to issues
 
 A "we'll refine this in a later ticket" aside is neither durable why nor
-review-time rationale — it is a task, and tasks belong in
-[GitHub Issues](agents/issue-tracker.md), not the source. A comment that names
+review-time rationale — it is a task, and tasks belong in the
+[issue tracker](agents/issue-tracker.md), not the source. A comment that names
 future work rots the moment the work lands elsewhere. Open an issue; link it from
 the comment only if the code genuinely needs to point a reader at the tracked
 limitation, otherwise leave the code to speak for itself.

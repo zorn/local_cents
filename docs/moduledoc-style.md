@@ -70,7 +70,7 @@ public API that a caller drives benefit from a short fenced ` ```elixir ` block,
 the way `Oban` and `Phoenix.LiveView` open with usage snippets. Plain data or
 struct modules usually don't need one — their `@typedoc`s carry the weight.
 
-## Moduledoc vs. inline comments vs. ADRs
+## Where "why" lives
 
 Several places hold "why," and each has a different job. Put each fact in exactly
 one of them and link rather than restate. This guide owns the **moduledoc**; the
@@ -86,7 +86,7 @@ lives in [`comment-style.md`](comment-style.md). In brief:
   reviewer-facing rationale, respectively. See
   [`comment-style.md`](comment-style.md) for where each goes. A moduledoc
   **summarizes an ADR's outcome in a sentence and links it**
-  (`…the name is read from inside the document (see [ADR 0007](0007-….html))`); it
+  (`…the name is read from inside the document (see [ADR 0007](0007-book-runtime-and-persistence.html))`); it
   never relitigates the decision.
 
 ## How much is enough
