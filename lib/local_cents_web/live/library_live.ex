@@ -70,18 +70,22 @@ defmodule LocalCentsWeb.LibraryLive do
 
   @impl Phoenix.LiveView
   def handle_async(:demo_seed, {:ok, books}, socket) do
-    # Seeding finished: subscribe to each new Book (as a normal mount would) and
-    # swap the loading state for the list.
-    Enum.each(books, &Tracking.subscribe(&1.id))
-    {:noreply, assign(socket, books: books, seeding: false)}
+    # Seeding finished: show the freshly-seeded list (subscribing as a normal mount
+    # would) and drop the loading state.
+    {:noreply, show_library(socket, books)}
   end
 
   def handle_async(:demo_seed, {:exit, reason}, socket) do
-    # Best-effort: a failed seed must never strand the window on a spinner. Log it and
-    # fall back to the empty library — the demos are throwaway starter content, so
-    # there is nothing to roll back, and the empty state invites the user to add a Book.
-    Logger.warning("Demo seeding failed; continuing with an empty library: #{inspect(reason)}")
-    {:noreply, assign(socket, books: [], seeding: false)}
+    # Best-effort: a failed seed must never strand the window on a spinner. Seeding may
+    # have partially succeeded (the first Book written, the next raised), so fall back
+    # to whatever is actually on disk rather than forcing empty — a written Book must
+    # still appear. If nothing was created this is the empty library, and its empty
+    # state invites the user to add a Book.
+    Logger.warning(
+      "Demo seeding failed; falling back to the existing library: #{inspect(reason)}"
+    )
+
+    {:noreply, show_library(socket, Tracking.list_books())}
   end
 
   @impl Phoenix.LiveView
@@ -354,6 +358,13 @@ defmodule LocalCentsWeb.LibraryLive do
   defp seed_demo_library do
     DemoSeeding.create_books()
     Tracking.list_books()
+  end
+
+  # Shows `books` in the library once seeding settles: subscribes to each so its
+  # "Last Updated" subtitle stays live (see ADR 0012) and clears the loading state.
+  defp show_library(socket, books) do
+    Enum.each(books, &Tracking.subscribe(&1.id))
+    assign(socket, books: books, seeding: false)
   end
 
   # Replaces the changed Book in the list in place (preserving order), or removes it
