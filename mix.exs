@@ -88,6 +88,12 @@ defmodule LocalCents.MixProject do
 
   defp before_closing_body_tag(_), do: ""
 
+  # The guide pages are curated and ordered by hand; the ADR and research
+  # collections are globbed so a newly added decision or note is published without
+  # editing this list (which is what let it drift out of date before). `about.md`
+  # leads the ADRs, then the numbered files in order. `mix docs` warns on a link to
+  # any `.md` not listed here, and CI treats that warning as an error — so a doc that
+  # is linked but not globbed fails the build rather than rotting silently.
   defp extras do
     [
       "README.md",
@@ -96,29 +102,16 @@ defmodule LocalCents.MixProject do
       "docs/software-terms.md",
       "docs/module-boundaries.md",
       "docs/moduledoc-style.md",
+      "docs/comment-style.md",
       "docs/book-runtime-architecture.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
       "docs/proposals/mvp.md",
-      "docs/adr/about.md",
-      "docs/adr/0001-which-automerge-rust-library.md",
-      "docs/adr/0002-expense-attributes.md",
-      "docs/adr/0003-bond-namespace-location.md",
-      "docs/adr/0004-remove-daisyui-hand-authored-components.md",
-      "docs/adr/0005-categories-not-tags.md",
-      "docs/adr/0006-multi-window-desktop-shell.md",
-      "docs/adr/0007-book-runtime-and-persistence.md",
-      "docs/adr/0008-mvp-expense-shape.md",
-      "docs/adr/0009-book-file-format.md",
-      "docs/adr/0010-cost-as-decimal-string.md",
-      "docs/adr/0011-pubsub-topic-naming.md",
-      "docs/adr/0012-book-last-updated-timestamp.md",
-      "docs/adr/0013-transparent-native-title-bar.md",
-      "docs/adr/0014-functional-core-process-shell.md",
-      "docs/adr/0015-expense-identity-and-date-encoding.md",
-      "docs/adr/0016-ecto-embedded-validation-no-repo.md",
-      "docs/research/automerge-last-updated.md"
-    ]
+      "docs/adr/about.md"
+    ] ++
+      Enum.sort(Path.wildcard("docs/adr/0*.md")) ++
+      Enum.sort(Path.wildcard("docs/research/*.md")) ++
+      Enum.sort(Path.wildcard("docs/agents/*.md"))
   end
 
   # Groups the "Pages" (extras) in the docs sidebar. Anything not matched here
@@ -126,10 +119,11 @@ defmodule LocalCents.MixProject do
   defp groups_for_extras do
     [
       Guides:
-        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|moduledoc-style|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
+        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|moduledoc-style|comment-style|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
       Proposals: ~r{docs/proposals/},
       Decisions: ~r{docs/adr/},
-      Research: ~r{docs/research/}
+      Research: ~r{docs/research/},
+      Agents: ~r{docs/agents/}
     ]
   end
 
