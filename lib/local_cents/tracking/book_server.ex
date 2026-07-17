@@ -253,6 +253,23 @@ defmodule LocalCents.Tracking.BookServer do
 
   # Server
 
+  # The GenServer state: the Book's id plus its current encoded document bytes.
+  # Every command decodes `doc` into a `BookDocument`, runs, and re-encodes.
+  @typep state() :: %{id: Book.id(), doc: binary()}
+
+  # A pure `BookDocument` command: given the decoded document it returns the new
+  # document — with an optional result value (the created/updated Expense or
+  # Category) — or an error.
+  @typep command() ::
+           (BookDocument.t() ->
+              {:ok, BookDocument.t(), Expense.t() | Category.t()}
+              | {:ok, BookDocument.t()}
+              | {:error, term()})
+
+  # What a command handler replies to the caller with: bare `:ok`, `{:ok, result}`
+  # carrying the affected Expense/Category, or an error.
+  @typep reply() :: :ok | {:ok, Expense.t() | Category.t()} | {:error, term()}
+
   @impl GenServer
   def init(id) do
     # Label the process so it's identifiable by Book id in `:observer` and other
@@ -342,6 +359,8 @@ defmodule LocalCents.Tracking.BookServer do
   #
   # `extra_signals` are additional broadcast messages emitted alongside the standard
   # `:book_updated` on success — see `category_signals/0`.
+  @spec run(state(), time :: integer(), command(), extra_signals :: [atom()]) ::
+          {:reply, reply(), state()}
   defp run(state, time, command, extra_signals \\ []) do
     case command.(decode(state)) do
       {:ok, document, result} -> commit(state, document, time, {:ok, result}, extra_signals)
@@ -358,6 +377,8 @@ defmodule LocalCents.Tracking.BookServer do
   # subscribers notified) only if it reached disk. A failed write — e.g. a full
   # disk — leaves the in-memory state untouched and returns the error to the
   # caller, rather than crashing and losing the change on restart.
+  @spec commit(state(), BookDocument.t(), time :: integer(), reply(), extra_signals :: [atom()]) ::
+          {:reply, reply(), state()}
   defp commit(state, document, time, reply, extra_signals) do
     new_doc = BookDocument.to_bytes(document, state.doc, time)
 
