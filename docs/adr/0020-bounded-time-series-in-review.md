@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-The MVP proposal's §Review deliberately keeps the review surface simple: a
+The MVP proposal's Review section deliberately keeps the review surface simple: a
 **group-by-category totals** summary, "numbers and tables only," with
 "time-series visualization and date-range filtering" written down as explicitly
 **deferred**. Building against that line (#68) surfaced that a single lifetime
@@ -24,7 +24,7 @@ rows, calendar **Months** (see [`CONTEXT.md`](../../CONTEXT.md)) are columns, an
 each cell is the total spent in that Category that Month. Row totals give the
 per-Category lifetime sum (the original #68 shape, now a strict subset), column
 totals give the per-Month grand, and the bottom-right cell is the grand total.
-The reconciliation and nil-cost rules from the original §Review carry over
+The reconciliation and nil-cost rules from the original Review section carry over
 unchanged.
 
 The time-series we pull in is deliberately **bounded**:
@@ -63,7 +63,7 @@ separate in-window view built later (see [ADR 0017](0017-in-window-secondary-vie
   over three years). This is a *display* problem for the Report view to solve
   (freeze the Category column, scroll horizontally), not a reason to hide time
   gaps by collapsing empty Months.
-* **Accepted:** the proposal's §Review no longer reads literally true and is
+* **Accepted:** the proposal's Review section no longer reads literally true and is
   amended to point here so the two documents do not contradict each other.
 * **Easier:** the flat per-Category total remains available for free as the
   matrix's row-total column, so nothing from the original #68 scope is lost.
