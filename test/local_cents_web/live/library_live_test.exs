@@ -151,10 +151,18 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     end
 
     test "seeds the demo library on first launch into an empty library", ~M{conn} do
+      # Seeding runs in a background task (start_async), so the Books appear a beat
+      # after mount — wait for the async render rather than asserting immediately.
       conn
       |> visit(~p"/library")
-      |> assert_has("#books", text: "Family Expenses")
-      |> assert_has("#books", text: "Business Expenses")
+      |> assert_has("#books", text: "Family Expenses", timeout: 10_000)
+      |> assert_has("#books", text: "Business Expenses", timeout: 10_000)
+    end
+
+    test "shows a loading state while the demo library is seeding", ~M{conn} do
+      conn
+      |> visit(~p"/library")
+      |> assert_has("[role='status']", text: "Setting up your demo library")
     end
 
     test "does not seed when the library already has a Book", ~M{conn} do

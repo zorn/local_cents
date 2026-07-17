@@ -24,8 +24,8 @@ defmodule LocalCentsWeb.Bond do
 
     * **Elements** (`LocalCentsWeb.Bond.Elements`) — the smallest building
       blocks, styled but domain-agnostic: `button/1`, `input/1`, `select/1`,
-      `checkbox/1`, `action_chip/1`, `empty_state/1`, `list_view/1`, `menu/1`,
-      `tag_pill/1`.
+      `checkbox/1`, `action_chip/1`, `empty_state/1`, `loading_state/1`,
+      `list_view/1`, `menu/1`, `tag_pill/1`.
     * **Layouts** (`LocalCentsWeb.Bond.Layouts`) — slot-driven arrangement
       shells that position content but carry no data of their own:
       `desktop_window/1`, `input_bar/1`, `list_controls/1`, `modal/1`,
@@ -46,6 +46,7 @@ defmodule LocalCentsWeb.Bond do
   defdelegate button(assigns), to: LocalCentsWeb.Bond.Elements.Button
   defdelegate checkbox(assigns), to: LocalCentsWeb.Bond.Elements.Checkbox
   defdelegate empty_state(assigns), to: LocalCentsWeb.Bond.Elements.EmptyState
+  defdelegate loading_state(assigns), to: LocalCentsWeb.Bond.Elements.LoadingState
   defdelegate input(assigns), to: LocalCentsWeb.Bond.Elements.Input
   defdelegate list_view(assigns), to: LocalCentsWeb.Bond.Elements.ListView
   defdelegate menu(assigns), to: LocalCentsWeb.Bond.Elements.Menu

@@ -29,28 +29,59 @@ defmodule LocalCentsWeb.LibraryLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    # On the connected mount, an empty library is a first launch: seed the demo
-    # Books so the app opens with something to explore. Seeding is left to the
-    # connected pass (not the throwaway static render) so it runs once, only for a
-    # real session. The static render just lists whatever is on disk.
-    books = library_books(connected?(socket))
+    socket =
+      assign(socket,
+        time_zone: connected_time_zone(socket),
+        creating: false,
+        create_name: "",
+        dialog: nil,
+        rename_errors: []
+      )
 
-    # Once connected, listen for each Book's changes so a "Last Updated" subtitle
-    # never goes stale while another window edits the Book (see ADR 0012). The
-    # browser reports its time zone through connect params; the static first render
-    # has none, so it falls back to UTC until the socket connects.
-    if connected?(socket), do: Enum.each(books, &Tracking.subscribe(&1.id))
+    books = Tracking.list_books()
 
-    socket
-    |> assign(
-      books: books,
-      time_zone: connected_time_zone(socket),
-      creating: false,
-      create_name: "",
-      dialog: nil,
-      rename_errors: []
-    )
-    |> ok()
+    cond do
+      # First launch into an empty library on the connected mount: paint the window
+      # immediately with a loading state and seed the demo Books in the background,
+      # rather than blocking mount for the ~1–2s the seed's many document writes take.
+      # The seeded list arrives in handle_async/3, which subscribes and swaps it in.
+      books == [] and seeding_enabled?() and connected?(socket) ->
+        socket
+        |> assign(books: [], seeding: true)
+        |> start_async(:demo_seed, &seed_demo_library/0)
+        |> ok()
+
+      # The static (disconnected) render before the socket connects: an empty library
+      # we are about to seed shows the same loading state, so there is no flash of the
+      # empty state before seeding starts on connect.
+      books == [] and seeding_enabled?() ->
+        socket |> assign(books: [], seeding: true) |> ok()
+
+      # A non-empty library, or one with seeding disabled: list what is on disk and,
+      # once connected, subscribe so each "Last Updated" subtitle stays live while
+      # another window edits the Book (see ADR 0012). The browser reports its time
+      # zone through connect params; the static first render has none, so it falls
+      # back to UTC until the socket connects.
+      true ->
+        if connected?(socket), do: Enum.each(books, &Tracking.subscribe(&1.id))
+        socket |> assign(books: books, seeding: false) |> ok()
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_async(:demo_seed, {:ok, books}, socket) do
+    # Seeding finished: subscribe to each new Book (as a normal mount would) and
+    # swap the loading state for the list.
+    Enum.each(books, &Tracking.subscribe(&1.id))
+    {:noreply, assign(socket, books: books, seeding: false)}
+  end
+
+  def handle_async(:demo_seed, {:exit, reason}, socket) do
+    # Best-effort: a failed seed must never strand the window on a spinner. Log it and
+    # fall back to the empty library — the demos are throwaway starter content, so
+    # there is nothing to roll back, and the empty state invites the user to add a Book.
+    Logger.warning("Demo seeding failed; continuing with an empty library: #{inspect(reason)}")
+    {:noreply, assign(socket, books: [], seeding: false)}
   end
 
   @impl Phoenix.LiveView
@@ -65,12 +96,23 @@ defmodule LocalCentsWeb.LibraryLive do
         heading carries the name for assistive tech and document structure. --%>
         <h1 class="sr-only">Library</h1>
         <div class="flex min-h-0 flex-1 flex-col">
-          <p
-            :if={@books == []}
-            class="m-4 rounded-lg border border-dashed border-surface-400 px-4 py-10 text-center text-sm text-surface-600"
-          >
-            No books yet — add one below to get started.
-          </p>
+          <%!-- First launch seeds the demo library in the background (see mount/3 and
+          handle_async/3); this is the in-progress state shown while that runs. --%>
+          <Bond.loading_state
+            :if={@seeding}
+            message="Setting up your demo library…"
+            hint="This only happens the first time."
+          />
+
+          <%!-- The empty state is the fallback whenever the library has no Books and
+          we are not mid-seed: a library the user emptied by deleting every Book, or a
+          first launch where seeding failed or is disabled. It must stay even though a
+          normal first launch seeds past it into the list below. --%>
+          <Bond.empty_state
+            :if={not @seeding and @books == []}
+            message="No books yet"
+            hint="Add one below to get started."
+          />
 
           <div :if={@books != []} id="books" class="flex min-h-0 flex-1 flex-col">
             <Bond.list_view fill>
@@ -301,48 +343,17 @@ defmodule LocalCentsWeb.LibraryLive do
   # A Book's category set does not affect the library row, so ignore it.
   def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
 
-  # The static (disconnected) render just lists what is on disk. The connected pass
-  # additionally seeds the demo library when it is empty — a first launch — so
-  # seeding runs once, for a real session.
-  defp library_books(false = _connected), do: Tracking.list_books()
+  # Seeding is disabled via the `:demo_seeding` app env in the test env (it writes a
+  # document per expense, so it would slow and pollute unrelated tests); it defaults
+  # on, so a real first launch is seeded.
+  defp seeding_enabled?, do: Application.get_env(:local_cents, :demo_seeding, true)
 
-  defp library_books(true = _connected) do
-    case Tracking.list_books() do
-      [] -> seed_demo_library()
-      books -> books
-    end
-  end
-
-  # Seeds the empty library and returns the freshly-seeded list. Disabled via the
-  # `:demo_seeding` app env (off in the test env; defaults on, so a real first launch
-  # is seeded).
+  # Runs in the async task started by mount/3: seed the demo Books, then return the
+  # freshly-seeded library. A raise here surfaces as an `{:exit, reason}` delivered to
+  # handle_async/3, which is the best-effort failure path — so no rescue is needed.
   defp seed_demo_library do
-    case Application.get_env(:local_cents, :demo_seeding, true) do
-      false -> []
-      _enabled -> run_demo_seeding()
-    end
-  end
-
-  # Best-effort: a failure mid-seed must never crash the library window on first
-  # launch. We log it and fall back to an empty library — the demos are throwaway
-  # starter content, so there is nothing to roll back.
-  defp run_demo_seeding do
-    _ = DemoSeeding.create_books()
+    DemoSeeding.create_books()
     Tracking.list_books()
-  rescue
-    error ->
-      Logger.warning(
-        "Demo seeding failed; continuing with an empty library: #{Exception.message(error)}"
-      )
-
-      []
-  catch
-    kind, reason ->
-      Logger.warning(
-        "Demo seeding failed; continuing with an empty library: #{inspect({kind, reason})}"
-      )
-
-      []
   end
 
   # Replaces the changed Book in the list in place (preserving order), or removes it
