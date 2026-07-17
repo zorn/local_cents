@@ -40,9 +40,10 @@ _tag_ — is a different concept and is out of scope for the MVP.)
 
 **Uncategorized**:
 Not a Category entity, but the computed bucket of Expenses that have no Category.
-It always appears as a row in group-by / totals views so category totals reconcile
-to the grand total, and it doubles as the worklist of Expenses that still need a
-Category.
+It appears as a row in group-by / totals views whenever any Expense is
+uncategorized, so category totals reconcile to the grand total, and it doubles as
+the worklist of Expenses that still need a Category. When every Expense is filed,
+there is nothing to bucket and no Uncategorized row appears.
 
 **Month**:
 The calendar year-and-month (e.g. `2026-03`) derived from an Expense's **Date** —
@@ -55,8 +56,8 @@ spending still appears and reads as zero.
 
 **Report**:
 A computed, read-only summary of a Book's Expenses. For the MVP it is the total of
-each Category — plus the **Uncategorized** bucket — broken down by **Month**,
-reconciling to a grand total (see
+each Category — plus the **Uncategorized** bucket when any Expense is
+uncategorized — broken down by **Month**, reconciling to a grand total (see
 [ADR 0020](docs/adr/0020-bounded-time-series-in-review.md)). A Report derives
 entirely from the Expenses it summarizes: it stores nothing of its own and is
 recomputed on demand.
