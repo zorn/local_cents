@@ -20,12 +20,20 @@ defmodule LocalCentsWeb.LibraryLive do
   """
   use LocalCentsWeb, :live_view
 
+  alias LocalCents.DemoSeeding
   alias LocalCents.Tracking
+
   alias LocalCentsWeb.DesktopShell
+
+  require Logger
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
-    books = Tracking.list_books()
+    # On the connected mount, an empty library is a first launch: seed the demo
+    # Books so the app opens with something to explore. Seeding is left to the
+    # connected pass (not the throwaway static render) so it runs once, only for a
+    # real session. The static render just lists whatever is on disk.
+    books = library_books(connected?(socket))
 
     # Once connected, listen for each Book's changes so a "Last Updated" subtitle
     # never goes stale while another window edits the Book (see ADR 0012). The
@@ -292,6 +300,50 @@ defmodule LocalCentsWeb.LibraryLive do
   # receives the `:categories_updated` signal category commands emit (see ADR 0018).
   # A Book's category set does not affect the library row, so ignore it.
   def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
+
+  # The static (disconnected) render just lists what is on disk. The connected pass
+  # additionally seeds the demo library when it is empty — a first launch — so
+  # seeding runs once, for a real session.
+  defp library_books(false = _connected), do: Tracking.list_books()
+
+  defp library_books(true = _connected) do
+    case Tracking.list_books() do
+      [] -> seed_demo_library()
+      books -> books
+    end
+  end
+
+  # Seeds the empty library and returns the freshly-seeded list. Disabled via the
+  # `:demo_seeding` app env (off in the test env; defaults on, so a real first launch
+  # is seeded).
+  defp seed_demo_library do
+    case Application.get_env(:local_cents, :demo_seeding, true) do
+      false -> []
+      _enabled -> run_demo_seeding()
+    end
+  end
+
+  # Best-effort: a failure mid-seed must never crash the library window on first
+  # launch. We log it and fall back to an empty library — the demos are throwaway
+  # starter content, so there is nothing to roll back.
+  defp run_demo_seeding do
+    _ = DemoSeeding.create_books()
+    Tracking.list_books()
+  rescue
+    error ->
+      Logger.warning(
+        "Demo seeding failed; continuing with an empty library: #{Exception.message(error)}"
+      )
+
+      []
+  catch
+    kind, reason ->
+      Logger.warning(
+        "Demo seeding failed; continuing with an empty library: #{inspect({kind, reason})}"
+      )
+
+      []
+  end
 
   # Replaces the changed Book in the list in place (preserving order), or removes it
   # when it no longer exists. The list holds only Books we subscribe to, so an id we

@@ -44,9 +44,17 @@ call).
 |---|---|---|---|
 | `LocalCents` | `lib/local_cents.ex` | — | — |
 | `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Expense` | — |
-| `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking` |
+| `LocalCents.DemoSeeding` | `lib/local_cents/demo_seeding.ex` | — | `LocalCents.Tracking` |
+| `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding` |
 | `LocalCents.Application` | `lib/local_cents/application.ex` | — | `LocalCents`, `LocalCentsWeb` |
 | `Storybook` | `lib/storybook.ex` | (checks disabled) | (checks disabled) |
+
+`LocalCents.DemoSeeding` is a top-level boundary of a different shape from the
+others: it is a *consumer/orchestrator*, not a domain context. It exports nothing
+(no one calls into it for data) and instead *depends on* `LocalCents.Tracking`,
+driving its public API to generate the first-run demo Books. It is promoted to
+top-level for the same reason the contexts are — so `LocalCentsWeb` can list it in
+`deps` and call it from `LibraryLive`.
 
 A boundary's root module (e.g. `LocalCents.Tracking`) is **always** callable from
 a boundary that depends on it — that is the public API. `exports` only adds
@@ -63,16 +71,21 @@ graph TD
     Web["LocalCentsWeb<br/><small>exports: Endpoint, Telemetry</small>"]
     Core["LocalCents<br/><small>core</small>"]
     Tracking["LocalCents.Tracking<br/><small>exports: Book, Expense</small>"]
+    DemoSeeding["LocalCents.DemoSeeding<br/><small>consumer (no exports)</small>"]
 
     App --> Web
     App --> Core
     Web --> Core
     Web --> Tracking
+    Web --> DemoSeeding
+    DemoSeeding --> Tracking
 
     classDef context fill:#e8f5e9,stroke:#43a047;
     classDef web fill:#e3f2fd,stroke:#1e88e5;
+    classDef consumer fill:#fff3e0,stroke:#fb8c00;
     class Tracking,Core context;
     class Web web;
+    class DemoSeeding consumer;
 ```
 
 An arrow means "is allowed to call". Note the arrows only point *toward* contexts

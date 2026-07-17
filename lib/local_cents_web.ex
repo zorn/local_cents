@@ -22,7 +22,7 @@ defmodule LocalCentsWeb do
   # their public APIs, but nothing outside may reach into web internals — only
   # the process-tree entry points (Endpoint, Telemetry) are exported.
   use Boundary,
-    deps: [LocalCents, LocalCents.Tracking],
+    deps: [LocalCents, LocalCents.Tracking, LocalCents.DemoSeeding],
     exports: [Endpoint, Telemetry]
 
   @spec static_paths() :: [String.t()]

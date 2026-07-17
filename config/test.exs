@@ -16,6 +16,12 @@ config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 # `LocalCents.BooksDirHelper`.
 config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_books")
 
+# Don't seed the demo library on an empty library during tests — seeding is
+# side-effecting and slow (it writes the whole document per expense), and only the
+# tests that specifically cover it opt back in via `Application.put_env/3`. It
+# defaults on (dev, prod), so a developer's empty library still gets the demos.
+config :local_cents, :demo_seeding, false
+
 # The endpoint PhoenixTest drives when running feature tests.
 config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 
