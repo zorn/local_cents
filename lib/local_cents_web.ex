@@ -67,6 +67,11 @@ defmodule LocalCentsWeb do
 
       import LocalCentsWeb.LiveViewPipes
 
+      # Appends a catch-all `handle_info/2` after this view's own clauses so a view
+      # ignores PubSub signals it does not handle instead of crashing on them (see
+      # `LocalCentsWeb.LiveViewUnhandledInfo` and ADR 0019).
+      @before_compile LocalCentsWeb.LiveViewUnhandledInfo
+
       unquote(html_helpers())
     end
   end
