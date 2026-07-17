@@ -4,8 +4,9 @@ defmodule LocalCentsWeb.LiveViewUnhandledInfo do
   LiveView, logging and ignoring any message no explicit clause matched.
 
   `LocalCentsWeb.live_view/0` injects this into every `use LocalCentsWeb,
-  :live_view`. It exists because of a sharp edge in `Phoenix.LiveView.Channel`:
-  a LiveView that defines **no** `handle_info/2` gets the framework's own
+  :live_view`. It exists because of a sharp edge in Phoenix.LiveView.Channel
+  (a private LiveView module): a LiveView that defines **no** `handle_info/2` gets
+  the framework's own
   log-and-ignore fallback, but defining **any** clause opts out of it and makes the
   view responsible for every message its process receives — an unmatched one raises
   `FunctionClauseError` and crashes the view. Without this hook, each view that
