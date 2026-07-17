@@ -88,12 +88,12 @@ defmodule LocalCents.MixProject do
 
   defp before_closing_body_tag(_), do: ""
 
-  # The guide pages are curated and ordered by hand; the ADR and research
+  # The guide pages are curated and ordered by hand; the ADR, research, and agents
   # collections are globbed so a newly added decision or note is published without
-  # editing this list (which is what let it drift out of date before). `about.md`
-  # leads the ADRs, then the numbered files in order. `mix docs` warns on a link to
-  # any `.md` not listed here, and CI treats that warning as an error — so a doc that
-  # is linked but not globbed fails the build rather than rotting silently.
+  # editing this list — the hand-maintained list is exactly what drifted out of date
+  # before. `about.md` leads the ADRs, then the numbered files in order. `mix docs`
+  # warns on a link to any `.md` not covered here, but only locally today; wiring
+  # that check into CI so it fails the build is tracked in issue #136.
   defp extras do
     [
       "README.md",
