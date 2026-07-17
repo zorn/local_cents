@@ -9,8 +9,8 @@ second signal — `{:categories_updated, book_id}` alongside `{:book_updated, bo
 no-op clause." That works, but it exposes a scaling problem as the signal vocabulary
 grows.
 
-The root cause is a sharp edge in `Phoenix.LiveView.Channel` (v1.2.6,
-`view_handle_info/2`): a LiveView that defines **no** `handle_info/2` gets the
+The root cause is a sharp edge in Phoenix.LiveView.Channel (v1.2.6, a private
+LiveView module): a LiveView that defines **no** `handle_info/2` gets the
 framework's own log-and-ignore fallback, but the moment it defines **any**
 `handle_info/2` clause it opts out of that fallback and becomes responsible for
 **every** message its process receives. An unmatched message is then a
