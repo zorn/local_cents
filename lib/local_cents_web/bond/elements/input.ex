@@ -85,6 +85,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
     """
 
   attr :variant, :string,
+    values: ~w(default frosted),
     default: "default",
     doc: "Visual variant; \"frosted\" suits dark panel backgrounds"
 

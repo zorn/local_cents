@@ -37,6 +37,7 @@ defmodule LocalCentsWeb.Bond.Elements.Select do
   alias Phoenix.LiveView.Socket
 
   attr :variant, :string,
+    values: ~w(default frosted),
     default: "default",
     doc: "Visual variant; \"frosted\" suits dark panel backgrounds"
 
