@@ -86,8 +86,12 @@ See [ADR 0005](../adr/0005-categories-not-tags.md).
 - The document window shows the **expense list** (sorted by date) and a
   **group-by-category totals** summary: each Category's total, the Uncategorized
   bucket, a needs-amount indicator, all **reconciling to a grand total**.
-- **Numbers and tables only — no charts.** Time-series visualization and
-  date-range filtering are deferred.
+- **Numbers and tables only — no charts.** Charts, date-range filtering, and
+  arbitrary/custom ranges are deferred.
+- **Amended:** the totals summary is a **Category × Month matrix** (a whole-Book,
+  per-calendar-month breakdown), not a flat lifetime total per Category. This pulls
+  a *bounded* time-series into the MVP; see
+  [ADR 0020](../adr/0020-bounded-time-series-in-review.md) for what stays deferred.
 
 ### Money
 See [ADR 0002](../adr/0002-expense-attributes.md) and

@@ -43,3 +43,20 @@ Not a Category entity, but the computed bucket of Expenses that have no Category
 It always appears as a row in group-by / totals views so category totals reconcile
 to the grand total, and it doubles as the worklist of Expenses that still need a
 Category.
+
+**Month**:
+The calendar year-and-month (e.g. `2026-03`) derived from an Expense's **Date** —
+the time bucket the **Report** groups spending into. A Month is a calendar span,
+not a rolling window or a billing cycle, and like the Date it comes from it carries
+no time-of-day and no timezone (see
+[ADR 0015](docs/adr/0015-expense-identity-and-date-encoding.md)). A Report spans
+every Month from the earliest to the latest Expense in the Book, so a Month with no
+spending still appears and reads as zero.
+
+**Report**:
+A computed, read-only summary of a Book's Expenses. For the MVP it is the total of
+each Category — plus the **Uncategorized** bucket — broken down by **Month**,
+reconciling to a grand total (see
+[ADR 0020](docs/adr/0020-bounded-time-series-in-review.md)). A Report derives
+entirely from the Expenses it summarizes: it stores nothing of its own and is
+recomputed on demand.
