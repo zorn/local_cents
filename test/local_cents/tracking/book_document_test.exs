@@ -106,6 +106,40 @@ defmodule LocalCents.Tracking.BookDocumentTest do
 
       assert ["First", "Second"] = Enum.map(BookDocument.expenses(document), & &1.description)
     end
+
+    test "files the new Expense under an existing category" do
+      {:ok, document, _} = BookDocument.add_category(empty_document(), %{name: "Food"}, "c1")
+
+      assert {:ok, _document, %Expense{category_id: "c1"}} =
+               BookDocument.add_expense(
+                 document,
+                 %{description: "Coffee", category_id: "c1"},
+                 @id,
+                 @today
+               )
+    end
+
+    test "a blank category_id leaves the Expense Uncategorized" do
+      {:ok, document, _} = BookDocument.add_category(empty_document(), %{name: "Food"}, "c1")
+
+      assert {:ok, _document, %Expense{category_id: nil}} =
+               BookDocument.add_expense(
+                 document,
+                 %{description: "Coffee", category_id: ""},
+                 @id,
+                 @today
+               )
+    end
+
+    test "an unknown category_id returns :category_not_found" do
+      assert {:error, :category_not_found} =
+               BookDocument.add_expense(
+                 empty_document(),
+                 %{description: "Coffee", category_id: "nope"},
+                 @id,
+                 @today
+               )
+    end
   end
 
   describe "edit_expense/4" do
@@ -155,6 +189,41 @@ defmodule LocalCents.Tracking.BookDocumentTest do
                BookDocument.edit_expense(document, @id, %{description: ""}, @today)
 
       assert "can't be blank" in errors_on(changeset).description
+    end
+
+    test "reassigns the category through the edit", %{document: document} do
+      {:ok, document, _} = BookDocument.add_category(document, %{name: "Food"}, "c1")
+
+      assert {:ok, _document, %Expense{category_id: "c1"}} =
+               BookDocument.edit_expense(
+                 document,
+                 @id,
+                 %{description: "Coffee", category_id: "c1"},
+                 @today
+               )
+    end
+
+    test "a blank category_id unassigns the category", %{document: document} do
+      {:ok, document, _} = BookDocument.add_category(document, %{name: "Food"}, "c1")
+      {:ok, document, _} = BookDocument.assign_category(document, @id, "c1")
+
+      assert {:ok, _document, %Expense{category_id: nil}} =
+               BookDocument.edit_expense(
+                 document,
+                 @id,
+                 %{description: "Coffee", category_id: ""},
+                 @today
+               )
+    end
+
+    test "an unknown category_id returns :category_not_found", %{document: document} do
+      assert {:error, :category_not_found} =
+               BookDocument.edit_expense(
+                 document,
+                 @id,
+                 %{description: "Coffee", category_id: "nope"},
+                 @today
+               )
     end
   end
 

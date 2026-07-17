@@ -288,6 +288,11 @@ defmodule LocalCentsWeb.LibraryLive do
     socket |> assign(books: refresh_book(socket.assigns.books, id)) |> noreply()
   end
 
+  # The library subscribes to each Book's topic for name/deletion changes, so it also
+  # receives the `:categories_updated` signal category commands emit (see ADR 0018).
+  # A Book's category set does not affect the library row, so ignore it.
+  def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
+
   # Replaces the changed Book in the list in place (preserving order), or removes it
   # when it no longer exists. The list holds only Books we subscribe to, so an id we
   # aren't already showing is left as-is.

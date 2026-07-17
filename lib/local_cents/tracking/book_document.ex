@@ -128,33 +128,38 @@ defmodule LocalCents.Tracking.BookDocument do
   Appends a new Expense built from `attrs`, using the injected `id` and defaulting a
   blank `date` to `today`.
 
-  Returns `{:ok, document, expense}` with the created Expense, or
-  `{:error, changeset}` if `attrs` fail validation.
+  Returns `{:ok, document, expense}` with the created Expense,
+  `{:error, changeset}` if `attrs` fail validation, or `{:error, :category_not_found}`
+  if `attrs` names a `category_id` that is not one of this Book's categories (see
+  [ADR 0018](0018-category-assignment-through-the-editor.html)).
   """
   @spec add_expense(t(), attrs :: map(), Expense.id(), today :: Date.t()) ::
-          {:ok, t(), Expense.t()} | {:error, Expense.changeset()}
+          {:ok, t(), Expense.t()} | {:error, Expense.changeset()} | {:error, :category_not_found}
   def add_expense(%__MODULE__{} = document, attrs, id, %Date{} = today) do
     changeset = Expense.changeset(%Expense{id: id}, attrs, today)
 
-    case apply_action(changeset, :insert) do
-      {:ok, expense} ->
-        {:ok, %{document | expenses: List.insert_at(document.expenses, -1, expense)}, expense}
-
-      {:error, changeset} ->
-        {:error, changeset}
+    with {:ok, expense} <- apply_action(changeset, :insert),
+         :ok <- validate_category_exists(document, expense.category_id) do
+      {:ok, %{document | expenses: List.insert_at(document.expenses, -1, expense)}, expense}
     end
   end
 
   @doc """
   Replaces every editable field of the Expense identified by `id` with `attrs` (a
   full replace, not a patch), defaulting a blank `date` to `today`. The `id` is
-  preserved.
+  preserved. `category_id` is part of the replace: a blank selection unassigns the
+  Category (see [ADR 0018](0018-category-assignment-through-the-editor.html)).
 
   Returns `{:ok, document, expense}` with the updated Expense, `{:error, changeset}`
-  on invalid `attrs`, or `{:error, :not_found}` if no Expense has that `id`.
+  on invalid `attrs`, `{:error, :not_found}` if no Expense has that `id`, or
+  `{:error, :category_not_found}` if `attrs` names a `category_id` that is not one
+  of this Book's categories.
   """
   @spec edit_expense(t(), Expense.id(), attrs :: map(), today :: Date.t()) ::
-          {:ok, t(), Expense.t()} | {:error, Expense.changeset()} | {:error, :not_found}
+          {:ok, t(), Expense.t()}
+          | {:error, Expense.changeset()}
+          | {:error, :not_found}
+          | {:error, :category_not_found}
   def edit_expense(%__MODULE__{} = document, id, attrs, %Date{} = today) do
     case Enum.find_index(document.expenses, &(&1.id == id)) do
       nil ->
@@ -164,13 +169,10 @@ defmodule LocalCents.Tracking.BookDocument do
         existing = Enum.at(document.expenses, index)
         changeset = Expense.changeset(existing, attrs, today)
 
-        case apply_action(changeset, :update) do
-          {:ok, expense} ->
-            {:ok, %{document | expenses: List.replace_at(document.expenses, index, expense)},
-             expense}
-
-          {:error, changeset} ->
-            {:error, changeset}
+        with {:ok, expense} <- apply_action(changeset, :update),
+             :ok <- validate_category_exists(document, expense.category_id) do
+          {:ok, %{document | expenses: List.replace_at(document.expenses, index, expense)},
+           expense}
         end
     end
   end
@@ -316,6 +318,18 @@ defmodule LocalCents.Tracking.BookDocument do
     index = Enum.find_index(document.expenses, &(&1.id == expense_id))
     expense = %{Enum.at(document.expenses, index) | category_id: category_id}
     {:ok, %{document | expenses: List.replace_at(document.expenses, index, expense)}, expense}
+  end
+
+  # A `nil` `category_id` is Uncategorized and always valid; a non-nil one must name
+  # a Category the Book actually holds. The changeset can't run this check — only the
+  # document sees the category list (see ADR 0018).
+  defp validate_category_exists(_document, nil), do: :ok
+
+  defp validate_category_exists(document, category_id) do
+    case Enum.any?(document.categories, &(&1.id == category_id)) do
+      true -> :ok
+      false -> {:error, :category_not_found}
+    end
   end
 
   defp unfile_expenses(expenses, category_id) do

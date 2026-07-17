@@ -109,6 +109,25 @@ defmodule LocalCents.TrackingTest do
       assert Tracking.list_expenses(book.id) == []
     end
 
+    test "files the new expense under a category_id passed in attrs" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Food"})
+
+      assert {:ok, %Expense{category_id: cat_id}} =
+               Tracking.add_expense(book.id, %{description: "Coffee", category_id: category.id})
+
+      assert cat_id == category.id
+    end
+
+    test "an unknown category_id returns :category_not_found without persisting" do
+      {:ok, book} = Tracking.create_book("Family")
+
+      assert {:error, :category_not_found} =
+               Tracking.add_expense(book.id, %{description: "Coffee", category_id: "no-such-id"})
+
+      assert Tracking.list_expenses(book.id) == []
+    end
+
     test "all added expenses are present" do
       {:ok, book} = Tracking.create_book("Family")
 
@@ -158,6 +177,37 @@ defmodule LocalCents.TrackingTest do
 
       assert {:error, :not_found} =
                Tracking.edit_expense(book.id, "no-such-id", %{description: "X"})
+    end
+
+    test "reassigns and unassigns the category through the edit" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Food"})
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
+
+      assert {:ok, %Expense{category_id: cat_id}} =
+               Tracking.edit_expense(book.id, expense.id, %{
+                 description: "Coffee",
+                 category_id: category.id
+               })
+
+      assert cat_id == category.id
+
+      assert {:ok, %Expense{category_id: nil}} =
+               Tracking.edit_expense(book.id, expense.id, %{
+                 description: "Coffee",
+                 category_id: ""
+               })
+    end
+
+    test "an unknown category_id returns :category_not_found" do
+      {:ok, book} = Tracking.create_book("Family")
+      {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
+
+      assert {:error, :category_not_found} =
+               Tracking.edit_expense(book.id, expense.id, %{
+                 description: "Coffee",
+                 category_id: "no-such-id"
+               })
     end
 
     test "returns {:error, :not_open} when the book's process is not running" do
@@ -242,6 +292,31 @@ defmodule LocalCents.TrackingTest do
       assert :ok = Tracking.delete_category(book.id, category.id)
       assert Tracking.list_categories(book.id) == []
       assert [%Expense{category_id: nil}] = Tracking.list_expenses(book.id)
+    end
+
+    test "category commands broadcast :categories_updated alongside :book_updated" do
+      {:ok, book} = Tracking.create_book("Family")
+      :ok = Tracking.subscribe(book.id)
+
+      {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
+      assert_receive {:categories_updated, id}
+      assert id == book.id
+
+      {:ok, _} = Tracking.rename_category(book.id, category.id, %{name: "Food"})
+      assert_receive {:categories_updated, ^id}
+
+      :ok = Tracking.delete_category(book.id, category.id)
+      assert_receive {:categories_updated, ^id}
+    end
+
+    test "expense edits do not broadcast :categories_updated" do
+      {:ok, book} = Tracking.create_book("Family")
+      :ok = Tracking.subscribe(book.id)
+
+      {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee"})
+
+      assert_receive {:book_updated, _id}
+      refute_received {:categories_updated, _id}
     end
 
     test "the category surface returns {:error, :not_open} for a book with no process" do

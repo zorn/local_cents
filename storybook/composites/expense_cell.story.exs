@@ -13,7 +13,7 @@ defmodule Storybook.Composites.ExpenseCell do
           date_display: "06/15/2025",
           description: "Whole Foods Market",
           amount_display: "$87.43",
-          category: %{label: "groceries", color: "#3f7fd6"}
+          category: "groceries"
         }
       },
       %Variation{

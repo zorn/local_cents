@@ -9,9 +9,12 @@ defmodule LocalCentsWeb.BookLive do
 
   The window lists the Book's expenses (newest first) and drives the full editor —
   a slide-in panel that adds, edits, and (behind a confirmation) hard-deletes an
-  expense. Category selection is not part of the editor yet; the Category domain
-  model and its picker arrive in later tickets, so an expense's category is always
-  absent here for now. The dumb quick-add capture path is likewise a later ticket.
+  expense. The editor files an expense under a Category with a `<select>` over the
+  Book's existing categories, committed by the same Save as the text fields (see
+  [ADR 0018](0018-category-assignment-through-the-editor.html)); a blank selection
+  leaves it Uncategorized. The picker's option list is a `@categories` cache
+  refreshed only on the Book's `:categories_updated` broadcast, so ordinary expense
+  edits never churn it. The dumb quick-add capture path is a later ticket.
   """
   use LocalCentsWeb, :live_view
 
@@ -32,6 +35,7 @@ defmodule LocalCentsWeb.BookLive do
       socket
       |> assign(book: book, page_title: book.name, editor: nil, confirm_delete: nil)
       |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
+      |> assign_categories(load_categories(id))
       |> ok()
     else
       _ ->
@@ -68,6 +72,7 @@ defmodule LocalCentsWeb.BookLive do
                 date_display={format_date(expense.date)}
                 description={expense.description}
                 amount_display={format_amount(expense.cost)}
+                category={Map.get(@category_names, expense.category_id)}
                 phx-click="edit_expense"
                 phx-value-id={expense.id}
               />
@@ -113,6 +118,25 @@ defmodule LocalCentsWeb.BookLive do
               class="w-full"
               placeholder="0.00"
             />
+            <%!-- Filing is a plain form field (ADR 0018): a blank selection is
+            Uncategorized. With no categories yet, the editor can't create one (that
+            is the Categories view's job), so show a hint instead of a dead select. --%>
+            <Bond.select
+              :if={@categories != []}
+              field={@form[:category_id]}
+              label="Category"
+              variant="frosted"
+              class="w-full"
+              options={category_options(@categories)}
+            />
+            <div :if={@categories == []}>
+              <span class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
+                Category
+              </span>
+              <p class="text-sm text-primary-400/80">
+                No categories yet — add them from Categories.
+              </p>
+            </div>
             <div class="flex items-center justify-between pt-2">
               <%!-- Delete only exists for a saved expense; a spacer keeps Save pinned
               right when adding, since the row is justify-between. --%>
@@ -252,6 +276,7 @@ defmodule LocalCentsWeb.BookLive do
     case Tracking.add_expense(book.id, expense_params, DateTime.utc_now(), today) do
       {:ok, _expense} -> saved(socket, book.id)
       {:error, %Ecto.Changeset{}} -> invalid(socket, base, expense_params, today)
+      {:error, :category_not_found} -> category_gone(socket, base, expense_params, today)
       {:error, _reason} -> failed(socket, "Could not save the expense.")
     end
   end
@@ -265,6 +290,7 @@ defmodule LocalCentsWeb.BookLive do
       {:ok, _expense} -> saved(socket, book.id)
       {:error, %Ecto.Changeset{}} -> invalid(socket, expense, expense_params, today)
       {:error, :not_found} -> saved(socket, book.id, "That expense no longer exists.")
+      {:error, :category_not_found} -> category_gone(socket, expense, expense_params, today)
       {:error, _reason} -> failed(socket, "Could not save the expense.")
     end
   end
@@ -316,6 +342,25 @@ defmodule LocalCentsWeb.BookLive do
     |> noreply()
   end
 
+  # The picked category was deleted between opening the editor and saving (the
+  # `:category_not_found` backstop from ADR 0018). Refresh the cache, clear the now
+  # dangling selection, and keep the user's other input so they can re-file and
+  # retry rather than lose the edit.
+  defp category_gone(socket, base, expense_params, today) do
+    socket
+    |> put_flash(:error, "That category no longer exists — it was cleared.")
+    |> assign_categories(load_categories(socket.assigns.book.id))
+    |> assign(form: blank_category_form(base, expense_params, today))
+    |> noreply()
+  end
+
+  # Rebuild the editor form with the category selection cleared (Uncategorized) while
+  # keeping the user's other input — the shared shape behind both the Save-time
+  # backstop and the live vanished-selection reset (see ADR 0018).
+  defp blank_category_form(base, params, today) do
+    editor_form(base, today, Map.put(params, "category_id", ""), :validate)
+  end
+
   @impl Phoenix.LiveView
   def handle_info({:book_updated, id}, socket) do
     case Tracking.get_book(id) do
@@ -334,6 +379,18 @@ defmodule LocalCentsWeb.BookLive do
         |> redirect_missing("This book was deleted.")
         |> noreply()
     end
+  end
+
+  # The Book's category set changed (elsewhere or here). Refresh the picker's cache
+  # only on this signal — not on the far more frequent `:book_updated` — so expense
+  # edits don't churn the option list (see ADR 0018). If the open editor's selected
+  # category was among those deleted, drop the selection to blank so the form and a
+  # subsequent Save agree; the user's other in-progress input is preserved.
+  def handle_info({:categories_updated, id}, socket) do
+    socket
+    |> assign_categories(load_categories(id))
+    |> reset_selected_category_if_gone()
+    |> noreply()
   end
 
   # A change elsewhere may have deleted the expense currently open in the editor;
@@ -359,6 +416,55 @@ defmodule LocalCentsWeb.BookLive do
       expenses -> Enum.sort_by(expenses, & &1.date, {:desc, Date})
     end
   end
+
+  # Caches the sorted category list for the picker plus a `%{id => name}` map for
+  # badge lookup, so rendering an expense row is a single `Map.get/2` rather than a
+  # linear scan of the categories per row. Both derive from the same list, so they
+  # are assigned together wherever categories are (re)loaded.
+  defp assign_categories(socket, categories) do
+    assign(socket,
+      categories: categories,
+      category_names: Map.new(categories, &{&1.id, &1.name})
+    )
+  end
+
+  # Sorted by name so the picker (and any future category display) reads
+  # alphabetically; the document's insertion order is not a display contract.
+  defp load_categories(id) do
+    case Tracking.list_categories(id) do
+      {:error, :not_open} -> []
+      categories -> Enum.sort_by(categories, & &1.name)
+    end
+  end
+
+  # The `<select>` options as `{name, id}` pairs; a blank option (Uncategorized) is
+  # supplied by `Bond.select` itself.
+  defp category_options(categories), do: Enum.map(categories, &{&1.name, &1.id})
+
+  # If the open editor's selected category was just deleted, clear it to blank so the
+  # picker and a later Save agree. Rebuild from the form's current params so the
+  # user's unsaved date/description/cost typing survives; only the category resets.
+  defp reset_selected_category_if_gone(%{assigns: %{editor: nil}} = socket), do: socket
+
+  defp reset_selected_category_if_gone(socket) do
+    selected = socket.assigns.form[:category_id].value
+
+    cond do
+      not present?(selected) -> socket
+      category_exists?(socket.assigns.categories, selected) -> socket
+      true -> clear_selected_category(socket)
+    end
+  end
+
+  defp clear_selected_category(socket) do
+    base = editor_base(socket.assigns.editor)
+    form = blank_category_form(base, socket.assigns.form.params, today(socket.assigns.time_zone))
+    assign(socket, form: form)
+  end
+
+  defp present?(value), do: is_binary(value) and value != ""
+
+  defp category_exists?(categories, id), do: Enum.any?(categories, &(&1.id == id))
 
   defp find_expense(socket, expense_id) do
     Enum.find(socket.assigns.expenses, &(&1.id == expense_id))

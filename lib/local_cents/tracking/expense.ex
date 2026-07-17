@@ -22,11 +22,16 @@ defmodule LocalCents.Tracking.Expense do
       [ADR 0010](0010-cost-as-decimal-string.html)).
     * `category_id` — the stable `id` of the `LocalCents.Tracking.Category` this
       Expense is filed under, or `nil` when Uncategorized (see
-      [ADR 0005](0005-categories-not-tags.html)). It is **not** a `changeset/3`
-      field: `changeset/3` is the user-editable-text path, and category assignment
-      is a deliberate act done through separate `BookDocument` commands
-      (`assign_category`/`unassign_category`), so a full-replace edit of the other
-      fields leaves it untouched — the same reason `id` is never cast.
+      [ADR 0005](0005-categories-not-tags.html)). It **is** a `changeset/3` field:
+      the expense editor files an Expense with a `<select>` over existing
+      categories, so filing is an ordinary form field committed by the same Save as
+      the text — a blank selection casts to `nil` (Uncategorized) and a full-replace
+      edit reconciles it (see [ADR 0018](0018-category-assignment-through-the-editor.html)).
+      The changeset only *casts* the id; whether that id names a real Category of the
+      Book is checked by the core (`LocalCents.Tracking.BookDocument`), which alone
+      can see the Book's category list. The standalone
+      `assign_category`/`unassign_category` commands remain for direct assignment
+      outside the editor (e.g. the category management view).
 
   This is an embedded `Ecto` schema used purely for casting and validation — there
   is no database (see [ADR 0016](0016-ecto-embedded-validation-no-repo.html)); the
@@ -63,7 +68,7 @@ defmodule LocalCents.Tracking.Expense do
     field(:category_id, :string)
   end
 
-  @cast_fields [:date, :description, :cost]
+  @cast_fields [:date, :description, :cost, :category_id]
 
   @doc """
   Casts and validates `attrs` onto `expense`, defaulting a blank `date` to `today`.
@@ -75,8 +80,13 @@ defmodule LocalCents.Tracking.Expense do
 
   Rules enforced: `date` and `description` are required (a blank `date` becomes
   `today` rather than an error); `cost` is optional and, when present, must be
-  non-negative (`0` is allowed). `attrs` may use string or atom keys; a blank
-  string for `date` or `cost` is treated as absent.
+  non-negative (`0` is allowed); `category_id` is optional and cast as-is, a blank
+  selection becoming `nil` (Uncategorized). `attrs` may use string or atom keys; a
+  blank string for `date`, `cost`, or `category_id` is treated as absent.
+
+  The changeset cannot tell whether a given `category_id` names a real Category of
+  the Book — that check belongs to `LocalCents.Tracking.BookDocument`, which holds
+  the category list (see [ADR 0018](0018-category-assignment-through-the-editor.html)).
   """
   @spec changeset(t(), attrs :: map(), today :: Date.t()) :: changeset()
   def changeset(%__MODULE__{} = expense, attrs, %Date{} = today) do
