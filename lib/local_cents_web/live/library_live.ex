@@ -20,29 +20,72 @@ defmodule LocalCentsWeb.LibraryLive do
   """
   use LocalCentsWeb, :live_view
 
+  alias LocalCents.DemoSeeding
   alias LocalCents.Tracking
+
   alias LocalCentsWeb.DesktopShell
+
+  require Logger
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
+    socket =
+      assign(socket,
+        time_zone: connected_time_zone(socket),
+        creating: false,
+        create_name: "",
+        dialog: nil,
+        rename_errors: []
+      )
+
     books = Tracking.list_books()
 
-    # Once connected, listen for each Book's changes so a "Last Updated" subtitle
-    # never goes stale while another window edits the Book (see ADR 0012). The
-    # browser reports its time zone through connect params; the static first render
-    # has none, so it falls back to UTC until the socket connects.
-    if connected?(socket), do: Enum.each(books, &Tracking.subscribe(&1.id))
+    cond do
+      # First launch into an empty library on the connected mount: paint the window
+      # immediately with a loading state and seed the demo Books in the background,
+      # rather than blocking mount for the ~1–2s the seed's many document writes take.
+      # The seeded list arrives in handle_async/3, which subscribes and swaps it in.
+      books == [] and seeding_enabled?() and connected?(socket) ->
+        socket
+        |> assign(books: [], seeding: true)
+        |> start_async(:demo_seed, &seed_demo_library/0)
+        |> ok()
 
-    socket
-    |> assign(
-      books: books,
-      time_zone: connected_time_zone(socket),
-      creating: false,
-      create_name: "",
-      dialog: nil,
-      rename_errors: []
+      # The static (disconnected) render before the socket connects: an empty library
+      # we are about to seed shows the same loading state, so there is no flash of the
+      # empty state before seeding starts on connect.
+      books == [] and seeding_enabled?() ->
+        socket |> assign(books: [], seeding: true) |> ok()
+
+      # A non-empty library, or one with seeding disabled: list what is on disk and,
+      # once connected, subscribe so each "Last Updated" subtitle stays live while
+      # another window edits the Book (see ADR 0012). The browser reports its time
+      # zone through connect params; the static first render has none, so it falls
+      # back to UTC until the socket connects.
+      true ->
+        if connected?(socket), do: Enum.each(books, &Tracking.subscribe(&1.id))
+        socket |> assign(books: books, seeding: false) |> ok()
+    end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_async(:demo_seed, {:ok, books}, socket) do
+    # Seeding finished: show the freshly-seeded list (subscribing as a normal mount
+    # would) and drop the loading state.
+    {:noreply, show_library(socket, books)}
+  end
+
+  def handle_async(:demo_seed, {:exit, reason}, socket) do
+    # Best-effort: a failed seed must never strand the window on a spinner. Seeding may
+    # have partially succeeded (the first Book written, the next raised), so fall back
+    # to whatever is actually on disk rather than forcing empty — a written Book must
+    # still appear. If nothing was created this is the empty library, and its empty
+    # state invites the user to add a Book.
+    Logger.warning(
+      "Demo seeding failed; falling back to the existing library: #{inspect(reason)}"
     )
-    |> ok()
+
+    {:noreply, show_library(socket, Tracking.list_books())}
   end
 
   @impl Phoenix.LiveView
@@ -57,12 +100,23 @@ defmodule LocalCentsWeb.LibraryLive do
         heading carries the name for assistive tech and document structure. --%>
         <h1 class="sr-only">Library</h1>
         <div class="flex min-h-0 flex-1 flex-col">
-          <p
-            :if={@books == []}
-            class="m-4 rounded-lg border border-dashed border-surface-400 px-4 py-10 text-center text-sm text-surface-600"
-          >
-            No books yet — add one below to get started.
-          </p>
+          <%!-- First launch seeds the demo library in the background (see mount/3 and
+          handle_async/3); this is the in-progress state shown while that runs. --%>
+          <Bond.loading_state
+            :if={@seeding}
+            message="Setting up your demo library…"
+            hint="This only happens the first time."
+          />
+
+          <%!-- The empty state is the fallback whenever the library has no Books and
+          we are not mid-seed: a library the user emptied by deleting every Book, or a
+          first launch where seeding failed or is disabled. It must stay even though a
+          normal first launch seeds past it into the list below. --%>
+          <Bond.empty_state
+            :if={not @seeding and @books == []}
+            message="No books yet"
+            hint="Add one below to get started."
+          />
 
           <div :if={@books != []} id="books" class="flex min-h-0 flex-1 flex-col">
             <Bond.list_view fill>
@@ -292,6 +346,26 @@ defmodule LocalCentsWeb.LibraryLive do
   # receives the `:categories_updated` signal category commands emit (see ADR 0018).
   # A Book's category set does not affect the library row, so ignore it.
   def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
+
+  # Seeding is disabled via the `:demo_seeding` app env in the test env (it writes a
+  # document per expense, so it would slow and pollute unrelated tests); it defaults
+  # on, so a real first launch is seeded.
+  defp seeding_enabled?, do: Application.get_env(:local_cents, :demo_seeding, true)
+
+  # Runs in the async task started by mount/3: seed the demo Books, then return the
+  # freshly-seeded library. A raise here surfaces as an `{:exit, reason}` delivered to
+  # handle_async/3, which is the best-effort failure path — so no rescue is needed.
+  defp seed_demo_library do
+    DemoSeeding.create_books()
+    Tracking.list_books()
+  end
+
+  # Shows `books` in the library once seeding settles: subscribes to each so its
+  # "Last Updated" subtitle stays live (see ADR 0012) and clears the loading state.
+  defp show_library(socket, books) do
+    Enum.each(books, &Tracking.subscribe(&1.id))
+    assign(socket, books: books, seeding: false)
+  end
 
   # Replaces the changed Book in the list in place (preserving order), or removes it
   # when it no longer exists. The list holds only Books we subscribe to, so an id we

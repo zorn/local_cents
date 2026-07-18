@@ -102,12 +102,20 @@ See [ADR 0002](../adr/0002-expense-attributes.md) and
   Cost stored as a decimal string, parsed with `Decimal`.
 
 ### First-run demo Books
-- On first launch (empty books directory **and** a not-yet-seeded flag),
-  **generate two editable demo Books** — *Family Expenses* and *Business
-  Expenses* — from a **seed module using the `Tracking` API** (so they always
-  match the current schema and exercise real code paths). Seeded **once**, gated by
-  a persisted flag so demos don't resurrect after deletion. The Business Expenses
-  seed expresses its old `client:*` tag idea with **categories** instead.
+- On launch into an **empty library**, **generate two editable demo Books** —
+  *Family Expenses* and *Business Expenses* — from `LocalCents.DemoSeeding`, which
+  drives the **`Tracking` API** (so they always match the current schema and
+  exercise real code paths). An empty library is the whole trigger — there is **no
+  persisted "already seeded" flag** — so deleting every Book and relaunching seeds
+  again. That is a deliberate simplicity trade: the demos are starter content, not
+  content the app insists on keeping, and the behavior is easy to revisit later.
+  The Books span the trailing twelve months (via a deterministic template
+  generator) with a few uncategorized / nil-cost expenses in the current month, so
+  the Review matrix has real content to show. The Business Book expresses its old
+  `client:*` tag idea with **categories** instead. Seeding is best-effort — a
+  failure degrades to a normal library rather than crashing the window — and can be
+  toggled off with the `:demo_seeding` app env (used to keep it out of unrelated
+  tests).
 
 ### Testing
 - **Domain tests** against the `Tracking` context (ExUnit, extending
@@ -133,8 +141,7 @@ See [ADR 0002](../adr/0002-expense-attributes.md) and
 - **Currency picker / multi-currency.**
 - **Bulk-reassign** expenses between categories; **category merge**.
 - **Credit-card statement import**; **budgeting / goal tracking**.
-- **Pre-built demo Book files** (we generate at runtime while the schema churns);
-  a hidden **re-seed** tool.
+- **Pre-built demo Book files** (we generate at runtime while the schema churns).
 
 ## Open items (to decide during the build, not blockers)
 
