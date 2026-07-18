@@ -4,7 +4,7 @@ defmodule LocalCentsWeb.Bond.Elements.LoadingState do
   are being prepared — the busy counterpart to
   `LocalCentsWeb.Bond.Elements.EmptyState`.
 
-  A quietly spinning indicator above a `message` naming what is happening, with an
+  A quietly spinning indicator above a `message` describing what is happening, with an
   optional `hint` line. Callers pass the copy; the component owns the look, so a
   "working on it" moment reads the same wherever it appears (e.g. first-run demo
   seeding). The spin is gated on `motion-safe` so it honors a reduced-motion
@@ -19,14 +19,12 @@ defmodule LocalCentsWeb.Bond.Elements.LoadingState do
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
-  attr :message, :string, required: true, doc: "The primary line naming what is happening"
+  attr :message, :string, required: true, doc: "The primary line describing what is happening"
 
   attr :hint, :string,
     default: nil,
     doc:
       "Optional quieter second line, e.g. reassurance about the wait; omit to show only the message"
-
-  attr :rest, :global, doc: "HTML attributes passed through to the wrapper element"
 
   @spec loading_state(Socket.assigns()) :: Rendered.t()
   def loading_state(assigns) do
@@ -35,7 +33,6 @@ defmodule LocalCentsWeb.Bond.Elements.LoadingState do
       class="m-4 flex flex-col items-center gap-3 rounded-lg px-6 py-12 text-center"
       role="status"
       aria-live="polite"
-      {@rest}
     >
       <.icon name="hero-arrow-path" class="size-6 text-surface-500 motion-safe:animate-spin" />
       <div>
