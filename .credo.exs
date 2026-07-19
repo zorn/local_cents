@@ -41,7 +41,7 @@
       # If you create your own checks, you must specify the source files for
       # them here, so they can be loaded by Credo before running the analysis.
       #
-      requires: ["./credo_checks/case_on_boolean.ex"],
+      requires: ["./credo_checks/case_on_boolean.ex", "./credo_checks/raw_in_heex.ex"],
       #
       # If you want to enforce a style guide and need a more traditional linting
       # experience, you can change `strict` to `true` below:
@@ -241,7 +241,8 @@
           ## Project-local checks — vendored single rules, loaded via `requires:`
           ## above. See credo_checks/ and the rule review on issue #139.
           #
-          {LocalCents.CredoChecks.CaseOnBoolean, []}
+          {LocalCents.CredoChecks.CaseOnBoolean, []},
+          {LocalCents.CredoChecks.RawInHeex, []}
         ],
         disabled: [
           # Jump.CredoChecks.UndeclaredExternalResource is too crude for this
