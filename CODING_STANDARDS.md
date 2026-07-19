@@ -86,6 +86,20 @@ gets its own guide or ADR.
 
   Short specs stay on one line — this is only for the ones that wrap.
 
+- **When a `@spec` states the return shape, don't restate the tuple in `@doc`
+  prose.** The `@spec` (which ExDoc renders inline) owns the literal shape, and a
+  doctest — where one fits — shows it by example. Reserve the prose for what the
+  `@spec` can't express: a behavioral summary of the return, and the _condition_
+  under which each branch happens and what its value carries. Name a meaningful
+  outcome semantically ("a `:not_found` error" for an unknown id, "a changeset
+  error" on invalid `attrs`, "returns the created `Expense`") rather than
+  transcribing `{:ok, …}` / `{:error, …}`. Phrase an error atom as "a `:reason`
+  error", not a bare "returns `:reason`" — the latter reads as if the atom were
+  the whole return value when the `@spec` wraps it in `{:error, …}`. This extends
+  the "explain the _why_, not the _what_" and "never restate the signature" rules
+  to the return value. Reasoning and the library precedent behind it:
+  [research note](docs/research/doc-vs-spec-return-shape.md).
+
 - **Name LiveView events in snake_case.** The event strings behind `phx-*`
   bindings and matched in `handle_event/3` are snake_case and describe what they
   represent — `handle_event("email_changed", …)`, `"validate"`, `"save"` — per
