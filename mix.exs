@@ -336,6 +336,7 @@ defmodule LocalCents.MixProject do
         "credo --strict",
         "cmd sh -c 'MIX_ENV=dev mix dialyzer'",
         "sobelow --config",
+        "cmd sh -c 'MIX_ENV=dev mix docs --warnings-as-errors'",
         "test"
       ]
     ]

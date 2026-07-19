@@ -48,3 +48,7 @@ jobs:
       - name: Check for security vulnerabilities in Phoenix project
         run: mix sobelow --config
         if: always()
+
+      - name: Check documentation for warnings
+        run: mix docs --warnings-as-errors
+        if: always()
