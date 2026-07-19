@@ -1,12 +1,16 @@
-# A project-local Credo check, loaded via the `requires:` key in `.credo.exs` so
-# it stays out of the compiled application — Credo is a dev/test-only dependency
-# and this module `use`s it, so it must never be part of a release build.
-#
-# Independent reimplementation of the idea behind
-# `ExSlop.Check.Refactor.CaseTrueFalse` (MIT, © 2026 Danila Poyarkov). We vendor
-# this single rule rather than take on the whole `ex_slop` collection; see the
-# rule review on issue #139 for why the rest of that library was not adopted.
 defmodule LocalCents.CredoChecks.CaseOnBoolean do
+  @moduledoc """
+  A project-local Credo check, loaded via the `requires:` key in `.credo.exs`
+  so it stays out of the compiled application — Credo is a dev/test-only
+  dependency and this module `use`s it, so it must never be part of a release
+  build.
+
+  Independent reimplementation of the idea behind
+  `ExSlop.Check.Refactor.CaseTrueFalse` (MIT, © 2026 Danila Poyarkov). We vendor
+  this single rule rather than take on the whole `ex_slop` collection; see the
+  rule review on issue #139 for why the rest of that library was not adopted.
+  """
+
   use Credo.Check,
     base_priority: :normal,
     category: :refactor,

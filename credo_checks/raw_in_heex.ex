@@ -1,8 +1,9 @@
-# A project-local Credo check, loaded via the `requires:` key in `.credo.exs`
-# so it stays out of the compiled application (Credo is a dev/test-only dep).
-#
-# Ported from zorn/flick (`Flick.Credo.Check.RawInHeex`).
 defmodule LocalCents.CredoChecks.RawInHeex do
+  @moduledoc """
+  A project-local Credo check, loaded via the `requires:` key in `.credo.exs`
+  so it stays out of the compiled application (Credo is a dev/test-only dep).
+  """
+
   use Credo.Check,
     base_priority: :high,
     category: :warning,
@@ -60,7 +61,10 @@ defmodule LocalCents.CredoChecks.RawInHeex do
   # text rather than the surrounding Elixir AST.
   defp traverse({:sigil_H, meta, [{:<<>>, _, parts}, _modifiers]} = ast, issues, issue_meta) do
     template = parts |> Enum.filter(&is_binary/1) |> Enum.join()
-    {ast, issues ++ raw_issues(template, meta[:line], issue_meta)}
+    # Prepend the (small) new issues onto the accumulator rather than `issues ++
+    # new`, whose cost grows with everything found so far. Credo sorts issues by
+    # position for display, so accumulator order does not matter.
+    {ast, raw_issues(template, meta[:line], issue_meta) ++ issues}
   end
 
   defp traverse(ast, issues, _issue_meta) do
