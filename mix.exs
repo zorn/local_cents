@@ -232,6 +232,11 @@ defmodule LocalCents.MixProject do
       # For security scans.
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
 
+      # For scanning the dependency tree against the community security
+      # advisories feed — Sobelow scans our own code, mix_audit cross-references
+      # `mix.lock` entries against known CVEs.
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+
       # To allow calling Rust code from Elixir.
       {:rustler, "~> 0.38.0"},
 
@@ -336,8 +341,9 @@ defmodule LocalCents.MixProject do
         "credo --strict",
         "cmd sh -c 'MIX_ENV=dev mix dialyzer'",
         "sobelow --config",
+        "deps.audit",
         "cmd sh -c 'MIX_ENV=dev mix docs --warnings-as-errors'",
-        "test"
+        "test --warnings-as-errors"
       ]
     ]
   end

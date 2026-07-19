@@ -126,10 +126,12 @@ runs:
       shell: sh
       if: inputs.install-hex == 'true'
 
+    # `--check-locked` fails if resolving deps would modify `mix.lock`, i.e.
+    # someone bumped a dep in `mix.exs` but forgot to commit the lockfile.
     - name: Install Dependencies
       run: |
         cd ${{ inputs.working-directory }}
-        mix deps.get
+        mix deps.get --check-locked
       shell: sh
 
     # Normally we'd use `mix deps.compile` here, however that incurs a large
