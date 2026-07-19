@@ -86,8 +86,8 @@ defmodule LocalCents.CredoChecks.RawInHeex do
   # before it. Byte offsets from `Regex.scan/3` and newline counting agree
   # because `\n` is a single byte regardless of any UTF-8 around it.
   defp newlines_before(template, byte_offset) do
-    <<prefix::binary-size(byte_offset), _::binary>> = template
-    prefix |> :binary.matches("\n") |> length()
+    prefix = binary_part(template, 0, byte_offset)
+    length(:binary.matches(prefix, "\n"))
   end
 
   defp allowed?(lines, index) do

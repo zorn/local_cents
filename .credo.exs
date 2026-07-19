@@ -110,6 +110,10 @@
           {Credo.Check.Readability.Semicolons, []},
           {Credo.Check.Readability.SeparateAliasRequire, []},
           {Credo.Check.Readability.SingleFunctionToBlockPipe, []},
+          # In de-facto tension with `Readability.NestedFunctionCalls` (a single
+          # pipe is what that check would push you toward). We enable `SinglePipe`
+          # and keep `NestedFunctionCalls` disabled, so the two never disagree.
+          {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Readability.SpaceAfterCommas, []},
           {Credo.Check.Readability.Specs, []},
           {Credo.Check.Readability.StrictModuleLayout, []},
@@ -185,6 +189,18 @@
           {Credo.Check.Warning.WrongTestFileExtension, []},
           {Credo.Check.Warning.WrongTestFilename, []},
 
+          # Machine-enforce two CLAUDE.md rules: `Req` is the only sanctioned HTTP
+          # client, and icons go through the `<.icon>` component, never the
+          # `Heroicons` modules. (`:httpc`, an Erlang atom module, is also
+          # discouraged but not catchable here — ForbiddenModule only walks
+          # `__aliases__` nodes, not atom modules.)
+          {Credo.Check.Warning.ForbiddenModule,
+           modules: [
+             {HTTPoison, "Use `Req` — the project's standard HTTP client."},
+             {Tesla, "Use `Req` — the project's standard HTTP client."},
+             {Heroicons, ~s(Use the `<.icon name="hero-...">` component instead.)}
+           ]},
+
           #
           ## Jump.CredoChecks — extra checks that nudge toward higher-quality
           ## Elixir/LiveView/test code (https://github.com/Jump-App/credo_checks).
@@ -255,7 +271,6 @@
           {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.NestedFunctionCalls, []},
           {Credo.Check.Readability.OnePipePerLine, []},
-          {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Refactor.VariableRebinding, []},
           {Credo.Check.Warning.LazyLogging, []},
           {Credo.Check.Warning.StructFieldAmount, []},

@@ -8,30 +8,30 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
 
   describe "call/2" do
     test "sets the content-security-policy response header" do
-      conn = build_conn() |> ContentSecurityPolicy.call([])
+      conn = ContentSecurityPolicy.call(build_conn(), [])
       assert get_resp_header(conn, "content-security-policy") != []
     end
 
     test "includes a nonce in the CSP header" do
-      conn = build_conn() |> ContentSecurityPolicy.call([])
+      conn = ContentSecurityPolicy.call(build_conn(), [])
       [csp] = get_resp_header(conn, "content-security-policy")
       assert csp =~ ~r/nonce-[A-Za-z0-9+\/=]+/
     end
 
     test "assigns csp_nonce to the conn" do
-      conn = build_conn() |> ContentSecurityPolicy.call([])
+      conn = ContentSecurityPolicy.call(build_conn(), [])
       assert byte_size(conn.assigns.csp_nonce) > 0
     end
 
     test "nonce in CSP header matches the csp_nonce assign" do
-      conn = build_conn() |> ContentSecurityPolicy.call([])
+      conn = ContentSecurityPolicy.call(build_conn(), [])
       [csp] = get_resp_header(conn, "content-security-policy")
       assert csp =~ "nonce-#{conn.assigns.csp_nonce}"
     end
 
     test "generates a unique nonce per request" do
-      conn1 = build_conn() |> ContentSecurityPolicy.call([])
-      conn2 = build_conn() |> ContentSecurityPolicy.call([])
+      conn1 = ContentSecurityPolicy.call(build_conn(), [])
+      conn2 = ContentSecurityPolicy.call(build_conn(), [])
       refute conn1.assigns.csp_nonce == conn2.assigns.csp_nonce
     end
   end
