@@ -11,6 +11,26 @@ defmodule LocalCents.TrackingTest do
 
   @moduletag :tmp_dir
 
+  describe "option validation" do
+    test "an unknown option key raises rather than being silently ignored", %{tmp_dir: dir} do
+      # The NimbleOptions schemas are the guardrail against a mistyped seam (e.g.
+      # `book_dir:` instead of `books_dir:`) quietly falling back to the default.
+      assert_raise NimbleOptions.ValidationError, ~r/unknown options \[:book_dir\]/, fn ->
+        Tracking.create_book("Family", book_dir: dir)
+      end
+
+      assert_raise NimbleOptions.ValidationError, fn ->
+        Tracking.list_books(book_dir: dir)
+      end
+    end
+
+    test "a wrong-typed option value raises" do
+      assert_raise NimbleOptions.ValidationError, fn ->
+        Tracking.create_book("Family", now: "not-a-datetime")
+      end
+    end
+  end
+
   describe "create_book/2" do
     test "returns a Book with an id and the given name", %{tmp_dir: dir} do
       assert {:ok, %Book{id: id, name: "Family Expenses"}} =

@@ -66,8 +66,8 @@ defmodule LocalCents.Tracking.BookStore do
   Writes to a temporary file and atomically renames it into place, so a crash or
   power loss mid-write leaves the previous `.lcbook` intact rather than a truncated,
   unreadable file. A leftover `.tmp` from an interrupted write is ignored by
-  `list_ids/0` (which only matches `*.lcbook`) and is truncated and overwritten by
-  the next `save/2` — writes for a given Book are serialized through its single
+  `list_ids/1` (which only matches `*.lcbook`) and is truncated and overwritten by
+  the next `save/3` — writes for a given Book are serialized through its single
   `BookServer`, so two writes never race on the same `.tmp`.
   """
   @spec save(dir :: String.t(), Book.id(), bytes :: binary()) :: :ok | {:error, File.posix()}
@@ -76,20 +76,23 @@ defmodule LocalCents.Tracking.BookStore do
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
   # (`File.rename/2` is not a traversal sink sobelow checks.)
   def save(dir, id, bytes) when is_binary(dir) and is_binary(id) and is_binary(bytes) do
-    # Create the directory if it doesn't exist yet — a first save into a books
-    # directory that hasn't been created must not fail with :enoent.
-    File.mkdir_p!(dir)
     final = path(dir, id)
     tmp = final <> ".tmp"
 
-    with :ok <- File.write(tmp, bytes),
+    # `mkdir_p` (not the bang) so a directory that can't be created returns
+    # `{:error, reason}` like the write/rename steps rather than raising, honoring
+    # the @spec. A first save into a books directory that doesn't exist yet must not
+    # fail with :enoent.
+    with :ok <- File.mkdir_p(dir),
+         :ok <- File.write(tmp, bytes),
          :ok <- File.rename(tmp, final) do
       :ok
     else
       {:error, reason} ->
-        # A failed rename (permissions, cross-device, …) leaves the temp file
-        # behind; remove it so errors don't accumulate stale `.tmp` files. Ignore
-        # the cleanup result — the original error is what the caller needs.
+        # A failed write or rename (permissions, cross-device, …) can leave the temp
+        # file behind; remove it so errors don't accumulate stale `.tmp` files. Ignore
+        # the cleanup result — the original error is what the caller needs. (A mkdir
+        # failure leaves no temp file, so the `rm` is a harmless no-op.)
         _ = File.rm(tmp)
         {:error, reason}
     end
