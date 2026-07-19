@@ -125,8 +125,8 @@ defmodule LocalCents.Tracking.BookServer do
   @doc """
   Replaces the editable fields of the Expense `expense_id` with `attrs`, persists,
   and broadcasts, returning the updated Expense. Returns a changeset error on invalid
-  `attrs`, `:not_found` for an unknown `expense_id`, or another error if the write
-  fails.
+  `attrs`, a `:not_found` error for an unknown `expense_id`, or another error if the
+  write fails.
   """
   @spec edit_expense(
           Book.id(),
@@ -141,8 +141,8 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   @doc """
-  Hard-deletes the Expense `expense_id`, persists, and broadcasts. Returns
-  `:not_found` for an unknown `expense_id`, or another error if the write fails.
+  Hard-deletes the Expense `expense_id`, persists, and broadcasts. Returns a
+  `:not_found` error for an unknown `expense_id`, or another error if the write fails.
   """
   @spec delete_expense(Book.id(), Expense.id(), time :: integer()) :: :ok | {:error, term()}
   def delete_expense(id, expense_id, time) when is_binary(id) do
@@ -181,8 +181,9 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Renames the Category `category_id` from `attrs`, persists, and broadcasts,
-  returning the updated Category. Returns a changeset error on invalid `attrs`,
-  `:not_found` for an unknown `category_id`, or another error if the write fails.
+  returning the updated Category. Returns a changeset error on invalid `attrs`, a
+  `:not_found` error for an unknown `category_id`, or another error if the write
+  fails.
   """
   @spec rename_category(Book.id(), Category.id(), attrs :: map(), time :: integer()) ::
           {:ok, Category.t()} | {:error, term()}
@@ -192,8 +193,8 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Deletes the Category `category_id`, un-files its Expenses, persists, and
-  broadcasts. Returns `:not_found` for an unknown `category_id`, or another error if
-  the write fails.
+  broadcasts. Returns a `:not_found` error for an unknown `category_id`, or another
+  error if the write fails.
   """
   @spec delete_category(Book.id(), Category.id(), time :: integer()) :: :ok | {:error, term()}
   def delete_category(id, category_id, time) when is_binary(id) do
@@ -202,8 +203,9 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Files the Expense `expense_id` under the Category `category_id`, persists, and
-  broadcasts, returning the updated Expense. Returns `:expense_not_found` or
-  `:category_not_found` when either is unknown, or another error if the write fails.
+  broadcasts, returning the updated Expense. Returns an `:expense_not_found` or
+  `:category_not_found` error when either is unknown, or another error if the write
+  fails.
   """
   @spec assign_category(Book.id(), Expense.id(), Category.id(), time :: integer()) ::
           {:ok, Expense.t()} | {:error, term()}
@@ -213,8 +215,8 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Un-files the Expense `expense_id` (nulls its `category_id`), persists, and
-  broadcasts, returning the updated Expense. Returns `:expense_not_found` for an
-  unknown `expense_id`, or another error if the write fails.
+  broadcasts, returning the updated Expense. Returns an `:expense_not_found` error
+  for an unknown `expense_id`, or another error if the write fails.
   """
   @spec unassign_category(Book.id(), Expense.id(), time :: integer()) ::
           {:ok, Expense.t()} | {:error, term()}

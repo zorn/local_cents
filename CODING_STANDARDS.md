@@ -91,9 +91,11 @@ gets its own guide or ADR.
   doctest — where one fits — shows it by example. Reserve the prose for what the
   `@spec` can't express: a behavioral summary of the return, and the _condition_
   under which each branch happens and what its value carries. Name a meaningful
-  outcome semantically (`` `:not_found` `` for an unknown id, "a changeset error"
-  on invalid `attrs`, "returns the created `Expense`") rather than transcribing
-  `{:ok, …}` / `{:error, …}`. This extends the "explain the _why_, not the _what_"
+  outcome semantically ("a `:not_found` error" for an unknown id, "a changeset
+  error" on invalid `attrs`, "returns the created `Expense`") rather than
+  transcribing `{:ok, …}` / `{:error, …}`. Phrase an error atom as "a `:reason`
+  error", not a bare "returns `:reason`" — the latter reads as if the atom were
+  the whole return value when the `@spec` wraps it in `{:error, …}`. This extends the "explain the _why_, not the _what_"
   and "never restate the signature" rules to the return value. Reasoning and the
   library precedent behind it:
   [research note](docs/research/doc-vs-spec-return-shape.md).

@@ -129,8 +129,8 @@ defmodule LocalCents.Tracking.BookDocument do
   blank `date` to `today`.
 
   On success, returns the updated document and the created Expense. Returns a
-  changeset error if `attrs` fail validation, or `:category_not_found` if `attrs`
-  names a `category_id` that is not one of this Book's categories (see
+  changeset error if `attrs` fail validation, or a `:category_not_found` error if
+  `attrs` names a `category_id` that is not one of this Book's categories (see
   [ADR 0018](0018-category-assignment-through-the-editor.html)).
   """
   @spec add_expense(t(), attrs :: map(), Expense.id(), today :: Date.t()) ::
@@ -151,8 +151,9 @@ defmodule LocalCents.Tracking.BookDocument do
   Category (see [ADR 0018](0018-category-assignment-through-the-editor.html)).
 
   On success, returns the updated document and Expense. Returns a changeset error on
-  invalid `attrs`, `:not_found` if no Expense has that `id`, or `:category_not_found`
-  if `attrs` names a `category_id` that is not one of this Book's categories.
+  invalid `attrs`, a `:not_found` error if no Expense has that `id`, or a
+  `:category_not_found` error if `attrs` names a `category_id` that is not one of
+  this Book's categories.
   """
   @spec edit_expense(t(), Expense.id(), attrs :: map(), today :: Date.t()) ::
           {:ok, t(), Expense.t()}
@@ -179,7 +180,7 @@ defmodule LocalCents.Tracking.BookDocument do
   @doc """
   Hard-deletes the Expense identified by `id`.
 
-  Returns `:not_found` if no Expense has that `id`.
+  Returns a `:not_found` error if no Expense has that `id`.
   """
   @spec delete_expense(t(), Expense.id()) :: {:ok, t()} | {:error, :not_found}
   def delete_expense(%__MODULE__{} = document, id) do
@@ -224,8 +225,8 @@ defmodule LocalCents.Tracking.BookDocument do
 
   A rename touches only the Category — Expenses reference it by stable `id`, so
   their `category_id` is left untouched. On success, returns the updated document
-  and Category. Returns a changeset error on invalid `attrs`, or `:not_found` if no
-  Category has that `id`.
+  and Category. Returns a changeset error on invalid `attrs`, or a `:not_found`
+  error if no Category has that `id`.
   """
   @spec rename_category(t(), Category.id(), attrs :: map()) ::
           {:ok, t(), Category.t()}
@@ -256,7 +257,7 @@ defmodule LocalCents.Tracking.BookDocument do
   nulling their `category_id` so they become Uncategorized (see
   [ADR 0005](0005-categories-not-tags.html)).
 
-  Returns `:not_found` if no Category has that `id`.
+  Returns a `:not_found` error if no Category has that `id`.
   """
   @spec delete_category(t(), Category.id()) :: {:ok, t()} | {:error, :not_found}
   def delete_category(%__MODULE__{} = document, id) do
@@ -275,8 +276,8 @@ defmodule LocalCents.Tracking.BookDocument do
   [ADR 0005](0005-categories-not-tags.html)).
 
   Both must exist: on success, returns the updated document and Expense; otherwise
-  `:expense_not_found` for an unknown `expense_id`, or `:category_not_found` for an
-  unknown `category_id`.
+  an `:expense_not_found` error for an unknown `expense_id`, or a
+  `:category_not_found` error for an unknown `category_id`.
   """
   @spec assign_category(t(), Expense.id(), Category.id()) ::
           {:ok, t(), Expense.t()} | {:error, :expense_not_found} | {:error, :category_not_found}
@@ -297,9 +298,9 @@ defmodule LocalCents.Tracking.BookDocument do
   Un-files the Expense `expense_id`, nulling its `category_id` so it becomes
   Uncategorized.
 
-  On success, returns the updated document and Expense. Returns `:expense_not_found`
-  for an unknown `expense_id`. Un-filing an already Uncategorized Expense is allowed
-  and a no-op on its `category_id`.
+  On success, returns the updated document and Expense. Returns an
+  `:expense_not_found` error for an unknown `expense_id`. Un-filing an already
+  Uncategorized Expense is allowed and a no-op on its `category_id`.
   """
   @spec unassign_category(t(), Expense.id()) ::
           {:ok, t(), Expense.t()} | {:error, :expense_not_found}
