@@ -5,6 +5,8 @@ defmodule LocalCents.DemoSeedingTest do
   # runtime state (Books closed) keeps its own fresh seed in an isolated `:tmp_dir`.
   use ExUnit.Case, async: true
 
+  import TinyMaps
+
   alias LocalCents.DemoSeeding
   alias LocalCents.Tracking
 
@@ -35,11 +37,11 @@ defmodule LocalCents.DemoSeedingTest do
       File.rm_rf!(dir)
     end)
 
-    %{dir: dir, family: family, business: business}
+    ~M{dir, family, business}
   end
 
   describe "create_books/1" do
-    test "creates exactly the two named demo Books", %{dir: dir} do
+    test "creates exactly the two named demo Books", ~M{dir} do
       names =
         [books_dir: dir]
         |> Tracking.list_books()
@@ -49,7 +51,7 @@ defmodule LocalCents.DemoSeedingTest do
       assert names == ["Business Expenses", "Family Expenses"]
     end
 
-    test "the Family Book carries its full category set", %{family: family} do
+    test "the Family Book carries its full category set", ~M{family} do
       names = family.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
       assert names ==
@@ -69,7 +71,7 @@ defmodule LocalCents.DemoSeedingTest do
                ])
     end
 
-    test "the Business Book's category set includes client categories", %{business: business} do
+    test "the Business Book's category set includes client categories", ~M{business} do
       names = business.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
       assert names ==
@@ -86,7 +88,7 @@ defmodule LocalCents.DemoSeedingTest do
                ])
     end
 
-    test "expenses span the trailing 12 months, ending in the current month", %{family: family} do
+    test "expenses span the trailing 12 months, ending in the current month", ~M{family} do
       dates = family.id |> Tracking.list_expenses() |> Enum.map(& &1.date)
 
       earliest = Enum.min(dates, Date)
@@ -97,7 +99,7 @@ defmodule LocalCents.DemoSeedingTest do
       assert {latest.year, latest.month} == {@today.year, @today.month}
     end
 
-    test "every calendar month in the window is populated (no empty columns)", %{family: family} do
+    test "every calendar month in the window is populated (no empty columns)", ~M{family} do
       months =
         family.id
         |> Tracking.list_expenses()
@@ -107,9 +109,8 @@ defmodule LocalCents.DemoSeedingTest do
       assert length(months) == 12
     end
 
-    test "recent inbox: uncategorized and nil-cost expenses sit in the current month", %{
-      family: family
-    } do
+    test "recent inbox: uncategorized and nil-cost expenses sit in the current month",
+         ~M{family} do
       expenses = Tracking.list_expenses(family.id)
 
       uncategorized = Enum.filter(expenses, &is_nil(&1.category_id))
@@ -124,7 +125,7 @@ defmodule LocalCents.DemoSeedingTest do
       end
     end
 
-    test "settled history is fully categorized and priced", %{family: family} do
+    test "settled history is fully categorized and priced", ~M{family} do
       settled =
         family.id
         |> Tracking.list_expenses()
