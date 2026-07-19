@@ -1,12 +1,14 @@
 defmodule LocalCents.DemoSeedingTest do
-  # Async: seeds each run's Books into its own `:tmp_dir` (injected into
-  # create_books and the library reads), so no shared `:books_dir` env is mutated.
+  # Async across modules. Seeding the full demo library costs ~2s, so the read-only
+  # assertions share a single `setup_all` seed (into a temp dir this module owns)
+  # rather than re-seeding per test. The one test that observes the *just-seeded*
+  # runtime state (Books closed) keeps its own fresh seed in an isolated `:tmp_dir`.
   use ExUnit.Case, async: true
+
+  import TinyMaps
 
   alias LocalCents.DemoSeeding
   alias LocalCents.Tracking
-
-  @moduletag :tmp_dir
 
   # A fixed reference "now" makes the 12-month window and the "current month"
   # deterministic. 2026-07-17 is a Friday in mid-month, so day-of-month math for
@@ -14,10 +16,32 @@ defmodule LocalCents.DemoSeedingTest do
   @now ~U[2026-07-17 12:00:00Z]
   @today ~D[2026-07-17]
 
-  describe "create_books/1" do
-    test "creates exactly the two named demo Books", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
+  # Seed the demo library once for all the read-only assertions below. Both Books are
+  # opened so tests can list their categories and expenses; everything is torn down
+  # (Books closed, temp dir removed) after the last test. The "closes each Book" test
+  # ignores this shared context and seeds its own isolated library.
+  setup_all do
+    dir = Path.join(System.tmp_dir!(), "demo_seeding_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(dir)
 
+    :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
+
+    family = book_named(dir, "Family Expenses")
+    business = book_named(dir, "Business Expenses")
+    :ok = Tracking.open_book(family.id, books_dir: dir)
+    :ok = Tracking.open_book(business.id, books_dir: dir)
+
+    on_exit(fn ->
+      Tracking.close_book(family.id)
+      Tracking.close_book(business.id)
+      File.rm_rf!(dir)
+    end)
+
+    ~M{dir, family, business}
+  end
+
+  describe "create_books/1" do
+    test "creates exactly the two named demo Books", ~M{dir} do
       names =
         [books_dir: dir]
         |> Tracking.list_books()
@@ -27,20 +51,7 @@ defmodule LocalCents.DemoSeedingTest do
       assert names == ["Business Expenses", "Family Expenses"]
     end
 
-    test "leaves no Book runtime process running (each Book is closed)", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      for book <- Tracking.list_books(books_dir: dir) do
-        assert Tracking.list_expenses(book.id) == {:error, :not_open}
-      end
-    end
-
-    test "the Family Book carries its full category set", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, books_dir: dir)
-
+    test "the Family Book carries its full category set", ~M{family} do
       names = family.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
       assert names ==
@@ -60,14 +71,7 @@ defmodule LocalCents.DemoSeedingTest do
                ])
     end
 
-    test "the Business Book carries its full category set, including client categories", %{
-      tmp_dir: dir
-    } do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      business = book_named(dir, "Business Expenses")
-      :ok = Tracking.open_book(business.id, books_dir: dir)
-
+    test "the Business Book's category set includes client categories", ~M{business} do
       names = business.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
       assert names ==
@@ -84,12 +88,7 @@ defmodule LocalCents.DemoSeedingTest do
                ])
     end
 
-    test "expenses span the trailing 12 months, ending in the current month", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, books_dir: dir)
-
+    test "expenses span the trailing 12 months, ending in the current month", ~M{family} do
       dates = family.id |> Tracking.list_expenses() |> Enum.map(& &1.date)
 
       earliest = Enum.min(dates, Date)
@@ -100,12 +99,7 @@ defmodule LocalCents.DemoSeedingTest do
       assert {latest.year, latest.month} == {@today.year, @today.month}
     end
 
-    test "every calendar month in the window is populated (no empty columns)", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, books_dir: dir)
-
+    test "every calendar month in the window is populated (no empty columns)", ~M{family} do
       months =
         family.id
         |> Tracking.list_expenses()
@@ -115,13 +109,8 @@ defmodule LocalCents.DemoSeedingTest do
       assert length(months) == 12
     end
 
-    test "recent inbox: uncategorized and nil-cost expenses sit in the current month", %{
-      tmp_dir: dir
-    } do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, books_dir: dir)
+    test "recent inbox: uncategorized and nil-cost expenses sit in the current month",
+         ~M{family} do
       expenses = Tracking.list_expenses(family.id)
 
       uncategorized = Enum.filter(expenses, &is_nil(&1.category_id))
@@ -136,12 +125,7 @@ defmodule LocalCents.DemoSeedingTest do
       end
     end
 
-    test "settled history is fully categorized and priced", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
-
-      family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, books_dir: dir)
-
+    test "settled history is fully categorized and priced", ~M{family} do
       settled =
         family.id
         |> Tracking.list_expenses()
@@ -150,6 +134,19 @@ defmodule LocalCents.DemoSeedingTest do
       assert settled != []
       assert Enum.all?(settled, &(&1.category_id != nil))
       assert Enum.all?(settled, &(&1.cost != nil))
+    end
+  end
+
+  describe "create_books/1 closes each Book" do
+    # This assertion observes the runtime state seeding *leaves behind*, so it needs a
+    # fresh seed no other test has opened — its own isolated library.
+    @tag :tmp_dir
+    test "leaves no Book runtime process running", %{tmp_dir: dir} do
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
+
+      for book <- Tracking.list_books(books_dir: dir) do
+        assert Tracking.list_expenses(book.id) == {:error, :not_open}
+      end
     end
   end
 
