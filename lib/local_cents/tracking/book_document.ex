@@ -305,9 +305,10 @@ defmodule LocalCents.Tracking.BookDocument do
   @spec unassign_category(t(), Expense.id()) ::
           {:ok, t(), Expense.t()} | {:error, :expense_not_found}
   def unassign_category(%__MODULE__{} = document, expense_id) do
-    case Enum.any?(document.expenses, &(&1.id == expense_id)) do
-      false -> {:error, :expense_not_found}
-      true -> set_expense_category(document, expense_id, nil)
+    if Enum.any?(document.expenses, &(&1.id == expense_id)) do
+      set_expense_category(document, expense_id, nil)
+    else
+      {:error, :expense_not_found}
     end
   end
 
@@ -326,9 +327,10 @@ defmodule LocalCents.Tracking.BookDocument do
   defp validate_category_exists(_document, nil), do: :ok
 
   defp validate_category_exists(document, category_id) do
-    case Enum.any?(document.categories, &(&1.id == category_id)) do
-      true -> :ok
-      false -> {:error, :category_not_found}
+    if Enum.any?(document.categories, &(&1.id == category_id)) do
+      :ok
+    else
+      {:error, :category_not_found}
     end
   end
 

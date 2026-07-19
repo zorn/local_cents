@@ -41,7 +41,7 @@
       # If you create your own checks, you must specify the source files for
       # them here, so they can be loaded by Credo before running the analysis.
       #
-      requires: [],
+      requires: ["./credo_checks/case_on_boolean.ex", "./credo_checks/raw_in_heex.ex"],
       #
       # If you want to enforce a style guide and need a more traditional linting
       # experience, you can change `strict` to `true` below:
@@ -110,6 +110,10 @@
           {Credo.Check.Readability.Semicolons, []},
           {Credo.Check.Readability.SeparateAliasRequire, []},
           {Credo.Check.Readability.SingleFunctionToBlockPipe, []},
+          # In de-facto tension with `Readability.NestedFunctionCalls` (a single
+          # pipe is what that check would push you toward). We enable `SinglePipe`
+          # and keep `NestedFunctionCalls` disabled, so the two never disagree.
+          {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Readability.SpaceAfterCommas, []},
           {Credo.Check.Readability.Specs, []},
           {Credo.Check.Readability.StrictModuleLayout, []},
@@ -149,7 +153,6 @@
           {Credo.Check.Refactor.RedundantWithClauseResult, []},
           {Credo.Check.Refactor.RejectFilter, []},
           {Credo.Check.Refactor.RejectReject, []},
-          {Credo.Check.Refactor.CondInsteadOfIfElse, []},
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.UtcNowTruncate, []},
           {Credo.Check.Refactor.WithClauses, []},
@@ -185,6 +188,18 @@
           {Credo.Check.Warning.UnusedTupleOperation, []},
           {Credo.Check.Warning.WrongTestFileExtension, []},
           {Credo.Check.Warning.WrongTestFilename, []},
+
+          # Machine-enforce two CLAUDE.md rules: `Req` is the only sanctioned HTTP
+          # client, and icons go through the `<.icon>` component, never the
+          # `Heroicons` modules. (`:httpc`, an Erlang atom module, is also
+          # discouraged but not catchable here — ForbiddenModule only walks
+          # `__aliases__` nodes, not atom modules.)
+          {Credo.Check.Warning.ForbiddenModule,
+           modules: [
+             {HTTPoison, "Use `Req` — the project's standard HTTP client."},
+             {Tesla, "Use `Req` — the project's standard HTTP client."},
+             {Heroicons, ~s(Use the `<.icon name="hero-...">` component instead.)}
+           ]},
 
           #
           ## Jump.CredoChecks — extra checks that nudge toward higher-quality
@@ -222,7 +237,30 @@
           {Jump.CredoChecks.TopLevelAliasImportRequire, []},
           {Jump.CredoChecks.UnusedLiveViewAssign, []},
           {Jump.CredoChecks.VacuousTest, []},
-          {Jump.CredoChecks.WeakAssertion, []}
+          {Jump.CredoChecks.WeakAssertion, []},
+
+          #
+          ## OeditusCredo — cherry-picked Phoenix/concurrency anti-pattern checks
+          ##
+          ## https://github.com/Oeditus/oeditus_credo ships ~38 checks, but a
+          ## check only runs when it is listed in this config — adding the
+          ## dependency alone activates nothing (it ships no plugin that would
+          ## auto-register them). We opt in to just the concurrency/blocking group
+          ## and skip the rest: its Ecto and auth checks are dead here (no Repo,
+          ## no auth — ADR 0016), and its security group duplicates Sobelow.
+          #
+          {OeditusCredo.Check.Warning.UnmanagedTask, []},
+          {OeditusCredo.Check.Warning.SyncOverAsync, []},
+          {OeditusCredo.Check.Warning.MissingHandleAsync, []},
+          {OeditusCredo.Check.Warning.BlockingInPlug, []},
+          {OeditusCredo.Check.Warning.SwallowingException, []},
+
+          #
+          ## Project-local checks — vendored single rules, loaded via `requires:`
+          ## above. See credo_checks/ and the rule review on issue #139.
+          #
+          {LocalCents.CredoChecks.CaseOnBoolean, []},
+          {LocalCents.CredoChecks.RawInHeex, []}
         ],
         disabled: [
           # Jump.CredoChecks.UndeclaredExternalResource is too crude for this
@@ -235,10 +273,17 @@
           {Credo.Check.Readability.AliasAs, []},
           {Credo.Check.Readability.NestedFunctionCalls, []},
           {Credo.Check.Readability.OnePipePerLine, []},
-          {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Refactor.VariableRebinding, []},
           {Credo.Check.Warning.LazyLogging, []},
-          {Credo.Check.Warning.StructFieldAmount, []}
+          {Credo.Check.Warning.StructFieldAmount, []},
+
+          # Mutually exclusive with `Credo.Check.Refactor.CondStatements` (enabled
+          # above), which recommends the opposite — Credo's own docs say enable
+          # only one. We keep Credo's default preference: `CondStatements` on,
+          # `CondInsteadOfIfElse` off. This lets boolean branching use `if/else`
+          # (see the vendored `LocalCents.CredoChecks.CaseOnBoolean`) rather than
+          # forcing `cond` onto a single condition.
+          {Credo.Check.Refactor.CondInsteadOfIfElse, []}
 
           # Custom checks can be created using `mix credo.gen.check`.
         ]

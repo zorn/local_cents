@@ -23,8 +23,7 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
 
   @spec fallback_csp() :: String.t()
   def fallback_csp do
-    ["default-src 'self'", "script-src 'self'" | @other_directives]
-    |> Enum.join("; ")
+    Enum.join(["default-src 'self'", "script-src 'self'" | @other_directives], "; ")
   end
 
   @spec init(opts :: keyword()) :: keyword()
@@ -35,8 +34,10 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
     nonce = 16 |> :crypto.strong_rand_bytes() |> Base.encode64()
 
     csp =
-      ["default-src 'self'", "script-src 'self' 'nonce-#{nonce}'" | @other_directives]
-      |> Enum.join("; ")
+      Enum.join(
+        ["default-src 'self'", "script-src 'self' 'nonce-#{nonce}'" | @other_directives],
+        "; "
+      )
 
     conn
     |> assign(:csp_nonce, nonce)

@@ -398,9 +398,10 @@ defmodule LocalCentsWeb.BookLive do
   defp close_editor_if_gone(socket) do
     case socket.assigns.editor do
       {:edit, %Expense{id: id}} ->
-        case Enum.any?(socket.assigns.expenses, &(&1.id == id)) do
-          true -> socket
-          false -> assign(socket, editor: nil, confirm_delete: nil)
+        if Enum.any?(socket.assigns.expenses, &(&1.id == id)) do
+          socket
+        else
+          assign(socket, editor: nil, confirm_delete: nil)
         end
 
       _ ->

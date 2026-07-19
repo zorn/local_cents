@@ -123,11 +123,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
 
   @spec input(Socket.assigns()) :: Rendered.t()
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors =
-      case Phoenix.Component.used_input?(field) do
-        true -> field.errors
-        false -> []
-      end
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
     # Assign, not assign_new: the nil defaults mean these keys already exist. A
     # nil-check (not `||`) lets an explicit falsy override — e.g. value={false} or

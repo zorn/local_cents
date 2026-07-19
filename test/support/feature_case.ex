@@ -27,7 +27,7 @@ defmodule LocalCentsWeb.FeatureCase do
   end
 
   setup _tags do
-    conn = Phoenix.ConnTest.build_conn() |> PhoenixTest.put_endpoint(LocalCentsWeb.Endpoint)
+    conn = PhoenixTest.put_endpoint(Phoenix.ConnTest.build_conn(), LocalCentsWeb.Endpoint)
     {:ok, conn: conn}
   end
 end

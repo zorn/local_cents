@@ -225,6 +225,11 @@ defmodule LocalCents.MixProject do
       # code — see https://github.com/Jump-App/credo_checks.
       {:jump_credo_checks, "~> 0.4", only: [:dev, :test], runtime: false},
 
+      # Trialing a handful of Oeditus' Phoenix/concurrency anti-pattern checks
+      # (cherry-picked in `.credo.exs`, not the full set) — see
+      # https://github.com/Oeditus/oeditus_credo.
+      {:oeditus_credo, "~> 0.8", only: [:dev, :test], runtime: false},
+
       # For enforcing domain-context isolation at compile time — each context
       # exposes a public API boundary and keeps its internals private.
       {:boundary, "~> 0.10.4", runtime: false},
