@@ -170,8 +170,7 @@ defmodule LocalCents.Tracking do
   [ADR 0007](0007-book-runtime-and-persistence.html)), so the rename is applied to
   the file directly without starting a runtime process.
 
-  Returns `{:error, reason}` if the Book cannot be read or the change cannot be
-  persisted.
+  Returns an error if the Book cannot be read or the change cannot be persisted.
 
   `now` stamps the rename change so the Book's `updated_at` advances; it defaults
   to the current time and is injectable for tests.
@@ -212,10 +211,10 @@ defmodule LocalCents.Tracking do
   Adds an expense to an open Book from a map of `attrs` (`:date`, `:description`,
   `:cost`), returning the created `Expense`.
 
-  Returns `{:error, changeset}` if `attrs` fail validation (see
-  `LocalCents.Tracking.Expense`), `{:error, :not_open}` if the Book's process is
-  not running (`open_book/1`), or `{:error, reason}` if persisting the change
-  fails. The new Expense's `id` is generated here (a side effect kept out of the
+  Returns a changeset error if `attrs` fail validation (see
+  `LocalCents.Tracking.Expense`), `:not_open` if the Book's process is not running
+  (`open_book/1`), or another error if persisting the change fails. The new
+  Expense's `id` is generated here (a side effect kept out of the
   functional core — see [ADR 0014](0014-functional-core-process-shell.html)).
 
   `now` stamps the change so the Book's `updated_at` advances (UTC). `today` seeds a
@@ -236,10 +235,9 @@ defmodule LocalCents.Tracking do
   Edits the Expense `expense_id` in an open Book, replacing its editable fields with
   `attrs` (a full replace). Returns the updated `Expense`.
 
-  Returns `{:error, changeset}` on invalid `attrs`, `{:error, :not_found}` for an
-  unknown `expense_id`, `{:error, :not_open}` if the Book's process is not running,
-  or `{:error, reason}` if persisting fails. `now`/`today` behave as in
-  `add_expense/4`.
+  Returns a changeset error on invalid `attrs`, `:not_found` for an unknown
+  `expense_id`, `:not_open` if the Book's process is not running, or another error
+  if persisting fails. `now`/`today` behave as in `add_expense/4`.
   """
   @spec edit_expense(
           Book.id(),
@@ -259,9 +257,9 @@ defmodule LocalCents.Tracking do
   @doc """
   Hard-deletes the Expense `expense_id` from an open Book.
 
-  Returns `:ok`, `{:error, :not_found}` for an unknown `expense_id`,
-  `{:error, :not_open}` if the Book's process is not running, or `{:error, reason}`
-  if persisting fails. `now` stamps the change so `updated_at` advances.
+  Returns `:not_found` for an unknown `expense_id`, `:not_open` if the Book's
+  process is not running, or another error if persisting fails. `now` stamps the
+  change so `updated_at` advances.
   """
   @spec delete_expense(Book.id(), Expense.id(), now :: DateTime.t()) :: :ok | {:error, term()}
   def delete_expense(id, expense_id, now \\ DateTime.utc_now())
@@ -275,9 +273,9 @@ defmodule LocalCents.Tracking do
   Lists the expenses of an open Book.
 
   The list order is not a contract callers should rely on (it is not stable across
-  a CRDT merge); sort in the view for display. Returns `{:error, :not_open}` if the
-  Book's process is not running (`open_book/1`), matching the mutating functions
-  rather than crashing the caller.
+  a CRDT merge); sort in the view for display. Returns `:not_open` if the Book's
+  process is not running (`open_book/1`), matching the mutating functions rather
+  than crashing the caller.
   """
   @spec list_expenses(Book.id()) :: [Expense.t()] | {:error, :not_open}
   def list_expenses(id) when is_binary(id) do
@@ -290,8 +288,8 @@ defmodule LocalCents.Tracking do
   Lists the categories of an open Book.
 
   The list order is not a contract callers should rely on (it is not stable across a
-  CRDT merge); sort in the view for display. Returns `{:error, :not_open}` if the
-  Book's process is not running (`open_book/1`).
+  CRDT merge); sort in the view for display. Returns `:not_open` if the Book's
+  process is not running (`open_book/1`).
   """
   @spec list_categories(Book.id()) :: [Category.t()] | {:error, :not_open}
   def list_categories(id) when is_binary(id) do
@@ -304,10 +302,10 @@ defmodule LocalCents.Tracking do
   Adds a category to an open Book from a map of `attrs` (`:name`), returning the
   created `Category`.
 
-  Returns `{:error, changeset}` if `attrs` fail validation (a blank `name` — see
-  `LocalCents.Tracking.Category`), `{:error, :not_open}` if the Book's process is
-  not running, or `{:error, reason}` if persisting fails. The new Category's `id` is
-  generated here (a side effect kept out of the functional core — see
+  Returns a changeset error if `attrs` fail validation (a blank `name` — see
+  `LocalCents.Tracking.Category`), `:not_open` if the Book's process is not running,
+  or another error if persisting fails. The new Category's `id` is generated here (a
+  side effect kept out of the functional core — see
   [ADR 0014](0014-functional-core-process-shell.html)). `now` stamps the change so
   `updated_at` advances (UTC).
   """
@@ -325,9 +323,9 @@ defmodule LocalCents.Tracking do
   returning the updated `Category`.
 
   A rename touches only the Category — filed Expenses reference it by stable id and
-  are left untouched. Returns `{:error, changeset}` on invalid `attrs`,
-  `{:error, :not_found}` for an unknown `category_id`, `{:error, :not_open}` if the
-  Book's process is not running, or `{:error, reason}` if persisting fails.
+  are left untouched. Returns a changeset error on invalid `attrs`, `:not_found` for
+  an unknown `category_id`, `:not_open` if the Book's process is not running, or
+  another error if persisting fails.
   """
   @spec rename_category(Book.id(), Category.id(), attrs :: map(), now :: DateTime.t()) ::
           {:ok, Category.t()} | {:error, term()}
@@ -343,9 +341,9 @@ defmodule LocalCents.Tracking do
   filed under it so they become Uncategorized (see
   [ADR 0005](0005-categories-not-tags.html)).
 
-  Returns `:ok`, `{:error, :not_found}` for an unknown `category_id`,
-  `{:error, :not_open}` if the Book's process is not running, or `{:error, reason}`
-  if persisting fails. `now` stamps the change so `updated_at` advances.
+  Returns `:not_found` for an unknown `category_id`, `:not_open` if the Book's
+  process is not running, or another error if persisting fails. `now` stamps the
+  change so `updated_at` advances.
   """
   @spec delete_category(Book.id(), Category.id(), now :: DateTime.t()) :: :ok | {:error, term()}
   def delete_category(id, category_id, now \\ DateTime.utc_now())
@@ -360,10 +358,9 @@ defmodule LocalCents.Tracking do
   (replacing any prior Category — an Expense has at most one), returning the updated
   `Expense`.
 
-  Returns `{:error, :expense_not_found}` or `{:error, :category_not_found}` when
-  either is unknown, `{:error, :not_open}` if the Book's process is not running, or
-  `{:error, reason}` if persisting fails. `now` stamps the change so `updated_at`
-  advances.
+  Returns `:expense_not_found` or `:category_not_found` when either is unknown,
+  `:not_open` if the Book's process is not running, or another error if persisting
+  fails. `now` stamps the change so `updated_at` advances.
   """
   @spec assign_category(Book.id(), Expense.id(), Category.id(), now :: DateTime.t()) ::
           {:ok, Expense.t()} | {:error, term()}
@@ -378,9 +375,9 @@ defmodule LocalCents.Tracking do
   Un-files the Expense `expense_id` in an open Book (nulls its `category_id` so it
   becomes Uncategorized), returning the updated `Expense`.
 
-  Returns `{:error, :expense_not_found}` for an unknown `expense_id`,
-  `{:error, :not_open}` if the Book's process is not running, or `{:error, reason}`
-  if persisting fails. `now` stamps the change so `updated_at` advances.
+  Returns `:expense_not_found` for an unknown `expense_id`, `:not_open` if the
+  Book's process is not running, or another error if persisting fails. `now` stamps
+  the change so `updated_at` advances.
   """
   @spec unassign_category(Book.id(), Expense.id(), now :: DateTime.t()) ::
           {:ok, Expense.t()} | {:error, term()}
