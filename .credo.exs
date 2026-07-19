@@ -222,7 +222,21 @@
           {Jump.CredoChecks.TopLevelAliasImportRequire, []},
           {Jump.CredoChecks.UnusedLiveViewAssign, []},
           {Jump.CredoChecks.VacuousTest, []},
-          {Jump.CredoChecks.WeakAssertion, []}
+          {Jump.CredoChecks.WeakAssertion, []},
+
+          #
+          ## OeditusCredo — cherry-picked Phoenix/concurrency anti-pattern checks
+          ##
+          ## https://github.com/Oeditus/oeditus_credo ships ~38 checks (all on by
+          ## default), but Credo only runs the ones listed here. We trial just the
+          ## concurrency/blocking group: its Ecto and auth checks are dead here (no
+          ## Repo, no auth — ADR 0016), and its security group duplicates Sobelow.
+          #
+          {OeditusCredo.Check.Warning.UnmanagedTask, []},
+          {OeditusCredo.Check.Warning.SyncOverAsync, []},
+          {OeditusCredo.Check.Warning.MissingHandleAsync, []},
+          {OeditusCredo.Check.Warning.BlockingInPlug, []},
+          {OeditusCredo.Check.Warning.SwallowingException, []}
         ],
         disabled: [
           # Jump.CredoChecks.UndeclaredExternalResource is too crude for this
