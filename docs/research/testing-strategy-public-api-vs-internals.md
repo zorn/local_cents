@@ -1,7 +1,7 @@
 # Testing Strategy: Public API over Implementation Details
 
 > Research note feeding [issue #79](https://github.com/zorn/local_cents/issues/79) — grounding our "favor a context's public API over its internal modules" preference in what the book actually argues and in what our tests actually do.
-> The primary source is Vladimir Khorikov's *Unit Testing Principles, Practices, and Patterns* (Manning, 2020), read from the reading notes at `notebook/Library/Unit Testing Principles, Practices, and Patterns.md` and the fuller source text at `notebook/Library/_sources/unit-testing.txt` (cited by chapter/section number below). Project claims cite the actual test and source files by `path:line`. No blog posts or secondary write-ups were used as authorities.
+> The primary source is Vladimir Khorikov's *Unit Testing Principles, Practices, and Patterns* (Manning, 2020), cited by chapter and section number below. Project claims cite the actual test and source files in this repo by `path:line`. No blog posts or secondary write-ups were used as authorities.
 
 ## Why this note exists
 
@@ -13,15 +13,15 @@ The one important refinement this note makes: the book's real principle is **not
 
 ### The four pillars, and why one of them is the whole game here
 
-Every test is scored on four pillars (Ch 4): **protection against regressions**, **resistance to refactoring**, **fast feedback**, and **maintainability**; a test's value is roughly the *product* of the four, so a zero on any one makes the test worthless. You cannot maximize the first three at once — but **resistance to refactoring is non-negotiable** (it is effectively binary; you either have it or you don't), so the real trade-off left to tune is protection vs. speed (`notebook/Library/…Patterns.md` "Big ideas", Ch 4 distillation).
+Every test is scored on four pillars (Ch 4): **protection against regressions**, **resistance to refactoring**, **fast feedback**, and **maintainability**; a test's value is roughly the *product* of the four, so a zero on any one makes the test worthless. You cannot maximize the first three at once — but **resistance to refactoring is non-negotiable** (it is effectively binary; you either have it or you don't), so the real trade-off left to tune is protection vs. speed (Ch 4).
 
-Resistance to refactoring is the pillar #79 is really about. A test lacking it produces **false positives**: it fails when you refactor the implementation even though behavior is unchanged. False positives are "the silent killer" — they train the team to ignore failures and erode trust in the whole suite. Their root cause is named precisely: **coupling tests to implementation details**. The corrective rule is *"assert the end result the SUT produces, never the steps it took,"* and the discipline is *"write tests black-box (through the public API); analyze them white-box"* (Ch 4; source `unit-testing.txt:2659`, `:3031`).
+Resistance to refactoring is the pillar #79 is really about. A test lacking it produces **false positives**: it fails when you refactor the implementation even though behavior is unchanged. False positives are "the silent killer" — they train the team to ignore failures and erode trust in the whole suite. Their root cause is named precisely: **coupling tests to implementation details**. The corrective rule is *"assert the end result the SUT produces, never the steps it took,"* and the discipline is *"write tests black-box (through the public API); analyze them white-box"* (Ch 4).
 
 ### The precise principle: observable behavior ≠ public API
 
-The book is explicit that "test the public API" is a proxy, not the target. It classifies all production code on **two independent axes** — public/private API, and observable-behavior/implementation-detail (Ch 5.2.1, `unit-testing.txt:3282`). Code is **observable behavior** only if it "expose[s] an operation… or a state that helps the client achieve one of its goals," and *"whether the code is observable behavior depends on who its client is and what the goals of that client are"* — the client may be *"client code from the same code base, an external application, or the user interface"* (`unit-testing.txt:3294`–`3302`).
+The book is explicit that "test the public API" is a proxy, not the target. It classifies all production code on **two independent axes** — public/private API, and observable-behavior/implementation-detail (Ch 5.2.1). Code is **observable behavior** only if it "expose[s] an operation… or a state that helps the client achieve one of its goals," and *"whether the code is observable behavior depends on who its client is and what the goals of that client are"* — the client may be *"client code from the same code base, an external application, or the user interface"* (Ch 5.2.1).
 
-In a **well-designed** system the two axes line up: observable behavior is public, implementation details are private (`unit-testing.txt:3304`). Because they usually coincide, "test through the public API" is the right default. But they are not the same thing, and the gap is exactly where the justified exceptions live (§4).
+In a **well-designed** system the two axes line up: observable behavior is public, implementation details are private (Ch 5.2.1). Because they usually coincide, "test through the public API" is the right default. But they are not the same thing, and the gap is exactly where the justified exceptions live (§4).
 
 ### The London vs. classical split, and mocking
 
@@ -29,7 +29,7 @@ The book sides with the **classical (Detroit)** school over the **London (mockis
 
 ### The four types of code
 
-Code is sorted by complexity/domain-significance × number of collaborators (Ch 7): **domain model & algorithms** (test hard with unit tests — best ROI), **trivial code** (don't test), **controllers** (test briefly with integration tests), and **overcomplicated code** (refactor into the first two). The **functional-core / mutable-shell** split (Ch 6) is the tool that keeps the domain in the high-ROI quadrant — and it maps almost directly onto idiomatic Elixir (pure functions for the domain, processes/boundaries for side effects), a connection the notes call out explicitly (`…Patterns.md` "Notes & connections").
+Code is sorted by complexity/domain-significance × number of collaborators (Ch 7): **domain model & algorithms** (test hard with unit tests — best ROI), **trivial code** (don't test), **controllers** (test briefly with integration tests), and **overcomplicated code** (refactor into the first two). The **functional-core / mutable-shell** split (Ch 6) is the tool that keeps the domain in the high-ROI quadrant — and it maps almost directly onto idiomatic Elixir (pure functions for the domain, processes/boundaries for side effects), a connection idiomatic Elixir makes directly (Ch 6).
 
 ### Where the user's paraphrase needs sharpening
 
@@ -37,7 +37,7 @@ Code is sorted by complexity/domain-significance × number of collaborators (Ch 
 |---|---|
 | "Validate the public API." | Validate **observable behavior**. Testing through the public API is the *default technique* for doing that, not the principle itself (Ch 5.2.1). |
 | "Avoid testing private implementation." | Correct, and the book is emphatic — never widen access just to test (Ch 11.1). But it carves out an explicit exception: a member that is *private yet part of observable behavior* (it fulfills a contract with an out-of-process client) is fine to test directly (Ch 11.1.3, below). |
-| (implied) private = never test | The reason private methods are usually off-limits is that *"those private methods are a proxy for implementation details"* — "testing private methods isn't bad in and of itself" (`unit-testing.txt:8246`). |
+| (implied) private = never test | The reason private methods are usually off-limits is that *"those private methods are a proxy for implementation details"* — "testing private methods isn't bad in and of itself" (Ch 11.1). |
 
 So the paraphrase is directionally right and a fine slogan, but the operative rule is "observable behavior over implementation details," which both explains the default *and* draws the exception line cleanly.
 
@@ -66,13 +66,13 @@ Rationale, in the book's terms: the boundary API is where our **observable behav
 
 ## 4. When testing an internal module IS justified
 
-The license comes straight from the book's own carve-out. Ch 11.1.3 ("When testing private methods is acceptable") gives the `Inquiry`/ORM example: a **private** constructor that is nonetheless **part of observable behavior**, because *"this constructor fulfills the contract with the ORM, and the fact that it's private doesn't make that contract less important: the ORM wouldn't be able to restore inquiries from the database without it"* (`unit-testing.txt:8283`). The out-of-process client (the ORM) makes the private member observable. The second carve-out is algorithmic: the black-box rule's *"only exception is when the test covers utility code with high algorithmic complexity"* (`unit-testing.txt:3031`; also Ch 7 on complex infrastructure algorithms, `:1047`).
+The license comes straight from the book's own carve-out. Ch 11.1.3 ("When testing private methods is acceptable") gives the `Inquiry`/ORM example: a **private** constructor that is nonetheless **part of observable behavior**, because *"this constructor fulfills the contract with the ORM, and the fact that it's private doesn't make that contract less important: the ORM wouldn't be able to restore inquiries from the database without it"* (Ch 11.1.3). The out-of-process client (the ORM) makes the private member observable. The second carve-out is algorithmic: the black-box rule's *"only exception is when the test covers utility code with high algorithmic complexity"* (Ch 4; also Ch 7 on complex infrastructure algorithms).
 
 Both carve-outs apply concretely here.
 
 **(a) `ExAutomerge` — the NIF / CRDT boundary (both carve-outs at once).** `test/…/ex_automerge_test.exs` exercises "the Rust NIF boundary directly as a codec" (`:1`–`:6`): decode/reconcile round-trips, absent-cost → `nil`, the advisory change-time `document_updated_at` derivation, and — the load-bearing part — **CRDT merge semantics**: concurrent delete-and-edit of different expenses both survive (`:244`–`:297`), merge is commutative (`:221`), identity-keyed rename-vs-delete of categories both survive (`:103`–`:147`). This is justified on two independent grounds:
 - It is **observable behavior with an out-of-process client** — exactly the `Inquiry`/ORM shape. The merge contract's client is *another device's document arriving over sync*; that "latest edit survives a concurrent merge" guarantee is a promise to the outside world (see `docs/research/automerge-last-updated.md` and ADR 0015), and it is invisible at the single-process `Tracking` API. In the book's mock vocabulary this is closer to an **unmanaged** dependency (the CRDT format is visible to other apps/devices) than to the filesystem.
-- It is **high-complexity algorithmic infrastructure** (a CRDT), the explicit exception to black-box-by-default (`unit-testing.txt:3031`). The module deliberately holds *no domain logic* (`lib/…/ex_automerge.ex:4`–`:7`), so these tests pin down the codec/merge algorithm and nothing we'd otherwise refactor freely.
+- It is **high-complexity algorithmic infrastructure** (a CRDT), the explicit exception to black-box-by-default (Ch 4). The module deliberately holds *no domain logic* (`lib/…/ex_automerge.ex:4`–`:7`), so these tests pin down the codec/merge algorithm and nothing we'd otherwise refactor freely.
 
 **(b) `BookServer` — the process/durability boundary.** `test/…/book_server_test.exs` asserts guarantees that are real observable behavior but *not expressible through the pure `Tracking` return values*: **persist-then-commit ordering** (a failed persist keeps in-memory state and fires no broadcast, `:22`–`:41`), an invalid command doesn't crash the server (`:43`–`:52`), and the `restart: :transient` **regression guard** that a just-closed Book is not resurrected by the DynamicSupervisor (`:65`–`:79`). Durability-under-failure and process-lifecycle are promises to the user (no silent data loss; close means closed), and observing them requires reaching into the process (`BookServer.alive?/1`, `Registry.lookup`, chmod'ing the dir). These are justified — but note they still assert **outcomes** (state preserved, no broadcast, process gone), not internal call sequences, so they keep resistance-to-refactoring.
 
