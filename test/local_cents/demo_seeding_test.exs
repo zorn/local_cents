@@ -69,9 +69,7 @@ defmodule LocalCents.DemoSeedingTest do
                ])
     end
 
-    test "the Business Book carries its full category set, including client categories", %{
-      business: business
-    } do
+    test "the Business Book's category set includes client categories", %{business: business} do
       names = business.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
       assert names ==
