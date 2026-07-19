@@ -102,10 +102,10 @@ defmodule LocalCents.Tracking.BookServer do
   def list_expenses(id), do: GenServer.call(via(id), :list_expenses)
 
   @doc """
-  Adds an expense built from `attrs`, persists, and broadcasts. `id` is the UUID
-  assigned to the new Expense and `today` seeds a blank date (both injected by the
-  caller). Returns the added Expense, a changeset error on invalid `attrs`, or
-  another error if the write fails.
+  Adds an expense built from `attrs`, persists, and broadcasts, returning the added
+  Expense. `id` is the UUID assigned to the new Expense and `today` seeds a blank
+  date (both injected by the caller). Returns a changeset error on invalid `attrs`,
+  or another error if the write fails.
 
   `time` is the unix-seconds stamp recorded on the change so the Book's
   `updated_at` advances (see [ADR 0012](0012-book-last-updated-timestamp.html)).
@@ -124,8 +124,9 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Replaces the editable fields of the Expense `expense_id` with `attrs`, persists,
-  and broadcasts. Returns the updated Expense, a changeset error on invalid `attrs`,
-  `:not_found` for an unknown `expense_id`, or another error if the write fails.
+  and broadcasts, returning the updated Expense. Returns a changeset error on invalid
+  `attrs`, `:not_found` for an unknown `expense_id`, or another error if the write
+  fails.
   """
   @spec edit_expense(
           Book.id(),
@@ -167,9 +168,9 @@ defmodule LocalCents.Tracking.BookServer do
   def list_categories(id), do: GenServer.call(via(id), :list_categories)
 
   @doc """
-  Adds a category built from `attrs`, persists, and broadcasts. `id` is the Book's
-  id; `category_id` is the UUID assigned to the new Category (injected by the
-  caller). Returns the added Category, a changeset error on invalid `attrs`, or
+  Adds a category built from `attrs`, persists, and broadcasts, returning the added
+  Category. `id` is the Book's id; `category_id` is the UUID assigned to the new
+  Category (injected by the caller). Returns a changeset error on invalid `attrs`, or
   another error if the write fails.
   """
   @spec add_category(Book.id(), attrs :: map(), Category.id(), time :: integer()) ::
@@ -179,9 +180,9 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   @doc """
-  Renames the Category `category_id` from `attrs`, persists, and broadcasts. Returns
-  the updated Category, a changeset error on invalid `attrs`, `:not_found` for an
-  unknown `category_id`, or another error if the write fails.
+  Renames the Category `category_id` from `attrs`, persists, and broadcasts,
+  returning the updated Category. Returns a changeset error on invalid `attrs`,
+  `:not_found` for an unknown `category_id`, or another error if the write fails.
   """
   @spec rename_category(Book.id(), Category.id(), attrs :: map(), time :: integer()) ::
           {:ok, Category.t()} | {:error, term()}
@@ -201,7 +202,7 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Files the Expense `expense_id` under the Category `category_id`, persists, and
-  broadcasts. Returns the updated Expense, `:expense_not_found` or
+  broadcasts, returning the updated Expense. Returns `:expense_not_found` or
   `:category_not_found` when either is unknown, or another error if the write fails.
   """
   @spec assign_category(Book.id(), Expense.id(), Category.id(), time :: integer()) ::
@@ -212,8 +213,8 @@ defmodule LocalCents.Tracking.BookServer do
 
   @doc """
   Un-files the Expense `expense_id` (nulls its `category_id`), persists, and
-  broadcasts. Returns the updated Expense, `:expense_not_found` for an unknown
-  `expense_id`, or another error if the write fails.
+  broadcasts, returning the updated Expense. Returns `:expense_not_found` for an
+  unknown `expense_id`, or another error if the write fails.
   """
   @spec unassign_category(Book.id(), Expense.id(), time :: integer()) ::
           {:ok, Expense.t()} | {:error, term()}
