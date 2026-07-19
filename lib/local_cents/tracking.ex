@@ -178,9 +178,10 @@ defmodule LocalCents.Tracking do
   @spec rename_book(Book.id(), Book.name(), now :: DateTime.t()) :: :ok | {:error, term()}
   def rename_book(id, new_name, now \\ DateTime.utc_now())
       when is_binary(id) and is_binary(new_name) do
-    case BookServer.alive?(id) do
-      true -> BookServer.rename(id, new_name, unix_seconds(now))
-      false -> rename_on_disk(id, new_name, unix_seconds(now))
+    if BookServer.alive?(id) do
+      BookServer.rename(id, new_name, unix_seconds(now))
+    else
+      rename_on_disk(id, new_name, unix_seconds(now))
     end
   catch
     # The server can die between alive?/1 and the rename call; the document is

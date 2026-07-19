@@ -41,7 +41,7 @@
       # If you create your own checks, you must specify the source files for
       # them here, so they can be loaded by Credo before running the analysis.
       #
-      requires: [],
+      requires: ["./credo_checks/case_on_boolean.ex"],
       #
       # If you want to enforce a style guide and need a more traditional linting
       # experience, you can change `strict` to `true` below:
@@ -149,7 +149,6 @@
           {Credo.Check.Refactor.RedundantWithClauseResult, []},
           {Credo.Check.Refactor.RejectFilter, []},
           {Credo.Check.Refactor.RejectReject, []},
-          {Credo.Check.Refactor.CondInsteadOfIfElse, []},
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.UtcNowTruncate, []},
           {Credo.Check.Refactor.WithClauses, []},
@@ -236,7 +235,13 @@
           {OeditusCredo.Check.Warning.SyncOverAsync, []},
           {OeditusCredo.Check.Warning.MissingHandleAsync, []},
           {OeditusCredo.Check.Warning.BlockingInPlug, []},
-          {OeditusCredo.Check.Warning.SwallowingException, []}
+          {OeditusCredo.Check.Warning.SwallowingException, []},
+
+          #
+          ## Project-local checks — vendored single rules, loaded via `requires:`
+          ## above. See credo_checks/ and the rule review on issue #139.
+          #
+          {LocalCents.CredoChecks.CaseOnBoolean, []}
         ],
         disabled: [
           # Jump.CredoChecks.UndeclaredExternalResource is too crude for this
@@ -252,7 +257,15 @@
           {Credo.Check.Readability.SinglePipe, []},
           {Credo.Check.Refactor.VariableRebinding, []},
           {Credo.Check.Warning.LazyLogging, []},
-          {Credo.Check.Warning.StructFieldAmount, []}
+          {Credo.Check.Warning.StructFieldAmount, []},
+
+          # Mutually exclusive with `Credo.Check.Refactor.CondStatements` (enabled
+          # above), which recommends the opposite — Credo's own docs say enable
+          # only one. We keep Credo's default preference: `CondStatements` on,
+          # `CondInsteadOfIfElse` off. This lets boolean branching use `if/else`
+          # (see the vendored `LocalCents.CredoChecks.CaseOnBoolean`) rather than
+          # forcing `cond` onto a single condition.
+          {Credo.Check.Refactor.CondInsteadOfIfElse, []}
 
           # Custom checks can be created using `mix credo.gen.check`.
         ]

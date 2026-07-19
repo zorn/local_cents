@@ -339,9 +339,10 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   defp clear_editing_if_gone(socket) do
     case socket.assigns.editing do
       {:edit, id} ->
-        case Enum.any?(socket.assigns.categories, &(&1.id == id)) do
-          true -> socket
-          false -> assign(socket, editing: nil, form: nil)
+        if Enum.any?(socket.assigns.categories, &(&1.id == id)) do
+          socket
+        else
+          assign(socket, editing: nil, form: nil)
         end
 
       _ ->
@@ -354,9 +355,10 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   defp clear_confirm_if_gone(socket) do
     case socket.assigns.confirm_delete do
       %{id: id} ->
-        case Enum.any?(socket.assigns.categories, &(&1.id == id)) do
-          true -> socket
-          false -> assign(socket, confirm_delete: nil)
+        if Enum.any?(socket.assigns.categories, &(&1.id == id)) do
+          socket
+        else
+          assign(socket, confirm_delete: nil)
         end
 
       nil ->

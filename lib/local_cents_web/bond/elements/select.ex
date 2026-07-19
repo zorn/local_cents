@@ -84,11 +84,7 @@ defmodule LocalCentsWeb.Bond.Elements.Select do
 
   @spec select(Socket.assigns()) :: Rendered.t()
   def select(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
-    errors =
-      case Phoenix.Component.used_input?(field) do
-        true -> field.errors
-        false -> []
-      end
+    errors = if Phoenix.Component.used_input?(field), do: field.errors, else: []
 
     # Mirror Bond.Elements.Input: prefer an explicit caller value, fall back to the
     # field's only when none was given, so an intentional "" still overrides.
