@@ -242,10 +242,12 @@
           #
           ## OeditusCredo — cherry-picked Phoenix/concurrency anti-pattern checks
           ##
-          ## https://github.com/Oeditus/oeditus_credo ships ~38 checks (all on by
-          ## default), but Credo only runs the ones listed here. We trial just the
-          ## concurrency/blocking group: its Ecto and auth checks are dead here (no
-          ## Repo, no auth — ADR 0016), and its security group duplicates Sobelow.
+          ## https://github.com/Oeditus/oeditus_credo ships ~38 checks, but a
+          ## check only runs when it is listed in this config — adding the
+          ## dependency alone activates nothing (it ships no plugin that would
+          ## auto-register them). We opt in to just the concurrency/blocking group
+          ## and skip the rest: its Ecto and auth checks are dead here (no Repo,
+          ## no auth — ADR 0016), and its security group duplicates Sobelow.
           #
           {OeditusCredo.Check.Warning.UnmanagedTask, []},
           {OeditusCredo.Check.Warning.SyncOverAsync, []},
