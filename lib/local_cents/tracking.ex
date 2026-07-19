@@ -62,7 +62,10 @@ defmodule LocalCents.Tracking do
   # and `Category` types that make up its API contract, plus `Supervisor` so the
   # application supervision tree can start the context's runtime; the remaining
   # implementation modules (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
-  use Boundary, top_level?: true, deps: [], exports: [Book, Category, Expense, Supervisor]
+  use Boundary,
+    top_level?: true,
+    deps: [],
+    exports: [Book, Category, Expense, Month, Report, Supervisor]
 
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.BookServer
@@ -70,6 +73,7 @@ defmodule LocalCents.Tracking do
   alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.ExAutomerge
   alias LocalCents.Tracking.Expense
+  alias LocalCents.Tracking.Report
 
   require Logger
 
@@ -374,6 +378,22 @@ defmodule LocalCents.Tracking do
   @spec list_categories(Book.id()) :: [Category.t()] | {:error, :not_open}
   def list_categories(id) when is_binary(id) do
     BookServer.list_categories(id)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Returns the open Book's `Report` — its Category × Month matrix of spending totals
+  (see [ADR 0020](0020-bounded-time-series-in-review.html)).
+
+  A pure, recomputed-on-demand read model: it stamps no change and reads no clock,
+  so it takes no options and mirrors `list_expenses/1`/`list_categories/1` rather
+  than the command functions. Returns a `:not_open` error if the Book's process is
+  not running (`open_book/2`).
+  """
+  @spec report(Book.id()) :: Report.t() | {:error, :not_open}
+  def report(id) when is_binary(id) do
+    BookServer.report(id)
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end

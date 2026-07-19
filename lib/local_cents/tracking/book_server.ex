@@ -45,6 +45,7 @@ defmodule LocalCents.Tracking.BookServer do
   alias LocalCents.Tracking.BookStore
   alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.Expense
+  alias LocalCents.Tracking.Report
 
   @registry LocalCents.Tracking.BookRegistry
   @supervisor LocalCents.Tracking.BookSupervisor
@@ -173,6 +174,13 @@ defmodule LocalCents.Tracking.BookServer do
   """
   @spec list_categories(Book.id()) :: [Category.t()]
   def list_categories(id), do: GenServer.call(via(id), :list_categories)
+
+  @doc """
+  Returns the Book's `Report` — its Category × Month spending matrix — computed from
+  the in-memory document, so the whole matrix comes from one consistent snapshot.
+  """
+  @spec report(Book.id()) :: Report.t()
+  def report(id), do: GenServer.call(via(id), :report)
 
   @doc """
   Adds a category built from `attrs`, persists, and broadcasts, returning the added
@@ -336,6 +344,10 @@ defmodule LocalCents.Tracking.BookServer do
 
   def handle_call(:list_categories, _from, state) do
     {:reply, BookDocument.categories(decode(state)), state}
+  end
+
+  def handle_call(:report, _from, state) do
+    {:reply, Report.compute(decode(state)), state}
   end
 
   def handle_call({:add_category, attrs, category_id, time}, _from, state) do

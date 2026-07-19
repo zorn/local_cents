@@ -8,6 +8,8 @@ defmodule LocalCents.TrackingTest do
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.Expense
+  alias LocalCents.Tracking.Month
+  alias LocalCents.Tracking.Report
 
   @moduletag :tmp_dir
 
@@ -519,6 +521,84 @@ defmodule LocalCents.TrackingTest do
 
       assert_receive {:book_updated, id}
       assert id == book.id
+    end
+  end
+
+  describe "report/1" do
+    test "computes the Category × Month matrix for an open book, reconciling to the grand total",
+         %{tmp_dir: dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
+      {:ok, utilities} = Tracking.add_category(book.id, %{name: "Utilities"})
+
+      # Two months of spending across two categories plus one uncategorized and one
+      # unpriced expense, so every axis of the matrix is exercised end-to-end.
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-01-10],
+          description: "Milk",
+          cost: "10.00",
+          category_id: groceries.id
+        })
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-03-05],
+          description: "Bread",
+          cost: "20.00",
+          category_id: groceries.id
+        })
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-01-15],
+          description: "Power",
+          cost: "30.00",
+          category_id: utilities.id
+        })
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-03-20],
+          description: "Water — need bill",
+          category_id: utilities.id
+        })
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{
+          date: ~D[2026-01-25],
+          description: "Parking",
+          cost: "5.00"
+        })
+
+      report = Tracking.report(book.id)
+
+      # Contiguous columns Jan→Mar, with the empty February filled in.
+      assert report.months == [Month.new(2026, 1), Month.new(2026, 2), Month.new(2026, 3)]
+
+      # Spending rows alphabetical, Uncategorized last.
+      assert Enum.map(report.rows, fn
+               %{category: nil} -> :uncategorized
+               %{category: c} -> c.name
+             end) == ["Groceries", "Utilities", :uncategorized]
+
+      # Independently known figure: $65.00 across five expenses, one still unpriced.
+      assert report.grand_total == %Report.Cell{
+               total: Decimal.new("65.00"),
+               needs_amount_count: 1
+             }
+
+      # The unpriced Utilities expense is a March count, never summed as zero.
+      utilities_row = Enum.find(report.rows, &(&1.category && &1.category.name == "Utilities"))
+      assert utilities_row.cells[Month.new(2026, 3)].needs_amount_count == 1
+      assert Decimal.equal?(utilities_row.cells[Month.new(2026, 3)].total, Decimal.new(0))
+    end
+
+    test "returns {:error, :not_open} when the book's process is not running", %{tmp_dir: dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      :ok = Tracking.close_book(book.id)
+
+      assert {:error, :not_open} = Tracking.report(book.id)
     end
   end
 end
