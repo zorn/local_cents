@@ -2,6 +2,8 @@
 
 > Research note (2026-07-18) surveying the CI setups of well-known, actively-maintained Elixir open-source projects, to help decide which additional automated checks LocalCents should adopt.
 > Every claim below links to a **primary source**: the project's real `.github/workflows/*.yml` file on GitHub, its `mix.exs`, or the tool's official repo/hexdocs. No blog-post summaries were used as evidence. Workflow links point at each repo's default branch; contents were read on 2026-07-18.
+>
+> **Update (2026-07-18):** Every **Adopt**-rated recommendation here shipped in [PR #144](https://github.com/zorn/local_cents/pull/144). See [Implementation status](#implementation-status) for what was adopted, what already existed, and what was deferred — plus a couple of factual corrections the implementation surfaced.
 
 ## Bottom line for the maintainer
 
@@ -10,6 +12,8 @@ LocalCents already runs a **stronger-than-average** static-analysis gate: compil
 ---
 
 ## Prioritized recommendations
+
+> The "LocalCents today" column reflects the state at survey time (2026-07-18, before [#144](https://github.com/zorn/local_cents/pull/144)). For current state, see [Implementation status](#implementation-status).
 
 | Check | Command / tool | Who uses it (sources below) | LocalCents today | Rec |
 |---|---|---|---|---|
@@ -97,6 +101,8 @@ Add as `{:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}` and run `mi
 
 **Dependabot.** Phoenix and Oban both keep a `.github/dependabot.yml`; Phoenix covers `github-actions` + `npm`, Oban covers `mix` + `github-actions` (grouped) — [Phoenix `dependabot.yml`](https://github.com/phoenixframework/phoenix/blob/main/.github/dependabot.yml), [Oban `dependabot.yml`](https://github.com/oban-bg/oban/blob/main/.github/dependabot.yml); [Dependabot docs](https://docs.github.com/en/code-security/dependabot). LocalCents pins several actions (some already to SHAs) and has a `cargo` crate tree under `native/ex_automerge`. **Recommendation: Adopt for `github-actions` and `cargo`.** The **mix** ecosystem is already handled by the repo's dedicated dep-update skill, so leaving `mix` out of Dependabot avoids duplicate PRs.
 
+> **Correction (2026-07-18):** the survey's "LocalCents today: No" for Dependabot was inaccurate — a `.github/dependabot.yml` already existed covering `mix`, `cargo`, and `github-actions`. And the mix-exclusion advice was **not** taken: the maintainer prefers to keep the `mix` entry as a monthly outdated-deps nudge (a useful signal even when the actual update runs through the skill). The only change made was removing the broken `cargo` `/tauri` entry — see [Implementation status](#implementation-status).
+
 ### Test coverage — ExCoveralls vs. built-in `mix test --cover`
 
 Two camps:
@@ -158,11 +164,43 @@ The projects surveyed rely on **CI as the enforcement point** rather than shippi
 
 ## Suggested next steps (highest value, lowest friction first)
 
-1. **Add `mix deps.audit` (mix_audit)** to the Code Quality workflow and the `precommit` alias — the one real security gap; catches CVEs in the dependency tree that Sobelow can't see.
-2. **Add `--check-locked` to `mix deps.get`** in the `elixir-setup` action — one flag; guarantees `mix.lock` is committed and consistent.
-3. **Add `--warnings-as-errors` to the `mix test` step** — one flag; extends the existing warnings gate to test code and to Elixir 1.18+ type warnings.
-4. **Add a Dependabot config** for `github-actions` and `cargo` (leave `mix` to the existing dep-update skill) — keeps pinned actions and the Rust NIF's crates patched.
-5. **Add actionlint** as its own tiny job — cheap insurance for the project's non-trivial workflow + caching YAML.
-6. *(Optional, when convenient)* Add a `mix docs` build guard and local-only `mix test --cover`; consider Bandit-style PLT auto-eviction if Dialyzer caching ever gets flaky.
+Status markers added 2026-07-18 after [PR #144](https://github.com/zorn/local_cents/pull/144). ✅ done · ➖ already present · ⏸ deferred.
+
+1. ✅ **Add `mix deps.audit` (mix_audit)** to the Code Quality workflow and the `precommit` alias — the one real security gap; catches CVEs in the dependency tree that Sobelow can't see.
+2. ✅ **Add `--check-locked` to `mix deps.get`** in the `elixir-setup` action — one flag; guarantees `mix.lock` is committed and consistent.
+3. ✅ **Add `--warnings-as-errors` to the `mix test` step** — one flag; extends the existing warnings gate to test code and to Elixir 1.18+ type warnings.
+4. ➖ **Add a Dependabot config** for `github-actions` and `cargo` — already existed (see the correction under [Dependency security & freshness](#dependency-security--freshness)). The maintainer opted to **keep** the `mix` entry as a monthly nudge rather than leave it to the dep-update skill; the broken `/tauri` cargo entry was removed.
+5. ✅ **Add actionlint** as its own tiny job — done, using the official `rhysd/actionlint` image; supply-chain hardening deferred to [#145](https://github.com/zorn/local_cents/issues/145).
+6. ➖/⏸ *(Optional, when convenient)* The **`mix docs` build guard** already exists (Lint job + `precommit`) and the **PLT anti-staleness** rebuild-on-retry already exists in `dialyzer.yaml`; local-only **`mix test --cover`** is deferred.
 
 Everything below step 5 is a "nice to have"; steps 1–3 are a few lines total and could ride in a single PR.
+
+---
+
+## Implementation status
+
+> Recorded 2026-07-18. Adopted in [#144](https://github.com/zorn/local_cents/pull/144); follow-up tracked in [#145](https://github.com/zorn/local_cents/issues/145).
+
+Everything the survey rated **Adopt** shipped in a single PR, along with a couple of structural changes and dependency bumps that fell out of the work.
+
+**Adopted (new)**
+
+- **`mix deps.audit` (mix_audit)** — added as a dev/test dep, a step in the new **Security** CI job, and to the `precommit` alias. Wiring it up immediately surfaced three vulnerable transitive deps, bumped to patched releases: `mint` 1.9.3, `phoenix_live_view` 1.2.7, `plug` 1.20.3. Worth noting for the future: Hex's own `mix deps.get` advisory scan (EEF/osv.dev feed) caught these, while `mix deps.audit` (mirego feed) had not yet listed them — the two feeds are complementary, not redundant.
+- **`mix deps.get --check-locked`** — added to the deps-install step in the `elixir-setup` composite action.
+- **`mix test --warnings-as-errors`** — added to the CI test step and the `precommit` alias.
+- **actionlint** — added as its own `Actionlint` workflow using the official first-party `rhysd/actionlint` image (bundles shellcheck). The mutable-tag / container-privilege supply-chain surface is tracked for hardening in [#145](https://github.com/zorn/local_cents/issues/145).
+
+**Already present (no change needed)**
+
+- **Dependabot** — a `.github/dependabot.yml` already covered `mix`, `cargo` (workspace root `/` = the `native/ex_automerge` NIF), and `github-actions`, all monthly + grouped. The `cargo` `/tauri` entry was **removed**: `tauri/Cargo.toml` has a path dependency on `../deps/elixirkit/elixirkit_rs`, which resolves into the gitignored Mix `deps/` directory, so Dependabot errored on every run ("couldn't fetch all your path-based dependencies") — an `ignore` can't help, since it only suppresses update PRs, not the earlier fetch step.
+- **`mix docs` build guard** — already ran with `--warnings-as-errors` in CI (now in the **Lint** job) and in `precommit`.
+- **Dialyzer PLT anti-staleness** — `dialyzer.yaml` already force-rebuilds the PLT on retried runs (`github.run_attempt != '1'`), covering the Bandit-style eviction idea; the fully-automatic in-run variant remains a future refinement only if staleness actually bites.
+
+**Deliberately deferred**
+
+- **`mix test --cover`** (local visibility, no threshold gate) — not adopted for now.
+- Multi-version matrix, ExCoveralls upload, Styler, `mix doctor`, Credo SARIF upload, etc. — remain **Consider/Skip** as originally assessed.
+
+**Structural change**
+
+- The single `quality_checks` CI job was split into two — **Lint** (format, Credo, unused deps, xref, docs) and **Security** (Sobelow, `deps.audit`) — so a PR reports them as distinct, independently-failing status lines. This was motivated by the job having accumulated enough checks that a single red ❌ was hard to diagnose.
