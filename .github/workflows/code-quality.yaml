@@ -16,8 +16,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality_checks:
-    name: Formatting, Credo, and Unused Deps
+  # Style/hygiene checks whose remedy is "edit the code": formatting, Credo,
+  # unused deps, the compile-connected dependency graph, and doc warnings.
+  # Kept separate from the security job so a red mark here is unambiguously
+  # about our own code, not a dependency CVE.
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -45,10 +49,32 @@ jobs:
         run: mix xref graph --label compile-connected --fail-above 0
         if: always()
 
-      - name: Check for security vulnerabilities in Phoenix project
-        run: mix sobelow --config
-        if: always()
-
       - name: Check documentation for warnings
         run: mix docs --warnings-as-errors
+        if: always()
+
+  # Security checks whose remedy is "bump a dep or triage a CVE": Sobelow scans
+  # our own Phoenix code for insecure patterns; mix_audit cross-references the
+  # locked dependency tree against known advisories. Broken out so a dependency
+  # advisory reports as its own status line and can be gated independently of
+  # the lint checks.
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Elixir Project
+        uses: ./.github/actions/elixir-setup
+        with:
+          build-app: false
+
+      - name: Check for security vulnerabilities in Phoenix project
+        run: mix sobelow --config
+
+      - name: Check dependencies for known vulnerabilities
+        run: mix deps.audit
         if: always()

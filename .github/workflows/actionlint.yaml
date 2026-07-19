@@ -1,0 +1,36 @@
+name: Actionlint
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+permissions:
+  contents: read
+
+# Cancel any in-progress instances of this workflow when this instance is triggered.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Statically lints the workflow YAML and the composite action (expression
+  # syntax, runs-on labels, matrix typos) plus shellcheck over `run:` blocks —
+  # cheap insurance for the project's non-trivial caching/composite-action YAML.
+  # Uses actionlint's official first-party image (bundles shellcheck), so no
+  # Elixir toolchain or checkout-and-compile is needed.
+  actionlint:
+    name: Actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run actionlint
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
