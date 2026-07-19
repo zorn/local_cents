@@ -4,6 +4,7 @@ LocalCents is an open-source expense-tracking application built with Phoenix Liv
 
 - See [`CODING_STANDARDS.md`](CODING_STANDARDS.md) for the index of how we write code here (moduledocs, `@impl`/`@spec` style, Bond components, boundaries, PubSub, commits); it links each rule's authoritative home
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
+- Branch each PR from an up-to-date `main`, not from whatever is currently checked out — `git switch main && git pull` then `git switch -c <name>`. Branching off another feature branch stacks them, so the new PR inherits the other's commits and its diff shows unrelated files. This bites especially when several agents share one working directory: confirm you are on `main` before creating a branch
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 - When writing or editing a `@moduledoc`/`@typedoc`, follow the house standard in `docs/moduledoc-style.md` (summary-first line, explain the _why_, link ADRs rather than restate them, and calibrate length to the module's kind)
 - When writing code comments, follow `docs/comment-style.md`: inline comments carry durable _why_ and never restate the signature; post single-use, reviewer-facing rationale as a PR review comment before review rather than baking it into the source; future-work asides become GitHub issues
