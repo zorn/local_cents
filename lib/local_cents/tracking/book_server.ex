@@ -61,10 +61,17 @@ defmodule LocalCents.Tracking.BookServer do
   @doc """
   Ensures a BookServer for `id` is running, starting it under the supervisor if
   needed. Returns the pid either way.
+
+  `dir` is the books directory the server reads and writes the Book's `.lcbook`
+  file in; it is stored in the server's state so the persistence path carries its
+  own directory rather than reading a global (which is what lets the tracking
+  tests run concurrently — see `docs/research/avoiding-async-false-tests.md`). It
+  only takes effect when the server is first started: an already-running server
+  keeps the directory it was started with.
   """
-  @spec ensure_started(Book.id()) :: {:ok, pid()} | {:error, term()}
-  def ensure_started(id) do
-    case DynamicSupervisor.start_child(@supervisor, {__MODULE__, id}) do
+  @spec ensure_started(Book.id(), dir :: String.t()) :: {:ok, pid()} | {:error, term()}
+  def ensure_started(id, dir) do
+    case DynamicSupervisor.start_child(@supervisor, {__MODULE__, {id, dir}}) do
       {:ok, pid} -> {:ok, pid}
       {:error, {:already_started, pid}} -> {:ok, pid}
       {:error, reason} -> {:error, reason}
@@ -85,9 +92,9 @@ defmodule LocalCents.Tracking.BookServer do
     end
   end
 
-  @spec start_link(Book.id()) :: GenServer.on_start()
-  def start_link(id) when is_binary(id) do
-    GenServer.start_link(__MODULE__, id, name: via(id))
+  @spec start_link({Book.id(), dir :: String.t()}) :: GenServer.on_start()
+  def start_link({id, dir}) when is_binary(id) and is_binary(dir) do
+    GenServer.start_link(__MODULE__, {id, dir}, name: via(id))
   end
 
   @doc "Returns the Book's name."
@@ -251,9 +258,11 @@ defmodule LocalCents.Tracking.BookServer do
 
   # Server
 
-  # The GenServer state: the Book's id plus its current encoded document bytes.
-  # Every command decodes `doc` into a `BookDocument`, runs, and re-encodes.
-  @typep state() :: %{id: Book.id(), doc: binary()}
+  # The GenServer state: the Book's id, its current encoded document bytes, and the
+  # books directory it persists to (injected at start so the persistence path is not
+  # coupled to a global — see `ensure_started/2`). Every command decodes `doc` into a
+  # `BookDocument`, runs, and re-encodes.
+  @typep state() :: %{id: Book.id(), doc: binary(), dir: String.t()}
 
   # A pure `BookDocument` command: given the decoded document it returns the new
   # document — with an optional result value (the created/updated Expense or
@@ -269,14 +278,14 @@ defmodule LocalCents.Tracking.BookServer do
   @typep reply() :: :ok | {:ok, Expense.t() | Category.t()} | {:error, term()}
 
   @impl GenServer
-  def init(id) do
+  def init({id, dir}) do
     # Label the process so it's identifiable by Book id in `:observer` and other
     # Erlang tooling — otherwise a `:via`-registered process shows only its pid.
     Process.set_label({:book_server, id})
 
-    with {:ok, doc} <- BookStore.load(id),
+    with {:ok, doc} <- BookStore.load(dir, id),
          :ok <- validate_document(doc) do
-      {:ok, %{id: id, doc: doc}}
+      {:ok, %{id: id, doc: doc, dir: dir}}
     else
       {:error, :invalid_document} -> {:stop, {:invalid_document, id}}
       {:error, reason} -> {:stop, {:load_failed, reason}}
@@ -380,7 +389,7 @@ defmodule LocalCents.Tracking.BookServer do
   defp commit(state, document, time, reply, extra_signals) do
     new_doc = BookDocument.to_bytes(document, state.doc, time)
 
-    case BookStore.save(state.id, new_doc) do
+    case BookStore.save(state.dir, state.id, new_doc) do
       :ok ->
         broadcast(state.id, {:book_updated, state.id})
         Enum.each(extra_signals, &broadcast(state.id, {&1, state.id}))

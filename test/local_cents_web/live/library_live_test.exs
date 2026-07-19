@@ -27,7 +27,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
   test "shows a book's last updated subtitle", ~M{conn} do
     # No browser time zone is reported in tests, so the subtitle renders in UTC:
     # 13:34 UTC -> "1:34 PM".
-    {:ok, _} = Tracking.create_book("Family Expenses", ~U[2026-06-02 13:34:20Z])
+    {:ok, _} = Tracking.create_book("Family Expenses", nil, ~U[2026-06-02 13:34:20Z])
 
     conn
     |> visit(~p"/library")
@@ -35,7 +35,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
   end
 
   test "keeps a book's last updated live when the book changes elsewhere", ~M{conn} do
-    {:ok, book} = Tracking.create_book("Family", ~U[2026-06-02 13:34:20Z])
+    {:ok, book} = Tracking.create_book("Family", nil, ~U[2026-06-02 13:34:20Z])
 
     session =
       conn

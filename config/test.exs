@@ -11,9 +11,10 @@ config :local_cents, LocalCentsWeb.Endpoint,
 config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 
 # Persist Books to a temporary directory during tests so runs never touch the
-# real application-support location. Tests that need isolation override this with
-# their own unique directory under `System.tmp_dir!/0` via
-# `LocalCents.BooksDirHelper`.
+# real application-support location. This is the default `BookStore.default_dir/0`
+# resolves to; the LiveView feature tests override it per-test via
+# `LocalCents.BooksDirHelper` (they run `async: false`), while unit and context
+# tests bypass it entirely by injecting their own `@tag :tmp_dir` directory.
 config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_books")
 
 # Don't seed the demo library on an empty library during tests — seeding is

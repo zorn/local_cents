@@ -53,17 +53,19 @@ defmodule LocalCents.DemoSeeding do
   `now` is the reference time: it stamps every change (so each Book's `updated_at`
   is `now`) and anchors the trailing twelve-month window and the "current month"
   the inbox lands in. It defaults to the current time and is injectable so tests
-  are deterministic.
+  are deterministic. `books_dir` is threaded to `LocalCents.Tracking.create_book/3`
+  (`nil` selects the tracking context's default) so tests can seed into an isolated
+  directory and run concurrently.
 
   Returns `:ok` once both Books are seeded. Raising is left to the caller to guard
   (`LibraryLive` seeds best-effort) — this function does not itself trap errors.
   """
-  @spec create_books(now :: DateTime.t()) :: :ok
-  def create_books(now \\ DateTime.utc_now()) do
+  @spec create_books(now :: DateTime.t(), books_dir :: String.t() | nil) :: :ok
+  def create_books(now \\ DateTime.utc_now(), books_dir \\ nil) do
     today = DateTime.to_date(now)
 
-    seed_book("Family Expenses", family_categories(), family_inbox(), now, today)
-    seed_book("Business Expenses", business_categories(), business_inbox(), now, today)
+    seed_book("Family Expenses", family_categories(), family_inbox(), now, today, books_dir)
+    seed_book("Business Expenses", business_categories(), business_inbox(), now, today, books_dir)
 
     :ok
   end
@@ -72,8 +74,8 @@ defmodule LocalCents.DemoSeeding do
   # under those categories, then drop the recent (uncategorized) inbox on top. The
   # Book is closed in an `after` so no `BookServer` lingers even if seeding raises
   # partway (the caller seeds best-effort and will surface the error).
-  defp seed_book(name, category_specs, inbox, now, today) do
-    {:ok, book} = Tracking.create_book(name, now)
+  defp seed_book(name, category_specs, inbox, now, today, books_dir) do
+    {:ok, book} = Tracking.create_book(name, books_dir, now)
 
     try do
       category_ids =

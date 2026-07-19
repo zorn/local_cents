@@ -28,6 +28,15 @@ defmodule LocalCents.Tracking do
   [ADR 0012](0012-book-last-updated-timestamp.html)).
   """
 
+  # As the context's public facade, this module coordinates every internal piece by
+  # design — the runtime (`BookServer`), persistence (`BookStore`), the CRDT codec
+  # (`ExAutomerge`), and each domain type (`Book`, `Expense`, `Category`) — on top of
+  # stdlib (`DateTime`, `Date`, `String`, …). That breadth is the point of a facade,
+  # not a smell to refactor away, so it opts out of the project-wide dependency cap
+  # (16 vs. the default 15) rather than fragmenting the single entry point. Same
+  # rationale as `LocalCents.Tracking.BookServer`, which mirrors this API.
+  # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
+
   # The tracking context boundary. It is a top-level boundary (a peer of the
   # core and web layers rather than nested inside `LocalCents`) so that other
   # layers can depend on the context directly. It exports the `Book`, `Expense`,
@@ -49,22 +58,32 @@ defmodule LocalCents.Tracking do
   Creates a new, empty Book named `name`, persists it, and starts its runtime
   process. Returns the `Book`.
 
-  `now` stamps the document's first change and seeds the Book's `updated_at`; it
-  defaults to the current time and is injectable for tests.
+  `books_dir` is the directory the Book is stored in; it defaults to
+  `LocalCents.Tracking.BookStore.default_dir/0` (`nil` selects that default) and
+  is injectable so tests pass an isolated temporary directory and run concurrently
+  (see `docs/research/avoiding-async-false-tests.md`). `now` stamps the document's
+  first change and seeds the Book's `updated_at`; it defaults to the current time
+  and is injectable for tests.
   """
-  @spec create_book(Book.name(), now :: DateTime.t()) :: {:ok, Book.t()} | {:error, term()}
-  def create_book(name, now \\ DateTime.utc_now()) when is_binary(name) do
+  @spec create_book(
+          Book.name(),
+          books_dir :: String.t() | nil,
+          now :: DateTime.t()
+        ) ::
+          {:ok, Book.t()} | {:error, term()}
+  def create_book(name, books_dir \\ nil, now \\ DateTime.utc_now()) when is_binary(name) do
+    dir = resolve_dir(books_dir)
     id = BookStore.generate_id()
     seconds = unix_seconds(now)
 
-    with :ok <- BookStore.save(id, ExAutomerge.new_document(name, seconds)),
-         {:ok, _pid} <- BookServer.ensure_started(id) do
+    with :ok <- BookStore.save(dir, id, ExAutomerge.new_document(name, seconds)),
+         {:ok, _pid} <- BookServer.ensure_started(id, dir) do
       {:ok, %Book{id: id, name: name, updated_at: to_datetime(seconds)}}
     else
       {:error, reason} ->
         # If the process failed to start after the file was written, remove it so a
         # phantom Book doesn't linger in `list_books/0`. (A no-op if save failed.)
-        BookStore.delete(id)
+        BookStore.delete(dir, id)
         {:error, reason}
     end
   end
@@ -72,10 +91,17 @@ defmodule LocalCents.Tracking do
   @doc """
   Ensures the Book's runtime process is running (idempotent). Returns `:ok` or an
   error if no Book with `id` exists on disk.
+
+  `books_dir` is the directory the Book is read from; it defaults to
+  `LocalCents.Tracking.BookStore.default_dir/0` (`nil` selects that default) and is
+  injectable for concurrent tests. It applies only when the process is first
+  started; an already-open Book keeps its directory.
   """
-  @spec open_book(Book.id()) :: :ok | {:error, term()}
-  def open_book(id) when is_binary(id) do
-    case BookServer.ensure_started(id) do
+  @spec open_book(Book.id(), books_dir :: String.t() | nil) :: :ok | {:error, term()}
+  def open_book(id, books_dir \\ nil) when is_binary(id) do
+    dir = resolve_dir(books_dir)
+
+    case BookServer.ensure_started(id, dir) do
       {:ok, _pid} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -98,30 +124,40 @@ defmodule LocalCents.Tracking do
   Returns every Book found in the books directory, as `Book` structs.
 
   Reads each file's name directly (matching ADR 0007's "reads a bit of metadata
-  from each file on load") without starting a process per Book.
+  from each file on load") without starting a process per Book. `books_dir`
+  defaults to `LocalCents.Tracking.BookStore.default_dir/0` (`nil` selects that
+  default) and is injectable for concurrent tests.
   """
-  @spec list_books() :: [Book.t()]
-  def list_books do
-    BookStore.list_ids()
-    |> Enum.map(&read_book/1)
+  @spec list_books(books_dir :: String.t() | nil) :: [Book.t()]
+  def list_books(books_dir \\ nil) do
+    dir = resolve_dir(books_dir)
+
+    dir
+    |> BookStore.list_ids()
+    |> Enum.map(&read_book(dir, &1))
     |> Enum.reject(&is_nil/1)
   end
 
   @doc """
   Returns the `Book` with `id`, or `nil` if no such Book exists in the library.
+
+  `books_dir` defaults to `LocalCents.Tracking.BookStore.default_dir/0` (`nil`
+  selects that default) and is injectable for concurrent tests.
   """
-  @spec get_book(Book.id()) :: Book.t() | nil
-  def get_book(id) when is_binary(id) do
+  @spec get_book(Book.id(), books_dir :: String.t() | nil) :: Book.t() | nil
+  def get_book(id, books_dir \\ nil) when is_binary(id) do
+    dir = resolve_dir(books_dir)
+
     # Read only this Book's file rather than enumerating the whole library. The
-    # `list_ids/0` guard keeps an absent id quiet (no `read_book/1` warning) and
+    # `list_ids/1` guard keeps an absent id quiet (no `read_book/2` warning) and
     # cheap (a directory listing, not a parse of every `.lcbook`).
-    if id in BookStore.list_ids(), do: read_book(id)
+    if id in BookStore.list_ids(dir), do: read_book(dir, id)
   end
 
   # Reads one Book's library view, tolerating a file that cannot be read or is not
   # a valid Book document, so a single bad `.lcbook` never blanks the whole library.
-  defp read_book(id) do
-    case BookStore.load(id) do
+  defp read_book(dir, id) do
+    case BookStore.load(dir, id) do
       {:ok, doc} ->
         %Book{
           id: id,
@@ -142,12 +178,16 @@ defmodule LocalCents.Tracking do
   @doc """
   Permanently deletes the Book: stops its process (if running) and removes the
   `.lcbook` file.
+
+  `books_dir` defaults to `LocalCents.Tracking.BookStore.default_dir/0` (`nil`
+  selects that default) and is injectable for concurrent tests.
   """
-  @spec delete_book(Book.id()) :: :ok | {:error, term()}
-  def delete_book(id) when is_binary(id) do
+  @spec delete_book(Book.id(), books_dir :: String.t() | nil) :: :ok | {:error, term()}
+  def delete_book(id, books_dir \\ nil) when is_binary(id) do
+    dir = resolve_dir(books_dir)
     :ok = close_book(id)
 
-    case BookStore.delete(id) do
+    case BookStore.delete(dir, id) do
       :ok ->
         # Announce the change on the Book's topic after the file is gone, so a
         # subscriber that re-reads finds it absent. Best-effort: the delete has
@@ -172,27 +212,41 @@ defmodule LocalCents.Tracking do
 
   Returns an error if the Book cannot be read or the change cannot be persisted.
 
-  `now` stamps the rename change so the Book's `updated_at` advances; it defaults
-  to the current time and is injectable for tests.
+  `books_dir` (the closed-Book path's directory) defaults to
+  `LocalCents.Tracking.BookStore.default_dir/0` (`nil` selects that default) and is
+  injectable for concurrent tests. `now` stamps the rename change so the Book's
+  `updated_at` advances; it defaults to the current time and is injectable for
+  tests.
   """
-  @spec rename_book(Book.id(), Book.name(), now :: DateTime.t()) :: :ok | {:error, term()}
-  def rename_book(id, new_name, now \\ DateTime.utc_now())
+  @spec rename_book(
+          Book.id(),
+          Book.name(),
+          books_dir :: String.t() | nil,
+          now :: DateTime.t()
+        ) ::
+          :ok | {:error, term()}
+  def rename_book(id, new_name, books_dir \\ nil, now \\ DateTime.utc_now())
       when is_binary(id) and is_binary(new_name) do
-    if BookServer.alive?(id) do
-      BookServer.rename(id, new_name, unix_seconds(now))
-    else
-      rename_on_disk(id, new_name, unix_seconds(now))
+    dir = resolve_dir(books_dir)
+    seconds = unix_seconds(now)
+
+    try do
+      if BookServer.alive?(id) do
+        BookServer.rename(id, new_name, seconds)
+      else
+        rename_on_disk(dir, id, new_name, seconds)
+      end
+    catch
+      # The server can die between alive?/1 and the rename call; the document is
+      # persisted after every change, so falling back to the on-disk rename is safe.
+      :exit, {:noproc, _} -> rename_on_disk(dir, id, new_name, seconds)
     end
-  catch
-    # The server can die between alive?/1 and the rename call; the document is
-    # persisted after every change, so falling back to the on-disk rename is safe.
-    :exit, {:noproc, _} -> rename_on_disk(id, new_name, unix_seconds(now))
   end
 
   # Renames a closed Book by rewriting its file. No `BookServer` owns the document,
   # so disk is the source of truth and no process needs to start just to rename.
-  defp rename_on_disk(id, new_name, seconds) do
-    with {:ok, bytes} <- BookStore.load(id) do
+  defp rename_on_disk(dir, id, new_name, seconds) do
+    with {:ok, bytes} <- BookStore.load(dir, id) do
       # A rename only touches the Book's name, so we set it on the raw decoded state
       # directly rather than routing through `BookDocument.rename/2` (which would also
       # re-introduce a `BookDocument` dependency here). NOTE: this stays equivalent to
@@ -200,7 +254,7 @@ defmodule LocalCents.Tracking do
       # it ever grows logic (validation, derived fields), this closed-Book path must
       # be routed through the core too, or the two rename paths will diverge.
       state = %{ExAutomerge.decode(bytes) | name: new_name}
-      BookStore.save(id, ExAutomerge.reconcile(bytes, state, seconds))
+      BookStore.save(dir, id, ExAutomerge.reconcile(bytes, state, seconds))
     end
   rescue
     # A readable-but-corrupt `.lcbook` makes the decode NIF raise; report it rather
@@ -397,6 +451,12 @@ defmodule LocalCents.Tracking do
   """
   @spec subscribe(Book.id()) :: :ok | {:error, term()}
   def subscribe(id) when is_binary(id), do: BookServer.subscribe(id)
+
+  # The books directory an entry point operates in: the caller's injected value, or
+  # the platform/app-env default. Injecting a directory is what lets the tracking
+  # tests run concurrently (see `docs/research/avoiding-async-false-tests.md`).
+  defp resolve_dir(nil), do: BookStore.default_dir()
+  defp resolve_dir(dir) when is_binary(dir), do: dir
 
   # The user's local calendar date, used as the default when an expense is saved
   # without a date. On the desktop the server and user share a machine, so the
