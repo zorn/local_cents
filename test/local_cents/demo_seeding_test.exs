@@ -14,27 +14,32 @@ defmodule LocalCents.DemoSeedingTest do
   @now ~U[2026-07-17 12:00:00Z]
   @today ~D[2026-07-17]
 
-  describe "create_books/2" do
+  describe "create_books/1" do
     test "creates exactly the two named demo Books", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
-      names = dir |> Tracking.list_books() |> Enum.map(& &1.name) |> Enum.sort()
+      names =
+        [books_dir: dir]
+        |> Tracking.list_books()
+        |> Enum.map(& &1.name)
+        |> Enum.sort()
+
       assert names == ["Business Expenses", "Family Expenses"]
     end
 
     test "leaves no Book runtime process running (each Book is closed)", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
-      for book <- Tracking.list_books(dir) do
+      for book <- Tracking.list_books(books_dir: dir) do
         assert Tracking.list_expenses(book.id) == {:error, :not_open}
       end
     end
 
     test "the Family Book carries its full category set", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
       family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, dir)
+      :ok = Tracking.open_book(family.id, books_dir: dir)
 
       names = family.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
@@ -58,10 +63,10 @@ defmodule LocalCents.DemoSeedingTest do
     test "the Business Book carries its full category set, including client categories", %{
       tmp_dir: dir
     } do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
       business = book_named(dir, "Business Expenses")
-      :ok = Tracking.open_book(business.id, dir)
+      :ok = Tracking.open_book(business.id, books_dir: dir)
 
       names = business.id |> Tracking.list_categories() |> Enum.map(& &1.name) |> Enum.sort()
 
@@ -80,10 +85,10 @@ defmodule LocalCents.DemoSeedingTest do
     end
 
     test "expenses span the trailing 12 months, ending in the current month", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
       family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, dir)
+      :ok = Tracking.open_book(family.id, books_dir: dir)
 
       dates = family.id |> Tracking.list_expenses() |> Enum.map(& &1.date)
 
@@ -96,10 +101,10 @@ defmodule LocalCents.DemoSeedingTest do
     end
 
     test "every calendar month in the window is populated (no empty columns)", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
       family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, dir)
+      :ok = Tracking.open_book(family.id, books_dir: dir)
 
       months =
         family.id
@@ -113,10 +118,10 @@ defmodule LocalCents.DemoSeedingTest do
     test "recent inbox: uncategorized and nil-cost expenses sit in the current month", %{
       tmp_dir: dir
     } do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
       family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, dir)
+      :ok = Tracking.open_book(family.id, books_dir: dir)
       expenses = Tracking.list_expenses(family.id)
 
       uncategorized = Enum.filter(expenses, &is_nil(&1.category_id))
@@ -132,10 +137,10 @@ defmodule LocalCents.DemoSeedingTest do
     end
 
     test "settled history is fully categorized and priced", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(@now, dir)
+      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
 
       family = book_named(dir, "Family Expenses")
-      :ok = Tracking.open_book(family.id, dir)
+      :ok = Tracking.open_book(family.id, books_dir: dir)
 
       settled =
         family.id
@@ -148,5 +153,6 @@ defmodule LocalCents.DemoSeedingTest do
     end
   end
 
-  defp book_named(dir, name), do: Enum.find(Tracking.list_books(dir), &(&1.name == name))
+  defp book_named(dir, name),
+    do: Enum.find(Tracking.list_books(books_dir: dir), &(&1.name == name))
 end

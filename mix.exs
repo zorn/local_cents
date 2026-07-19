@@ -289,6 +289,12 @@ defmodule LocalCents.MixProject do
       # For JSON encoding and decoding.
       {:jason, "~> 1.2"},
 
+      # Schema-based validation for the injectable options (`:books_dir`, `:now`,
+      # `:today`) the `LocalCents.Tracking` context API accepts, so a mistyped option
+      # key raises instead of being silently ignored. Already present transitively
+      # (finch, mdex); declared here because we use it directly.
+      {:nimble_options, "~> 1.1"},
+
       # For embedded-schema validation and casting of the domain model (e.g. the
       # `Expense` editor form). Used *without* a database or `ecto_sql` — the store
       # is the Automerge document, not SQL (see ADR 0007). See ADR 0016.

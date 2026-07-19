@@ -9,7 +9,7 @@ defmodule LocalCents.Tracking.BookServerTest do
   @moduletag :tmp_dir
 
   test "a command broadcasts {:book_updated, id} to subscribers", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", dir)
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     :ok = Tracking.subscribe(book.id)
 
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
@@ -19,7 +19,7 @@ defmodule LocalCents.Tracking.BookServerTest do
   end
 
   test "a failed persist returns an error, keeps state, and does not broadcast", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", dir)
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     :ok = Tracking.subscribe(book.id)
 
     # Make the books directory read-only so the atomic write (temp file + rename)
@@ -40,7 +40,7 @@ defmodule LocalCents.Tracking.BookServerTest do
   end
 
   test "an invalid command returns a changeset without crashing the server", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", dir)
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
 
     # A missing description fails validation in the functional core.
     assert {:error, %Ecto.Changeset{}} = Tracking.add_expense(book.id, %{cost: "5.00"})
@@ -50,13 +50,13 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert Tracking.list_expenses(book.id) == []
   end
 
-  test "open_book/1 fails and starts no server for a readable but invalid .lcbook", %{
+  test "open_book/2 fails and starts no server for a readable but invalid .lcbook", %{
     tmp_dir: dir
   } do
     id = "bad00000-0000-4000-8000-000000000000"
     File.write!(Path.join(dir, id <> ".lcbook"), "garbage")
 
-    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id, dir)
+    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id, books_dir: dir)
     refute BookServer.alive?(id)
   end
 
@@ -64,7 +64,7 @@ defmodule LocalCents.Tracking.BookServerTest do
     # Regression guard: with the default :permanent restart, the DynamicSupervisor
     # would resurrect a just-closed BookServer (defeating close/1). :transient must
     # keep an intentional :normal close stopped.
-    {:ok, book} = Tracking.create_book("Family", dir)
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     [{pid, _}] = Registry.lookup(LocalCents.Tracking.BookRegistry, book.id)
     ref = Process.monitor(pid)
 
@@ -77,14 +77,14 @@ defmodule LocalCents.Tracking.BookServerTest do
   end
 
   test "state persists across an explicit close and reopen", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", dir)
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     assert BookServer.alive?(book.id)
     :ok = Tracking.close_book(book.id)
     refute BookServer.alive?(book.id)
 
-    :ok = Tracking.open_book(book.id, dir)
+    :ok = Tracking.open_book(book.id, books_dir: dir)
 
     assert [%Tracking.Expense{description: "Coffee"}] = Tracking.list_expenses(book.id)
   end

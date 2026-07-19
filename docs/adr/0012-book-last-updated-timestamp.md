@@ -29,10 +29,10 @@ after a concurrent merge, it reflects the newest of the merged branch tips.
 Rust core does *not* default a change's time, so a document written without one has
 `timestamp == 0`. The mutating NIFs (`new_document/2`, `rename/3`, `add_expense/4`)
 therefore take a `time` (unix seconds) and record it via
-`CommitOptions::with_time/1`. The `LocalCents.Tracking` functions supply it from a
-`now \\ DateTime.utc_now()` argument (injectable for tests), converted to whole
-seconds — the resolution Automerge records. `merge/2` takes no time: it integrates
-changes that already carry their own.
+`CommitOptions::with_time/1`. The `LocalCents.Tracking` functions supply it from an
+injectable `:now` option (a `DateTime` defaulting to `DateTime.utc_now/0`),
+converted to whole seconds — the resolution Automerge records. `merge/2` takes no
+time: it integrates changes that already carry their own.
 
 > **Update (#62):** the per-operation `rename/3` and `add_expense/4` NIFs named above
 > were replaced by a single `reconcile/3` mutation NIF when the tracking context

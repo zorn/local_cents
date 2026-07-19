@@ -273,7 +273,7 @@ defmodule LocalCentsWeb.BookLive do
     book = socket.assigns.book
     today = today(socket.assigns.time_zone)
 
-    case Tracking.add_expense(book.id, expense_params, DateTime.utc_now(), today) do
+    case Tracking.add_expense(book.id, expense_params, today: today) do
       {:ok, _expense} -> saved(socket, book.id)
       {:error, %Ecto.Changeset{}} -> invalid(socket, base, expense_params, today)
       {:error, :category_not_found} -> category_gone(socket, base, expense_params, today)
@@ -286,7 +286,7 @@ defmodule LocalCentsWeb.BookLive do
     book = socket.assigns.book
     today = today(socket.assigns.time_zone)
 
-    case Tracking.edit_expense(book.id, expense.id, expense_params, DateTime.utc_now(), today) do
+    case Tracking.edit_expense(book.id, expense.id, expense_params, today: today) do
       {:ok, _expense} -> saved(socket, book.id)
       {:error, %Ecto.Changeset{}} -> invalid(socket, expense, expense_params, today)
       {:error, :not_found} -> saved(socket, book.id, "That expense no longer exists.")
