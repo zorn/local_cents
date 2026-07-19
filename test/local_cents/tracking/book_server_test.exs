@@ -1,16 +1,15 @@
 defmodule LocalCents.Tracking.BookServerTest do
-  # Not async: uses a temporary books directory via the global :books_dir env.
-  use ExUnit.Case, async: false
-
-  import LocalCents.BooksDirHelper
+  # Async: each test seeds its Book into its own `:tmp_dir` (injected via
+  # create_book/open_book), so no shared `:books_dir` env forces serialization.
+  use ExUnit.Case, async: true
 
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
 
-  test "a command broadcasts {:book_updated, id} to subscribers" do
-    {:ok, book} = Tracking.create_book("Family")
+  test "a command broadcasts {:book_updated, id} to subscribers", %{tmp_dir: dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     :ok = Tracking.subscribe(book.id)
 
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
@@ -19,8 +18,8 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert id == book.id
   end
 
-  test "a failed persist returns an error, keeps state, and does not broadcast", %{books_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family")
+  test "a failed persist returns an error, keeps state, and does not broadcast", %{tmp_dir: dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     :ok = Tracking.subscribe(book.id)
 
     # Make the books directory read-only so the atomic write (temp file + rename)
@@ -40,8 +39,8 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert BookServer.alive?(book.id)
   end
 
-  test "an invalid command returns a changeset without crashing the server" do
-    {:ok, book} = Tracking.create_book("Family")
+  test "an invalid command returns a changeset without crashing the server", %{tmp_dir: dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
 
     # A missing description fails validation in the functional core.
     assert {:error, %Ecto.Changeset{}} = Tracking.add_expense(book.id, %{cost: "5.00"})
@@ -51,22 +50,21 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert Tracking.list_expenses(book.id) == []
   end
 
-  test "open_book/1 fails and starts no server for a readable but invalid .lcbook", %{
-    books_dir: dir
+  test "open_book/2 fails and starts no server for a readable but invalid .lcbook", %{
+    tmp_dir: dir
   } do
     id = "bad00000-0000-4000-8000-000000000000"
-    File.mkdir_p!(dir)
     File.write!(Path.join(dir, id <> ".lcbook"), "garbage")
 
-    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id)
+    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id, books_dir: dir)
     refute BookServer.alive?(id)
   end
 
-  test "close_book stops the server for good and it is not restarted" do
+  test "close_book stops the server for good and it is not restarted", %{tmp_dir: dir} do
     # Regression guard: with the default :permanent restart, the DynamicSupervisor
     # would resurrect a just-closed BookServer (defeating close/1). :transient must
     # keep an intentional :normal close stopped.
-    {:ok, book} = Tracking.create_book("Family")
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     [{pid, _}] = Registry.lookup(LocalCents.Tracking.BookRegistry, book.id)
     ref = Process.monitor(pid)
 
@@ -78,15 +76,15 @@ defmodule LocalCents.Tracking.BookServerTest do
     refute BookServer.alive?(book.id)
   end
 
-  test "state persists across an explicit close and reopen" do
-    {:ok, book} = Tracking.create_book("Family")
+  test "state persists across an explicit close and reopen", %{tmp_dir: dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     assert BookServer.alive?(book.id)
     :ok = Tracking.close_book(book.id)
     refute BookServer.alive?(book.id)
 
-    :ok = Tracking.open_book(book.id)
+    :ok = Tracking.open_book(book.id, books_dir: dir)
 
     assert [%Tracking.Expense{description: "Coffee"}] = Tracking.list_expenses(book.id)
   end

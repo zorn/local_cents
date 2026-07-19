@@ -14,10 +14,15 @@ defmodule LocalCents.Tracking.BookStore do
   [ADR 0007](0007-book-runtime-and-persistence.html)) — there is no index or
   database.
 
-  The books directory defaults to the platform's per-user application-support
-  location (`~/Library/Application Support/LocalCents/books` on macOS) and can be
-  overridden with the `:books_dir` application env, which the test suite uses to
-  redirect writes to a temporary directory.
+  ## The books directory is a parameter, not ambient state
+
+  Every function that touches the filesystem takes the books directory as its
+  first argument rather than reading it from a global. This is what lets the
+  unit and context tests run with `async: true`: each test passes its own
+  temporary directory (see `docs/research/avoiding-async-false-tests.md`) instead
+  of mutating a shared `:books_dir` application env. `default_dir/0` resolves the
+  ambient default for callers that don't inject one (the production app and the
+  LiveView feature tests).
   """
 
   alias LocalCents.Tracking.Book
@@ -25,13 +30,19 @@ defmodule LocalCents.Tracking.BookStore do
   @extension ".lcbook"
 
   @doc """
-  Returns the directory that holds `.lcbook` files, creating it if needed.
+  Returns the default books directory, creating it if needed.
+
+  Resolves the `:books_dir` application env when set — the LiveView feature tests
+  still redirect writes this way — and otherwise the platform's per-user
+  application-support location (`~/Library/Application Support/LocalCents/books`
+  on macOS). Callers that already hold a directory pass it to the functions below
+  instead; `LocalCents.Tracking` resolves this once and threads it down.
   """
-  @spec books_dir() :: String.t()
+  @spec default_dir() :: String.t()
   # sobelow_skip ["Traversal.FileModule"]
   # `dir` is derived from application config or a fixed platform path, never from
   # user input, so this File call cannot be steered to traverse.
-  def books_dir do
+  def default_dir do
     dir =
       Application.get_env(:local_cents, :books_dir) ||
         Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
@@ -55,27 +66,33 @@ defmodule LocalCents.Tracking.BookStore do
   Writes to a temporary file and atomically renames it into place, so a crash or
   power loss mid-write leaves the previous `.lcbook` intact rather than a truncated,
   unreadable file. A leftover `.tmp` from an interrupted write is ignored by
-  `list_ids/0` (which only matches `*.lcbook`) and is truncated and overwritten by
-  the next `save/2` — writes for a given Book are serialized through its single
+  `list_ids/1` (which only matches `*.lcbook`) and is truncated and overwritten by
+  the next `save/3` — writes for a given Book are serialized through its single
   `BookServer`, so two writes never race on the same `.tmp`.
   """
-  @spec save(Book.id(), bytes :: binary()) :: :ok | {:error, File.posix()}
+  @spec save(dir :: String.t(), Book.id(), bytes :: binary()) :: :ok | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
-  # Paths derive from `path/1`, which raises unless `id` is a single safe path
+  # Paths derive from `path/2`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
   # (`File.rename/2` is not a traversal sink sobelow checks.)
-  def save(id, bytes) when is_binary(id) and is_binary(bytes) do
-    final = path(id)
+  def save(dir, id, bytes) when is_binary(dir) and is_binary(id) and is_binary(bytes) do
+    final = path(dir, id)
     tmp = final <> ".tmp"
 
-    with :ok <- File.write(tmp, bytes),
+    # `mkdir_p` (not the bang) so a directory that can't be created returns
+    # `{:error, reason}` like the write/rename steps rather than raising, honoring
+    # the @spec. A first save into a books directory that doesn't exist yet must not
+    # fail with :enoent.
+    with :ok <- File.mkdir_p(dir),
+         :ok <- File.write(tmp, bytes),
          :ok <- File.rename(tmp, final) do
       :ok
     else
       {:error, reason} ->
-        # A failed rename (permissions, cross-device, …) leaves the temp file
-        # behind; remove it so errors don't accumulate stale `.tmp` files. Ignore
-        # the cleanup result — the original error is what the caller needs.
+        # A failed write or rename (permissions, cross-device, …) can leave the temp
+        # file behind; remove it so errors don't accumulate stale `.tmp` files. Ignore
+        # the cleanup result — the original error is what the caller needs. (A mkdir
+        # failure leaves no temp file, so the `rm` is a harmless no-op.)
         _ = File.rm(tmp)
         {:error, reason}
     end
@@ -84,38 +101,38 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Reads the document bytes for `id`.
   """
-  @spec load(Book.id()) :: {:ok, binary()} | {:error, File.posix()}
+  @spec load(dir :: String.t(), Book.id()) :: {:ok, binary()} | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
-  # The path comes from `path/1`, which raises unless `id` is a single safe path
+  # The path comes from `path/2`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
-  def load(id) when is_binary(id) do
-    File.read(path(id))
+  def load(dir, id) when is_binary(dir) and is_binary(id) do
+    File.read(path(dir, id))
   end
 
   @doc """
   Deletes the `.lcbook` file for `id`.
   """
-  @spec delete(Book.id()) :: :ok | {:error, File.posix()}
+  @spec delete(dir :: String.t(), Book.id()) :: :ok | {:error, File.posix()}
   # sobelow_skip ["Traversal.FileModule"]
-  # The path comes from `path/1`, which raises unless `id` is a single safe path
+  # The path comes from `path/2`, which raises unless `id` is a single safe path
   # component — a hostile id (e.g. "../secrets") cannot escape the books directory.
-  def delete(id) when is_binary(id) do
-    File.rm(path(id))
+  def delete(dir, id) when is_binary(dir) and is_binary(id) do
+    File.rm(path(dir, id))
   end
 
   @doc """
-  Returns the ids of every Book with a `.lcbook` file in the books directory.
+  Returns the ids of every Book with a `.lcbook` file in `dir`.
   """
-  @spec list_ids() :: [Book.id()]
-  def list_ids do
-    [books_dir(), "*" <> @extension]
+  @spec list_ids(dir :: String.t()) :: [Book.id()]
+  def list_ids(dir) when is_binary(dir) do
+    [dir, "*" <> @extension]
     |> Path.join()
     |> Path.wildcard()
     |> Enum.map(&Path.basename(&1, @extension))
   end
 
   @doc """
-  Returns the absolute path of the `.lcbook` file for `id`.
+  Returns the absolute path of the `.lcbook` file for `id` inside `dir`.
 
   Raises `ArgumentError` unless `id` is a single, safe path component. Book ids
   will eventually arrive from request params (the `/books/:id` route), so this is
@@ -123,9 +140,9 @@ defmodule LocalCents.Tracking.BookStore do
   books directory. `Path.basename(id) == id` rejects anything containing a
   directory separator or a `.`/`..` segment.
   """
-  @spec path(Book.id()) :: String.t()
-  def path(id) when is_binary(id) do
-    Path.join(books_dir(), safe_component!(id) <> @extension)
+  @spec path(dir :: String.t(), Book.id()) :: String.t()
+  def path(dir, id) when is_binary(dir) and is_binary(id) do
+    Path.join(dir, safe_component!(id) <> @extension)
   end
 
   defp safe_component!(id) do

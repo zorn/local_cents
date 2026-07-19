@@ -50,20 +50,34 @@ defmodule LocalCents.DemoSeeding do
   @doc """
   Creates the two demo Books, fully populated, and closes each when done.
 
-  `now` is the reference time: it stamps every change (so each Book's `updated_at`
-  is `now`) and anchors the trailing twelve-month window and the "current month"
-  the inbox lands in. It defaults to the current time and is injectable so tests
-  are deterministic.
+  Options mirror `LocalCents.Tracking`'s injected seams and are validated by
+  `NimbleOptions`:
+
+    * `:now` — the reference time. It stamps every change (so each Book's
+      `updated_at` is `:now`) and anchors the trailing twelve-month window and the
+      "current month" the inbox lands in. Defaults to the current time and is
+      injectable so tests are deterministic.
+    * `:books_dir` — threaded to `LocalCents.Tracking.create_book/2` so tests can
+      seed into an isolated directory and run concurrently; defaults to the tracking
+      context's default directory.
 
   Returns `:ok` once both Books are seeded. Raising is left to the caller to guard
   (`LibraryLive` seeds best-effort) — this function does not itself trap errors.
   """
-  @spec create_books(now :: DateTime.t()) :: :ok
-  def create_books(now \\ DateTime.utc_now()) do
+  @create_books_schema NimbleOptions.new!(
+                         now: [type: {:struct, DateTime}],
+                         books_dir: [type: :string]
+                       )
+
+  @spec create_books(opts :: keyword()) :: :ok
+  def create_books(opts \\ []) do
+    opts = NimbleOptions.validate!(opts, @create_books_schema)
+    now = opts[:now] || DateTime.utc_now()
+    books_dir = opts[:books_dir]
     today = DateTime.to_date(now)
 
-    seed_book("Family Expenses", family_categories(), family_inbox(), now, today)
-    seed_book("Business Expenses", business_categories(), business_inbox(), now, today)
+    seed_book("Family Expenses", family_categories(), family_inbox(), now, today, books_dir)
+    seed_book("Business Expenses", business_categories(), business_inbox(), now, today, books_dir)
 
     :ok
   end
@@ -72,13 +86,13 @@ defmodule LocalCents.DemoSeeding do
   # under those categories, then drop the recent (uncategorized) inbox on top. The
   # Book is closed in an `after` so no `BookServer` lingers even if seeding raises
   # partway (the caller seeds best-effort and will surface the error).
-  defp seed_book(name, category_specs, inbox, now, today) do
-    {:ok, book} = Tracking.create_book(name, now)
+  defp seed_book(name, category_specs, inbox, now, today, books_dir) do
+    {:ok, book} = Tracking.create_book(name, create_book_opts(now, books_dir))
 
     try do
       category_ids =
         Map.new(category_specs, fn {category_name, _offsets, _pool} ->
-          {:ok, category} = Tracking.add_category(book.id, %{name: category_name}, now)
+          {:ok, category} = Tracking.add_category(book.id, %{name: category_name}, now: now)
           {category_name, category.id}
         end)
 
@@ -102,17 +116,25 @@ defmodule LocalCents.DemoSeeding do
       date = seeded_date(today, offset, index)
 
       {:ok, expense} =
-        Tracking.add_expense(book_id, %{date: date, description: description, cost: cost}, now)
+        Tracking.add_expense(book_id, %{date: date, description: description, cost: cost},
+          now: now
+        )
 
-      {:ok, _} = Tracking.assign_category(book_id, expense.id, category_id, now)
+      {:ok, _} = Tracking.assign_category(book_id, expense.id, category_id, now: now)
     end)
   end
+
+  # Builds the `create_book/2` options, omitting `:books_dir` when none was injected
+  # (production seeds into the default directory; tests pass an isolated one). The key
+  # is left off rather than passed as `nil`, which the `:string`-typed option rejects.
+  defp create_book_opts(now, nil), do: [now: now]
+  defp create_book_opts(now, books_dir), do: [now: now, books_dir: books_dir]
 
   # Adds the current-month inbox: recently-captured expenses left Uncategorized,
   # some with no cost yet. Dated `today` so they read as just-entered.
   defp seed_inbox(book_id, inbox, now, today) do
     Enum.each(inbox, fn {description, cost} ->
-      {:ok, _} = Tracking.add_expense(book_id, inbox_attrs(description, cost, today), now)
+      {:ok, _} = Tracking.add_expense(book_id, inbox_attrs(description, cost, today), now: now)
     end)
   end
 

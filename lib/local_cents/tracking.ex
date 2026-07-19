@@ -23,10 +23,38 @@ defmodule LocalCents.Tracking do
   subscribers; read functions are served from the process's in-memory document.
 
   Identify a Book by its `id` (a UUID string, also its file name). `create_book/2`
-  and `list_books/0` return `Book` structs pairing that id with the name and a
+  and `list_books/1` return `Book` structs pairing that id with the name and a
   `updated_at` derived from the document's change history (see
   [ADR 0012](0012-book-last-updated-timestamp.html)).
+
+  ## Injected options
+
+  Functions that need a clock, a "today" date, or a books directory take them as a
+  trailing keyword list validated by `NimbleOptions`, so a mistyped key raises
+  rather than being silently ignored:
+
+    * `:books_dir` — the directory holding the `.lcbook` files; defaults to
+      `LocalCents.Tracking.BookStore.default_dir/0`.
+    * `:now` — a `DateTime` stamping the change (and seeding `updated_at`); defaults
+      to `DateTime.utc_now/0`.
+    * `:today` — a `Date` seeding a blank Expense date; defaults to the machine's
+      local date.
+
+  Injecting these keeps the functional core clock-free (see
+  [ADR 0014](0014-functional-core-process-shell.html)) and lets the suite run with
+  per-test directories concurrently (see
+  `docs/research/avoiding-async-false-tests.md`). Their defaults are dynamic, so
+  they are applied after validation rather than declared in the schema.
   """
+
+  # As the context's public facade, this module coordinates every internal piece by
+  # design — the runtime (`BookServer`), persistence (`BookStore`), the CRDT codec
+  # (`ExAutomerge`), and each domain type (`Book`, `Expense`, `Category`) — on top of
+  # stdlib and `NimbleOptions`. That breadth is the point of a facade, not a smell to
+  # refactor away, so it opts out of the project-wide dependency cap rather than
+  # fragmenting the single entry point. Same rationale as
+  # `LocalCents.Tracking.BookServer`, which mirrors this API.
+  # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
 
   # The tracking context boundary. It is a top-level boundary (a peer of the
   # core and web layers rather than nested inside `LocalCents`) so that other
@@ -45,26 +73,41 @@ defmodule LocalCents.Tracking do
 
   require Logger
 
+  # One spec per injectable option, composed into a per-function schema below. The
+  # defaults live in `opt_dir/1`, `opt_now/1`, and `opt_today/1`, not here — a
+  # `NimbleOptions` default is captured at compile time, which would freeze
+  # `DateTime.utc_now/0` and the platform path.
+  @books_dir_opt [type: :string]
+  @now_opt [type: {:struct, DateTime}]
+  @today_opt [type: {:struct, Date}]
+
+  @books_dir_now_schema NimbleOptions.new!(books_dir: @books_dir_opt, now: @now_opt)
+  @books_dir_schema NimbleOptions.new!(books_dir: @books_dir_opt)
+  @now_today_schema NimbleOptions.new!(now: @now_opt, today: @today_opt)
+  @now_schema NimbleOptions.new!(now: @now_opt)
+
   @doc """
   Creates a new, empty Book named `name`, persists it, and starts its runtime
   process. Returns the `Book`.
 
-  `now` stamps the document's first change and seeds the Book's `updated_at`; it
-  defaults to the current time and is injectable for tests.
+  Options: `:books_dir` and `:now` (see the moduledoc). `:now` seeds the Book's
+  `updated_at`.
   """
-  @spec create_book(Book.name(), now :: DateTime.t()) :: {:ok, Book.t()} | {:error, term()}
-  def create_book(name, now \\ DateTime.utc_now()) when is_binary(name) do
+  @spec create_book(Book.name(), opts :: keyword()) :: {:ok, Book.t()} | {:error, term()}
+  def create_book(name, opts \\ []) when is_binary(name) do
+    opts = NimbleOptions.validate!(opts, @books_dir_now_schema)
+    dir = opt_dir(opts)
     id = BookStore.generate_id()
-    seconds = unix_seconds(now)
+    seconds = unix_seconds(opt_now(opts))
 
-    with :ok <- BookStore.save(id, ExAutomerge.new_document(name, seconds)),
-         {:ok, _pid} <- BookServer.ensure_started(id) do
+    with :ok <- BookStore.save(dir, id, ExAutomerge.new_document(name, seconds)),
+         {:ok, _pid} <- BookServer.ensure_started(id, dir) do
       {:ok, %Book{id: id, name: name, updated_at: to_datetime(seconds)}}
     else
       {:error, reason} ->
         # If the process failed to start after the file was written, remove it so a
-        # phantom Book doesn't linger in `list_books/0`. (A no-op if save failed.)
-        BookStore.delete(id)
+        # phantom Book doesn't linger in `list_books/1`. (A no-op if save failed.)
+        BookStore.delete(dir, id)
         {:error, reason}
     end
   end
@@ -72,10 +115,16 @@ defmodule LocalCents.Tracking do
   @doc """
   Ensures the Book's runtime process is running (idempotent). Returns `:ok` or an
   error if no Book with `id` exists on disk.
+
+  Options: `:books_dir` (see the moduledoc). It applies only when the process is
+  first started; an already-open Book keeps its directory.
   """
-  @spec open_book(Book.id()) :: :ok | {:error, term()}
-  def open_book(id) when is_binary(id) do
-    case BookServer.ensure_started(id) do
+  @spec open_book(Book.id(), opts :: keyword()) :: :ok | {:error, term()}
+  def open_book(id, opts \\ []) when is_binary(id) do
+    opts = NimbleOptions.validate!(opts, @books_dir_schema)
+    dir = opt_dir(opts)
+
+    case BookServer.ensure_started(id, dir) do
       {:ok, _pid} -> :ok
       {:error, reason} -> {:error, reason}
     end
@@ -99,29 +148,40 @@ defmodule LocalCents.Tracking do
 
   Reads each file's name directly (matching ADR 0007's "reads a bit of metadata
   from each file on load") without starting a process per Book.
+
+  Options: `:books_dir` (see the moduledoc).
   """
-  @spec list_books() :: [Book.t()]
-  def list_books do
-    BookStore.list_ids()
-    |> Enum.map(&read_book/1)
+  @spec list_books(opts :: keyword()) :: [Book.t()]
+  def list_books(opts \\ []) do
+    opts = NimbleOptions.validate!(opts, @books_dir_schema)
+    dir = opt_dir(opts)
+
+    dir
+    |> BookStore.list_ids()
+    |> Enum.map(&read_book(dir, &1))
     |> Enum.reject(&is_nil/1)
   end
 
   @doc """
   Returns the `Book` with `id`, or `nil` if no such Book exists in the library.
+
+  Options: `:books_dir` (see the moduledoc).
   """
-  @spec get_book(Book.id()) :: Book.t() | nil
-  def get_book(id) when is_binary(id) do
+  @spec get_book(Book.id(), opts :: keyword()) :: Book.t() | nil
+  def get_book(id, opts \\ []) when is_binary(id) do
+    opts = NimbleOptions.validate!(opts, @books_dir_schema)
+    dir = opt_dir(opts)
+
     # Read only this Book's file rather than enumerating the whole library. The
-    # `list_ids/0` guard keeps an absent id quiet (no `read_book/1` warning) and
+    # `list_ids/1` guard keeps an absent id quiet (no `read_book/2` warning) and
     # cheap (a directory listing, not a parse of every `.lcbook`).
-    if id in BookStore.list_ids(), do: read_book(id)
+    if id in BookStore.list_ids(dir), do: read_book(dir, id)
   end
 
   # Reads one Book's library view, tolerating a file that cannot be read or is not
   # a valid Book document, so a single bad `.lcbook` never blanks the whole library.
-  defp read_book(id) do
-    case BookStore.load(id) do
+  defp read_book(dir, id) do
+    case BookStore.load(dir, id) do
       {:ok, doc} ->
         %Book{
           id: id,
@@ -142,12 +202,16 @@ defmodule LocalCents.Tracking do
   @doc """
   Permanently deletes the Book: stops its process (if running) and removes the
   `.lcbook` file.
+
+  Options: `:books_dir` (see the moduledoc).
   """
-  @spec delete_book(Book.id()) :: :ok | {:error, term()}
-  def delete_book(id) when is_binary(id) do
+  @spec delete_book(Book.id(), opts :: keyword()) :: :ok | {:error, term()}
+  def delete_book(id, opts \\ []) when is_binary(id) do
+    opts = NimbleOptions.validate!(opts, @books_dir_schema)
+    dir = opt_dir(opts)
     :ok = close_book(id)
 
-    case BookStore.delete(id) do
+    case BookStore.delete(dir, id) do
       :ok ->
         # Announce the change on the Book's topic after the file is gone, so a
         # subscriber that re-reads finds it absent. Best-effort: the delete has
@@ -172,27 +236,32 @@ defmodule LocalCents.Tracking do
 
   Returns an error if the Book cannot be read or the change cannot be persisted.
 
-  `now` stamps the rename change so the Book's `updated_at` advances; it defaults
-  to the current time and is injectable for tests.
+  Options: `:books_dir` (the closed-Book path's directory) and `:now` (see the
+  moduledoc). `:now` advances the Book's `updated_at`.
   """
-  @spec rename_book(Book.id(), Book.name(), now :: DateTime.t()) :: :ok | {:error, term()}
-  def rename_book(id, new_name, now \\ DateTime.utc_now())
-      when is_binary(id) and is_binary(new_name) do
-    if BookServer.alive?(id) do
-      BookServer.rename(id, new_name, unix_seconds(now))
-    else
-      rename_on_disk(id, new_name, unix_seconds(now))
+  @spec rename_book(Book.id(), Book.name(), opts :: keyword()) :: :ok | {:error, term()}
+  def rename_book(id, new_name, opts \\ []) when is_binary(id) and is_binary(new_name) do
+    opts = NimbleOptions.validate!(opts, @books_dir_now_schema)
+    dir = opt_dir(opts)
+    seconds = unix_seconds(opt_now(opts))
+
+    try do
+      if BookServer.alive?(id) do
+        BookServer.rename(id, new_name, seconds)
+      else
+        rename_on_disk(dir, id, new_name, seconds)
+      end
+    catch
+      # The server can die between alive?/1 and the rename call; the document is
+      # persisted after every change, so falling back to the on-disk rename is safe.
+      :exit, {:noproc, _} -> rename_on_disk(dir, id, new_name, seconds)
     end
-  catch
-    # The server can die between alive?/1 and the rename call; the document is
-    # persisted after every change, so falling back to the on-disk rename is safe.
-    :exit, {:noproc, _} -> rename_on_disk(id, new_name, unix_seconds(now))
   end
 
   # Renames a closed Book by rewriting its file. No `BookServer` owns the document,
   # so disk is the source of truth and no process needs to start just to rename.
-  defp rename_on_disk(id, new_name, seconds) do
-    with {:ok, bytes} <- BookStore.load(id) do
+  defp rename_on_disk(dir, id, new_name, seconds) do
+    with {:ok, bytes} <- BookStore.load(dir, id) do
       # A rename only touches the Book's name, so we set it on the raw decoded state
       # directly rather than routing through `BookDocument.rename/2` (which would also
       # re-introduce a `BookDocument` dependency here). NOTE: this stays equivalent to
@@ -200,11 +269,11 @@ defmodule LocalCents.Tracking do
       # it ever grows logic (validation, derived fields), this closed-Book path must
       # be routed through the core too, or the two rename paths will diverge.
       state = %{ExAutomerge.decode(bytes) | name: new_name}
-      BookStore.save(id, ExAutomerge.reconcile(bytes, state, seconds))
+      BookStore.save(dir, id, ExAutomerge.reconcile(bytes, state, seconds))
     end
   rescue
     # A readable-but-corrupt `.lcbook` makes the decode NIF raise; report it rather
-    # than crash the caller, matching how `read_book/1` tolerates bad files.
+    # than crash the caller, matching how `read_book/2` tolerates bad files.
     ArgumentError -> {:error, :invalid_document}
   end
 
@@ -214,20 +283,26 @@ defmodule LocalCents.Tracking do
 
   Returns a changeset error if `attrs` fail validation (see
   `LocalCents.Tracking.Expense`), a `:not_open` error if the Book's process is not
-  running (`open_book/1`), or another error if persisting the change fails. The new
-  Expense's `id` is generated here (a side effect kept out of the
-  functional core — see [ADR 0014](0014-functional-core-process-shell.html)).
+  running (`open_book/2`), or another error if persisting the change fails. The new
+  Expense's `id` is generated here (a side effect kept out of the functional core —
+  see [ADR 0014](0014-functional-core-process-shell.html)).
 
-  `now` stamps the change so the Book's `updated_at` advances (UTC). `today` seeds a
-  blank date and must be the *user's* local date — on the desktop that is the
-  machine's date (the default); a future web caller supplies the browser's date.
-  Both are injectable for tests.
+  Options: `:now` and `:today` (see the moduledoc). `:today` seeds a blank date and
+  must be the *user's* local date — on the desktop that is the machine's date (the
+  default); a future web caller supplies the browser's date.
   """
-  @spec add_expense(Book.id(), attrs :: map(), now :: DateTime.t(), today :: Date.t()) ::
+  @spec add_expense(Book.id(), attrs :: map(), opts :: keyword()) ::
           {:ok, Expense.t()} | {:error, term()}
-  def add_expense(id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
-      when is_binary(id) and is_map(attrs) do
-    BookServer.add_expense(id, attrs, Ecto.UUID.generate(), today, unix_seconds(now))
+  def add_expense(id, attrs, opts \\ []) when is_binary(id) and is_map(attrs) do
+    opts = NimbleOptions.validate!(opts, @now_today_schema)
+
+    BookServer.add_expense(
+      id,
+      attrs,
+      Ecto.UUID.generate(),
+      opt_today(opts),
+      unix_seconds(opt_now(opts))
+    )
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -238,19 +313,21 @@ defmodule LocalCents.Tracking do
 
   Returns a changeset error on invalid `attrs`, a `:not_found` error for an unknown
   `expense_id`, a `:not_open` error if the Book's process is not running, or another
-  error if persisting fails. `now`/`today` behave as in `add_expense/4`.
+  error if persisting fails.
+
+  Options: `:now` and `:today` (see the moduledoc), as in `add_expense/3`.
   """
   @spec edit_expense(
           Book.id(),
           Expense.id(),
           attrs :: map(),
-          now :: DateTime.t(),
-          today :: Date.t()
+          opts :: keyword()
         ) ::
           {:ok, Expense.t()} | {:error, term()}
-  def edit_expense(id, expense_id, attrs, now \\ DateTime.utc_now(), today \\ local_today())
+  def edit_expense(id, expense_id, attrs, opts \\ [])
       when is_binary(id) and is_binary(expense_id) and is_map(attrs) do
-    BookServer.edit_expense(id, expense_id, attrs, today, unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_today_schema)
+    BookServer.edit_expense(id, expense_id, attrs, opt_today(opts), unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -259,13 +336,15 @@ defmodule LocalCents.Tracking do
   Hard-deletes the Expense `expense_id` from an open Book.
 
   Returns a `:not_found` error for an unknown `expense_id`, a `:not_open` error if
-  the Book's process is not running, or another error if persisting fails. `now`
-  stamps the change so `updated_at` advances.
+  the Book's process is not running, or another error if persisting fails.
+
+  Options: `:now` (see the moduledoc), which advances `updated_at`.
   """
-  @spec delete_expense(Book.id(), Expense.id(), now :: DateTime.t()) :: :ok | {:error, term()}
-  def delete_expense(id, expense_id, now \\ DateTime.utc_now())
+  @spec delete_expense(Book.id(), Expense.id(), opts :: keyword()) :: :ok | {:error, term()}
+  def delete_expense(id, expense_id, opts \\ [])
       when is_binary(id) and is_binary(expense_id) do
-    BookServer.delete_expense(id, expense_id, unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.delete_expense(id, expense_id, unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -275,7 +354,7 @@ defmodule LocalCents.Tracking do
 
   The list order is not a contract callers should rely on (it is not stable across
   a CRDT merge); sort in the view for display. Returns a `:not_open` error if the
-  Book's process is not running (`open_book/1`), matching the mutating functions
+  Book's process is not running (`open_book/2`), matching the mutating functions
   rather than crashing the caller.
   """
   @spec list_expenses(Book.id()) :: [Expense.t()] | {:error, :not_open}
@@ -290,7 +369,7 @@ defmodule LocalCents.Tracking do
 
   The list order is not a contract callers should rely on (it is not stable across a
   CRDT merge); sort in the view for display. Returns a `:not_open` error if the
-  Book's process is not running (`open_book/1`).
+  Book's process is not running (`open_book/2`).
   """
   @spec list_categories(Book.id()) :: [Category.t()] | {:error, :not_open}
   def list_categories(id) when is_binary(id) do
@@ -307,14 +386,16 @@ defmodule LocalCents.Tracking do
   `LocalCents.Tracking.Category`), a `:not_open` error if the Book's process is not
   running, or another error if persisting fails. The new Category's `id` is
   generated here (a side effect kept out of the functional core — see
-  [ADR 0014](0014-functional-core-process-shell.html)). `now` stamps the change so
-  `updated_at` advances (UTC).
+  [ADR 0014](0014-functional-core-process-shell.html)).
+
+  Options: `:now` (see the moduledoc), which advances `updated_at`.
   """
-  @spec add_category(Book.id(), attrs :: map(), now :: DateTime.t()) ::
+  @spec add_category(Book.id(), attrs :: map(), opts :: keyword()) ::
           {:ok, Category.t()} | {:error, term()}
-  def add_category(id, attrs, now \\ DateTime.utc_now())
+  def add_category(id, attrs, opts \\ [])
       when is_binary(id) and is_map(attrs) do
-    BookServer.add_category(id, attrs, Ecto.UUID.generate(), unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.add_category(id, attrs, Ecto.UUID.generate(), unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -327,12 +408,15 @@ defmodule LocalCents.Tracking do
   are left untouched. Returns a changeset error on invalid `attrs`, a `:not_found`
   error for an unknown `category_id`, a `:not_open` error if the Book's process is
   not running, or another error if persisting fails.
+
+  Options: `:now` (see the moduledoc).
   """
-  @spec rename_category(Book.id(), Category.id(), attrs :: map(), now :: DateTime.t()) ::
+  @spec rename_category(Book.id(), Category.id(), attrs :: map(), opts :: keyword()) ::
           {:ok, Category.t()} | {:error, term()}
-  def rename_category(id, category_id, attrs, now \\ DateTime.utc_now())
+  def rename_category(id, category_id, attrs, opts \\ [])
       when is_binary(id) and is_binary(category_id) and is_map(attrs) do
-    BookServer.rename_category(id, category_id, attrs, unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.rename_category(id, category_id, attrs, unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -343,13 +427,15 @@ defmodule LocalCents.Tracking do
   [ADR 0005](0005-categories-not-tags.html)).
 
   Returns a `:not_found` error for an unknown `category_id`, a `:not_open` error if
-  the Book's process is not running, or another error if persisting fails. `now`
-  stamps the change so `updated_at` advances.
+  the Book's process is not running, or another error if persisting fails.
+
+  Options: `:now` (see the moduledoc), which advances `updated_at`.
   """
-  @spec delete_category(Book.id(), Category.id(), now :: DateTime.t()) :: :ok | {:error, term()}
-  def delete_category(id, category_id, now \\ DateTime.utc_now())
+  @spec delete_category(Book.id(), Category.id(), opts :: keyword()) :: :ok | {:error, term()}
+  def delete_category(id, category_id, opts \\ [])
       when is_binary(id) and is_binary(category_id) do
-    BookServer.delete_category(id, category_id, unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.delete_category(id, category_id, unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -361,13 +447,16 @@ defmodule LocalCents.Tracking do
 
   Returns an `:expense_not_found` or `:category_not_found` error when either is
   unknown, a `:not_open` error if the Book's process is not running, or another
-  error if persisting fails. `now` stamps the change so `updated_at` advances.
+  error if persisting fails.
+
+  Options: `:now` (see the moduledoc), which advances `updated_at`.
   """
-  @spec assign_category(Book.id(), Expense.id(), Category.id(), now :: DateTime.t()) ::
+  @spec assign_category(Book.id(), Expense.id(), Category.id(), opts :: keyword()) ::
           {:ok, Expense.t()} | {:error, term()}
-  def assign_category(id, expense_id, category_id, now \\ DateTime.utc_now())
+  def assign_category(id, expense_id, category_id, opts \\ [])
       when is_binary(id) and is_binary(expense_id) and is_binary(category_id) do
-    BookServer.assign_category(id, expense_id, category_id, unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.assign_category(id, expense_id, category_id, unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -378,13 +467,15 @@ defmodule LocalCents.Tracking do
 
   Returns an `:expense_not_found` error for an unknown `expense_id`, a `:not_open`
   error if the Book's process is not running, or another error if persisting fails.
-  `now` stamps the change so `updated_at` advances.
+
+  Options: `:now` (see the moduledoc), which advances `updated_at`.
   """
-  @spec unassign_category(Book.id(), Expense.id(), now :: DateTime.t()) ::
+  @spec unassign_category(Book.id(), Expense.id(), opts :: keyword()) ::
           {:ok, Expense.t()} | {:error, term()}
-  def unassign_category(id, expense_id, now \\ DateTime.utc_now())
+  def unassign_category(id, expense_id, opts \\ [])
       when is_binary(id) and is_binary(expense_id) do
-    BookServer.unassign_category(id, expense_id, unix_seconds(now))
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.unassign_category(id, expense_id, unix_seconds(opt_now(opts)))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -398,11 +489,19 @@ defmodule LocalCents.Tracking do
   @spec subscribe(Book.id()) :: :ok | {:error, term()}
   def subscribe(id) when is_binary(id), do: BookServer.subscribe(id)
 
-  # The user's local calendar date, used as the default when an expense is saved
-  # without a date. On the desktop the server and user share a machine, so the
-  # machine's local date is the user's; a future web caller must pass the browser's
-  # date explicitly rather than rely on this (the server's zone is not the user's).
-  defp local_today, do: NaiveDateTime.to_date(NaiveDateTime.local_now())
+  # The books directory an entry point operates in: the caller's injected `:books_dir`
+  # option, or the platform/app-env default. Injecting a directory is what lets the
+  # tracking tests run concurrently (see `docs/research/avoiding-async-false-tests.md`).
+  defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
+
+  # The change clock, defaulting to now. Kept out of the `NimbleOptions` schema
+  # because a schema default is captured at compile time (see the schema comment).
+  defp opt_now(opts), do: opts[:now] || DateTime.utc_now()
+
+  # The "today" date an omitted Expense date falls back to. On the desktop the server
+  # and user share a machine, so the machine's local date is the user's; a future web
+  # caller must pass `:today` explicitly (the server's zone is not the user's).
+  defp opt_today(opts), do: opts[:today] || NaiveDateTime.to_date(NaiveDateTime.local_now())
 
   # The change stamp we hand the NIFs is whole unix seconds — the resolution
   # Automerge records — so a Book's `updated_at` round-trips at the same precision
@@ -411,7 +510,7 @@ defmodule LocalCents.Tracking do
 
   # A Book has no `updated_at` (and the library renders no "last updated" line) when
   # there's no usable stamp. We mirror the NIF's `time > 0` rule here so a freshly
-  # created Book agrees with a later `list_books/0` read: `document_updated_at/1`
+  # created Book agrees with a later `list_books/1` read: `document_updated_at/1`
   # returns `nil` for an unset (`0`) stamp, so a `0` seed must become `nil` too rather
   # than the Unix epoch.
   defp to_datetime(seconds) when is_integer(seconds) and seconds > 0,
