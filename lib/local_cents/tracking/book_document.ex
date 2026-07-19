@@ -180,7 +180,7 @@ defmodule LocalCents.Tracking.BookDocument do
   @doc """
   Hard-deletes the Expense identified by `id`.
 
-  Returns a `:not_found` error if no Expense has that `id`.
+  Returns the updated document, or a `:not_found` error if no Expense has that `id`.
   """
   @spec delete_expense(t(), Expense.id()) :: {:ok, t()} | {:error, :not_found}
   def delete_expense(%__MODULE__{} = document, id) do
@@ -257,7 +257,7 @@ defmodule LocalCents.Tracking.BookDocument do
   nulling their `category_id` so they become Uncategorized (see
   [ADR 0005](0005-categories-not-tags.html)).
 
-  Returns a `:not_found` error if no Category has that `id`.
+  Returns the updated document, or a `:not_found` error if no Category has that `id`.
   """
   @spec delete_category(t(), Category.id()) :: {:ok, t()} | {:error, :not_found}
   def delete_category(%__MODULE__{} = document, id) do

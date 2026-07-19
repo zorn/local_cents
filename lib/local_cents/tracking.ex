@@ -305,8 +305,7 @@ defmodule LocalCents.Tracking do
   Returns a changeset error if `attrs` fail validation (a blank `name` — see
   `LocalCents.Tracking.Category`), a `:not_open` error if the Book's process is not
   running, or another error if persisting fails. The new Category's `id` is
-  generated here (a
-  side effect kept out of the functional core — see
+  generated here (a side effect kept out of the functional core — see
   [ADR 0014](0014-functional-core-process-shell.html)). `now` stamps the change so
   `updated_at` advances (UTC).
   """

@@ -95,9 +95,9 @@ gets its own guide or ADR.
   error" on invalid `attrs`, "returns the created `Expense`") rather than
   transcribing `{:ok, …}` / `{:error, …}`. Phrase an error atom as "a `:reason`
   error", not a bare "returns `:reason`" — the latter reads as if the atom were
-  the whole return value when the `@spec` wraps it in `{:error, …}`. This extends the "explain the _why_, not the _what_"
-  and "never restate the signature" rules to the return value. Reasoning and the
-  library precedent behind it:
+  the whole return value when the `@spec` wraps it in `{:error, …}`. This extends
+  the "explain the _why_, not the _what_" and "never restate the signature" rules
+  to the return value. Reasoning and the library precedent behind it:
   [research note](docs/research/doc-vs-spec-return-shape.md).
 
 - **Name LiveView events in snake_case.** The event strings behind `phx-*`
