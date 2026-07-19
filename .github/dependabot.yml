@@ -18,17 +18,13 @@ updates:
         patterns:
           - "*"
 
-  - package-ecosystem: "cargo"
-    directory: "/tauri"
-    schedule:
-      interval: "monthly"
-    ignore:
-      - dependency-name: "elixirkit"
-    groups:
-      tauri-dependencies:
-        patterns:
-          - "*"
-
+  # No cargo entry for /tauri: `tauri/Cargo.toml` has a path dependency on
+  # `../deps/elixirkit/elixirkit_rs`, which lives in the gitignored Mix `deps/`
+  # directory (fetched by `mix deps.get`, absent from Dependabot's checkout).
+  # Dependabot must fetch every path dependency before evaluating updates, so
+  # the whole entry errored on every run — an `ignore` can't skip a path dep.
+  # The Rust NIF crates that research recommended watching are covered by the
+  # `/` workspace entry above.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
