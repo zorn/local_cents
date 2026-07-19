@@ -96,6 +96,28 @@ defmodule LocalCents.Tracking.ReportTest do
       assert Enum.map(report.rows, & &1.category.name) == ["Groceries"]
     end
 
+    test "an expense whose category_id names no current Category buckets as Uncategorized" do
+      # A CRDT merge can leave a dangling reference — an expense filed under a
+      # Category a peer deleted. The read model must fold it into Uncategorized, not
+      # crash on the missing Category.
+      categories = [category("c1", "Groceries")]
+
+      expenses = [
+        expense(~D[2026-01-10], "10.00", "c1"),
+        expense(~D[2026-01-11], "7.00", "deleted-elsewhere")
+      ]
+
+      report = Report.compute(document(categories, expenses))
+
+      assert Enum.map(report.rows, fn
+               %{category: nil} -> :uncategorized
+               %{category: c} -> c.name
+             end) == ["Groceries", :uncategorized]
+
+      uncategorized = Enum.find(report.rows, &is_nil(&1.category))
+      assert uncategorized.total == cell("7.00", 0)
+    end
+
     test "a Category whose only expenses are nil-cost still gets a zero-dollar row with a count" do
       categories = [category("c1", "Groceries")]
       expenses = [expense(~D[2026-01-10], nil, "c1")]

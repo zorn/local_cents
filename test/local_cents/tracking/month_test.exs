@@ -8,9 +8,13 @@ defmodule LocalCents.Tracking.MonthTest do
       assert %Month{year: 2026, month: 3} = Month.new(2026, 3)
     end
 
-    test "rejects a month number outside 1..12" do
-      assert_raise ArgumentError, fn -> Month.new(2026, 0) end
-      assert_raise ArgumentError, fn -> Month.new(2026, 13) end
+    test "rejects a month number outside 1..12, naming the month" do
+      assert_raise ArgumentError, ~r/month must be in 1\.\.12/, fn -> Month.new(2026, 0) end
+      assert_raise ArgumentError, ~r/month must be in 1\.\.12/, fn -> Month.new(2026, 13) end
+    end
+
+    test "rejects a non-integer year with a year-specific message" do
+      assert_raise ArgumentError, ~r/year must be an integer/, fn -> Month.new("2026", 3) end
     end
   end
 

@@ -25,17 +25,26 @@ defmodule LocalCents.Tracking.Month do
   @enforce_keys [:year, :month]
   defstruct [:year, :month]
 
-  @type t() :: %__MODULE__{year: integer(), month: 1..12}
+  @typedoc "A calendar month number, 1 (January) through 12 (December)."
+  @type month_number() :: 1..12
+
+  @type t() :: %__MODULE__{year: integer(), month: month_number()}
 
   @doc """
   Builds a Month from a `year` and a `month` number (1–12).
 
-  Raises `ArgumentError` for a month number outside 1..12 — a Month is a real
-  calendar position, not an arbitrary pair of integers.
+  Raises `ArgumentError` for a non-integer year or a month outside 1..12 — a Month
+  is a real calendar position, not an arbitrary pair of integers.
   """
-  @spec new(year :: integer(), month :: 1..12) :: t()
+  @spec new(year :: integer(), month :: month_number()) :: t()
   def new(year, month) when is_integer(year) and is_integer(month) and month in 1..12 do
     %__MODULE__{year: year, month: month}
+  end
+
+  # Distinct clauses so a bad year and a bad month each report the argument actually
+  # at fault, rather than a single message that blames the month for either.
+  def new(year, _month) when not is_integer(year) do
+    raise ArgumentError, "year must be an integer, got: #{inspect(year)}"
   end
 
   def new(_year, month) do

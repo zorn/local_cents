@@ -112,7 +112,7 @@ defmodule LocalCents.Tracking.Report do
   def compute(%BookDocument{categories: categories, expenses: expenses}) do
     months = month_span(expenses)
     categories_by_id = Map.new(categories, &{&1.id, &1})
-    grouped = Enum.group_by(expenses, &row_key/1)
+    grouped = Enum.group_by(expenses, &row_key(&1, categories_by_id))
 
     rows =
       grouped
@@ -144,9 +144,17 @@ defmodule LocalCents.Tracking.Report do
     Month.range(earliest, latest)
   end
 
-  # An Expense's row: its Category's stable id, or the Uncategorized marker.
-  defp row_key(%Expense{category_id: nil}), do: @uncategorized
-  defp row_key(%Expense{category_id: id}), do: id
+  # An Expense's row: its Category's stable id, or the Uncategorized marker. An id
+  # that names no current Category buckets as Uncategorized too — a CRDT merge can
+  # leave a dangling reference (one replica files an Expense under a Category another
+  # replica deleted), and a deleted Category effectively un-files its Expenses (see
+  # [ADR 0005](0005-categories-not-tags.html)), so the read model treats the missing
+  # Category as absent rather than crashing on it.
+  defp row_key(%Expense{category_id: nil}, _categories_by_id), do: @uncategorized
+
+  defp row_key(%Expense{category_id: id}, categories_by_id) do
+    if Map.has_key?(categories_by_id, id), do: id, else: @uncategorized
+  end
 
   # A row carries a Cell for every Month in the span (explicit zeros included), its
   # Category (or nil for Uncategorized), and its lifetime total.
