@@ -58,11 +58,12 @@ top-level for the same reason the contexts are — so `LocalCentsWeb` can list i
 
 A boundary's root module (e.g. `LocalCents.Tracking`) is **always** callable from
 a boundary that depends on it — that is the public API. `exports` only adds
-*additional* modules to the public surface, which is why we export the `Book`,
-`Category`, `Expense`, `Month`, and `Report` data types (they are part of the
-contract passed across the boundary) but not `ExAutomerge` (the implementation).
-Those five are all structs; `Supervisor` is also exported so the application can
-start the context's process tree.
+*additional* modules to the public surface: the data-type structs that cross the
+boundary (e.g. `Book`, `Expense`) and the context's `Supervisor`, but not
+implementation modules like `ExAutomerge`. The authoritative export list lives in
+the `exports:` option of each boundary's declaring module — see
+`lib/local_cents/tracking.ex`; the table above is checked against it by
+`test/local_cents/module_boundaries_doc_test.exs`, so it cannot silently drift.
 
 ### How the layers relate
 
@@ -71,7 +72,7 @@ graph TD
     App["LocalCents.Application<br/><i>top-level</i>"]
     Web["LocalCentsWeb<br/><small>exports: Endpoint, Telemetry</small>"]
     Core["LocalCents<br/><small>core</small>"]
-    Tracking["LocalCents.Tracking<br/><small>exports: Book, Category, Expense, Month, Report, Supervisor</small>"]
+    Tracking["LocalCents.Tracking<br/><small>domain context (exports data-type structs)</small>"]
     DemoSeeding["LocalCents.DemoSeeding<br/><small>consumer (no exports)</small>"]
 
     App --> Web
