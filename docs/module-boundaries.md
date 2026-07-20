@@ -43,7 +43,7 @@ call).
 | Boundary | Declared in | Exports | May depend on |
 |---|---|---|---|
 | `LocalCents` | `lib/local_cents.ex` | — | — |
-| `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Expense` | — |
+| `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Category`, `Expense`, `Month`, `Report`, `Supervisor` | — |
 | `LocalCents.DemoSeeding` | `lib/local_cents/demo_seeding.ex` | — | `LocalCents.Tracking` |
 | `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding` |
 | `LocalCents.Application` | `lib/local_cents/application.ex` | — | `LocalCents`, `LocalCentsWeb` |
@@ -58,10 +58,11 @@ top-level for the same reason the contexts are — so `LocalCentsWeb` can list i
 
 A boundary's root module (e.g. `LocalCents.Tracking`) is **always** callable from
 a boundary that depends on it — that is the public API. `exports` only adds
-*additional* modules to the public surface, which is why we export the `Book` and
-`Expense` data types (they are part of the contract passed across the boundary)
-but not `ExAutomerge` (the implementation). `Expense` is a struct; `Book` is an
-opaque `binary()` type (a serialized Automerge document).
+*additional* modules to the public surface, which is why we export the `Book`,
+`Category`, `Expense`, `Month`, and `Report` data types (they are part of the
+contract passed across the boundary) but not `ExAutomerge` (the implementation).
+Those five are all structs; `Supervisor` is also exported so the application can
+start the context's process tree.
 
 ### How the layers relate
 
@@ -70,7 +71,7 @@ graph TD
     App["LocalCents.Application<br/><i>top-level</i>"]
     Web["LocalCentsWeb<br/><small>exports: Endpoint, Telemetry</small>"]
     Core["LocalCents<br/><small>core</small>"]
-    Tracking["LocalCents.Tracking<br/><small>exports: Book, Expense</small>"]
+    Tracking["LocalCents.Tracking<br/><small>exports: Book, Category, Expense, Month, Report, Supervisor</small>"]
     DemoSeeding["LocalCents.DemoSeeding<br/><small>consumer (no exports)</small>"]
 
     App --> Web
@@ -108,7 +109,7 @@ dependency cycle between `LocalCents` and `LocalCentsWeb`.
 graph TD
     subgraph tracking["LocalCents.Tracking boundary"]
         API["LocalCents.Tracking<br/><b>public API</b>"]
-        Book["Book<br/><small>exported type (binary)</small>"]
+        Book["Book<br/><small>exported struct</small>"]
         Expense["Expense<br/><small>exported struct</small>"]
         ExAutomerge["ExAutomerge<br/><b>private impl</b>"]
 
