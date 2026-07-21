@@ -170,6 +170,5 @@ gets its own guide or ADR.
   is to the human author.
 - PR titles follow conventional commits with a lowercase-starting subject
   (e.g. `feat: add multi-window desktop shell`).
-- `mix precommit` (compile `--warnings-as-errors`, `deps.unlock --check-unused`,
-  `format`, `credo --strict`, `dialyzer`, `sobelow`, `test`) must pass before a
-  change is considered done.
+- `mix precommit` must pass before a change is considered done — see the
+  `precommit` alias in [`mix.exs`](mix.exs) for the exact checks it runs.
