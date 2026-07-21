@@ -55,9 +55,10 @@ jobs:
 
   # Security checks whose remedy is "bump a dep or triage a CVE": Sobelow scans
   # our own Phoenix code for insecure patterns; mix_audit cross-references the
-  # locked dependency tree against known advisories. Broken out so a dependency
-  # advisory reports as its own status line and can be gated independently of
-  # the lint checks.
+  # locked dependency tree against known advisories; hex.audit flags any locked
+  # dependency whose maintainer has retired the version (deprecated, pulled,
+  # renamed). Broken out so a dependency advisory reports as its own status line
+  # and can be gated independently of the lint checks.
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -77,4 +78,8 @@ jobs:
 
       - name: Check dependencies for known vulnerabilities
         run: mix deps.audit
+        if: always()
+
+      - name: Check dependencies for retired packages
+        run: mix hex.audit
         if: always()
