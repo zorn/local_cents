@@ -353,6 +353,10 @@ defmodule LocalCents.MixProject do
         "cmd sh -c 'MIX_ENV=dev mix dialyzer'",
         "sobelow --config",
         "deps.audit",
+        # Run in a subprocess: the `compile` step above evicts Hex's archive
+        # tasks from this process's code path, so an in-process `hex.audit`
+        # lookup fails with "task could not be found".
+        "cmd mix hex.audit",
         "cmd sh -c 'MIX_ENV=dev mix docs --warnings-as-errors'",
         "test --warnings-as-errors"
       ]
