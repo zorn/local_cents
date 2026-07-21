@@ -113,6 +113,16 @@ Two camps:
 **Value:** visibility into untested code. **Cost/friction:** a hard threshold gate is a recurring source of "unblock my PR" friction, and third-party uploads (Coveralls/Codecov) add a token + external dependency.
 **Recommendation: Consider — built-in only.** For a solo project, `mix test --cover` for *local visibility* is worth it; skip the external upload and skip a failing threshold gate until there's a second contributor to hold accountable.
 
+> **Correction (2026-07-21):** [issue #154](https://github.com/zorn/local_cents/issues/154)
+> adopted **`excoveralls`** for local visibility rather than the built-in tool
+> this survey leaned toward — the line-by-line `mix coveralls.html` report is the
+> thing that makes "eyeball what's untested" worth repeating, and the survey's two
+> objections don't bite the *local* case: there is **no threshold gate** and **no
+> external upload**. Both remain live concerns for the *CI* question, which is
+> deliberately deferred to [issue #155](https://github.com/zorn/local_cents/issues/155)
+> and blocked on #154. How coverage is run and why it stays local:
+> [`docs/testing-coverage.md`](../testing-coverage.md).
+
 ### Documentation checks
 
 - **Docs build guard.** ex_doc, LiveView, and Ash all build docs in CI (ex_doc's `test/prerelease.sh`, LiveView's `docs.yml`, Ash's `mix docs` job) — [ex_doc `ci.yml`](https://github.com/elixir-lang/ex_doc/blob/main/.github/workflows/ci.yml), [Ash `ash-ci.yml`](https://github.com/ash-project/ash/blob/main/.github/workflows/ash-ci.yml). Running `mix docs` in CI catches broken cross-references and doc-link warnings. LocalCents already publishes ex_doc collections and recently fixed doc-link warnings *by hand* (see the repo's own recent doc commits), so a build gate would prevent that regressing. **Recommendation: Consider/Adopt** — add a `mix docs` step (optionally with warnings treated as failures).
