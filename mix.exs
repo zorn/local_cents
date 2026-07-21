@@ -126,8 +126,21 @@ defmodule LocalCents.MixProject do
   # (README, API Reference) stays ungrouped at the top.
   defp groups_for_extras do
     [
-      Guides:
-        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|moduledoc-style|comment-style|testing-coverage|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
+      # A group value may be a list of patterns (ExDoc `List.wrap`s it); exact
+      # path strings match by equality, which reads far better than one long
+      # alternation regex. Keep this list in the same order as `extras/0`.
+      Guides: [
+        "CONTEXT.md",
+        "docs/ui-language.md",
+        "docs/software-terms.md",
+        "docs/module-boundaries.md",
+        "docs/moduledoc-style.md",
+        "docs/comment-style.md",
+        "docs/testing-coverage.md",
+        "docs/book-runtime-architecture.md",
+        "docs/command-line-history.md",
+        "docs/breadboard-demo.md"
+      ],
       Proposals: ~r{docs/proposals/},
       Decisions: ~r{docs/adr/},
       Research: ~r{docs/research/},
@@ -232,8 +245,7 @@ defmodule LocalCents.MixProject do
 
       # For local, exploratory test-coverage reports (`mix coveralls.html`). Kept
       # `only: :test` and deliberately out of `precommit`/CI — coverage is an
-      # eyeball-it-on-demand tool here, never a gate. See docs/testing-coverage.md
-      # and the follow-up CI issue #155.
+      # eyeball-it-on-demand tool here, never a gate. See docs/testing-coverage.md.
       {:excoveralls, "~> 0.18", only: :test, runtime: false},
 
       # For code logic style and enforcement.
