@@ -115,6 +115,20 @@ gets its own guide or ADR.
   authenticated-route / `current_scope` rules, and `Req` as the HTTP client — are
   documented in [`CLAUDE.md`](CLAUDE.md).
 
+## Testing
+
+- **Test observable behavior through the narrowest public surface** — default to a
+  context's boundary API (`LocalCents.Tracking`) over its internals, reaching into
+  an internal module only for a guarantee the API can't express (a NIF/CRDT
+  boundary, a process/durability promise, a complex algorithm). The reasoning and
+  the justified exceptions:
+  [research note](docs/research/testing-strategy-public-api-vs-internals.md).
+
+- **Coverage is a local, exploratory tool, not a gate** — run `mix coveralls.html`
+  when you want to see untested areas; it is deliberately absent from `precommit`
+  and CI, and there is no threshold. How to run it and why it stays local:
+  [`docs/testing-coverage.md`](docs/testing-coverage.md).
+
 ## Frontend (JS, CSS, components)
 
 - **No npm.** Keep `package.json` / `node_modules` out of the project as long as

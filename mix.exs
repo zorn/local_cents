@@ -20,6 +20,13 @@ defmodule LocalCents.MixProject do
       compilers: [:boundary, :phoenix_live_view] ++ Mix.compilers(),
       listeners: [Phoenix.CodeReloader],
 
+      # Route `mix test --cover` and the `mix coveralls.*` tasks through
+      # ExCoveralls. Config lives in `coveralls.json`, which only skips the
+      # Storybook stories (compiled modules the suite never renders, so they read
+      # as 0% and distort the total). No threshold and no upload — coverage is a
+      # local eyeball tool, not a gate (see docs/testing-coverage.md).
+      test_coverage: [tool: ExCoveralls],
+
       # Docs
       name: "LocalCents",
       source_url: "https://github.com/zorn/local_cents",
@@ -103,6 +110,7 @@ defmodule LocalCents.MixProject do
       "docs/module-boundaries.md",
       "docs/moduledoc-style.md",
       "docs/comment-style.md",
+      "docs/testing-coverage.md",
       "docs/book-runtime-architecture.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
@@ -119,7 +127,7 @@ defmodule LocalCents.MixProject do
   defp groups_for_extras do
     [
       Guides:
-        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|moduledoc-style|comment-style|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
+        ~r{(CONTEXT|docs/(ui-language|software-terms|module-boundaries|moduledoc-style|comment-style|testing-coverage|book-runtime-architecture|command-line-history|breadboard-demo))\.md},
       Proposals: ~r{docs/proposals/},
       Decisions: ~r{docs/adr/},
       Research: ~r{docs/research/},
@@ -177,7 +185,12 @@ defmodule LocalCents.MixProject do
     # Dialyzer is executed in a separate `MIX_ENV=dev` mix invocation below.
     [
       preferred_envs: [
-        precommit: :test
+        precommit: :test,
+        # Coverage instrumentation reads compiled `:test` modules, so these must
+        # run under `MIX_ENV=test` to see the code the suite exercises.
+        coveralls: :test,
+        "coveralls.html": :test,
+        "coveralls.detail": :test
       ]
     ]
   end
@@ -216,6 +229,12 @@ defmodule LocalCents.MixProject do
       # For high-level, browser-like feature tests that read as user flows
       # (`visit/2`, `click_button/2`, `fill_in/3`, `assert_has/3`).
       {:phoenix_test, "~> 0.11.1", only: :test, runtime: false},
+
+      # For local, exploratory test-coverage reports (`mix coveralls.html`). Kept
+      # `only: :test` and deliberately out of `precommit`/CI — coverage is an
+      # eyeball-it-on-demand tool here, never a gate. See docs/testing-coverage.md
+      # and the follow-up CI issue #155.
+      {:excoveralls, "~> 0.18", only: :test, runtime: false},
 
       # For code logic style and enforcement.
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
