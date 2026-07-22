@@ -92,3 +92,5 @@ open -W --stderr (tty) --stdout (tty) tauri/target/release/bundle/macos/local-ce
 ```
 
 This project has not been configured to create notarized / deployable app bundles yet.
+
+July 22, 2026
