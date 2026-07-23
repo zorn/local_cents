@@ -43,7 +43,7 @@ call).
 | Boundary | Declared in | Exports | May depend on |
 |---|---|---|---|
 | `LocalCents` | `lib/local_cents.ex` | — | — |
-| `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Category`, `Expense`, `Month`, `Report`, `Supervisor` | — |
+| `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Category`, `Expense`, `Month`, `Report` (with its `Cell` and `Row`), `Supervisor` | — |
 | `LocalCents.DemoSeeding` | `lib/local_cents/demo_seeding.ex` | — | `LocalCents.Tracking` |
 | `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding` |
 | `LocalCents.Application` | `lib/local_cents/application.ex` | — | `LocalCents`, `LocalCentsWeb` |

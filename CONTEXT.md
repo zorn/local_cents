@@ -58,9 +58,10 @@ The calendar year-and-month (e.g. `2026-03`) derived from an Expense's **Date** 
 the time bucket the **Report** groups spending into. A Month is a calendar span,
 not a rolling window or a billing cycle, and like the Date it comes from it carries
 no time-of-day and no timezone (see
-[ADR 0015](docs/adr/0015-expense-identity-and-date-encoding.md)). A Report spans
-every Month from the earliest to the latest Expense in the Book, so a Month with no
-spending still appears and reads as zero.
+[ADR 0015](docs/adr/0015-expense-identity-and-date-encoding.md)). A Report's columns
+are the Months in its selected **Report range** — by default the trailing few
+months, up to the whole Book. Within that range a Month with no spending still
+appears and reads as zero.
 
 **Report**:
 A computed, read-only summary of a Book's Expenses. For the MVP it is the total of
@@ -68,4 +69,18 @@ each Category — plus the **Uncategorized** bucket when any Expense is
 uncategorized — broken down by **Month**, reconciling to a grand total (see
 [ADR 0020](docs/adr/0020-bounded-time-series-in-review.md)). A Report derives
 entirely from the Expenses it summarizes: it stores nothing of its own and is
-recomputed on demand.
+recomputed on demand. It covers the Months in its **Report range**, and every
+total — each Category row, each Month column, and the grand total — reconciles to
+that range, not to the Book's lifetime.
+
+**Report range**:
+How far back a **Report** looks — the rule that fixes which Months it covers. It is a
+_trailing_ range measured from the current Month: the last _N_ Months (e.g. the last
+6), or _all_ Months back to the Book's earliest Expense. Because every total in a
+Report reconciles to the range it covers (see **Report**), a shorter range re-scopes
+each Category's total to spending _within_ it; only the _all_ range recovers a
+Category's lifetime figure. Deliberately a small set of trailing presets, not an
+arbitrary custom start/end — bounded, in the spirit of
+[ADR 0020](docs/adr/0020-bounded-time-series-in-review.md). Named _range_, not
+"window," because a **window** in this app is a native desktop window (see
+[ADR 0006](docs/adr/0006-multi-window-desktop-shell.md)).

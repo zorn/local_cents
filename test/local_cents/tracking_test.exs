@@ -524,7 +524,7 @@ defmodule LocalCents.TrackingTest do
     end
   end
 
-  describe "report/1" do
+  describe "report/2" do
     test "computes the Category × Month matrix for an open book, reconciling to the grand total",
          %{tmp_dir: dir} do
       {:ok, book} = Tracking.create_book("Family", books_dir: dir)
@@ -592,6 +592,27 @@ defmodule LocalCents.TrackingTest do
       utilities_row = Enum.find(report.rows, &(&1.category && &1.category.name == "Utilities"))
       assert utilities_row.cells[Month.new(2026, 3)].needs_amount_count == 1
       assert Decimal.equal?(utilities_row.cells[Month.new(2026, 3)].total, Decimal.new(0))
+    end
+
+    test "a :range option narrows the matrix to a trailing window", %{tmp_dir: dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{date: ~D[2026-01-10], description: "Old", cost: "99.00"})
+
+      {:ok, _} =
+        Tracking.add_expense(book.id, %{date: ~D[2026-06-05], description: "New", cost: "20.00"})
+
+      report =
+        Tracking.report(book.id, range: {:trailing_months, 3}, now: ~U[2026-07-15 12:00:00Z])
+
+      # January is outside the trailing-3 window (May–Jul); only June's $20 counts.
+      assert report.months == [Month.new(2026, 5), Month.new(2026, 6), Month.new(2026, 7)]
+
+      assert report.grand_total == %Report.Cell{
+               total: Decimal.new("20.00"),
+               needs_amount_count: 0
+             }
     end
 
     test "returns {:error, :not_open} when the book's process is not running", %{tmp_dir: dir} do
