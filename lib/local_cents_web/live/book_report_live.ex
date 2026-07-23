@@ -87,6 +87,7 @@ defmodule LocalCentsWeb.BookReportLive do
               value={@range_key}
               include_blank={false}
               options={@range_options}
+              class="w-44"
               aria-label="Time range"
             />
           </form>

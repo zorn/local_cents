@@ -36,8 +36,8 @@ defmodule LocalCentsWeb.Bond.Composites.ReportMatrix do
   @spec report_matrix(Socket.assigns()) :: Rendered.t()
   def report_matrix(assigns) do
     ~H"""
-    <div id={@id} class="min-h-0 flex-1 overflow-auto">
-      <table class="border-separate border-spacing-0 text-sm tabular-nums">
+    <div id={@id} class="min-h-0 flex-1 overflow-auto bg-white">
+      <table class="w-full border-separate border-spacing-0 text-sm tabular-nums">
         <thead>
           <tr>
             <th
@@ -135,13 +135,18 @@ defmodule LocalCentsWeb.Bond.Composites.ReportMatrix do
     assigns = assign(assigns, :note, needs_note(assigns.count))
 
     ~H"""
+    <%!-- A CSS hover note rather than a native `title`: Tauri's WKWebView does not
+    render `title` tooltips. Positioned above and right-aligned so it opens into the
+    table body (away from the scroll container's clipped edges). --%>
     <span
-      class="inline-flex items-center gap-0.5 text-amber-600"
-      title={@note}
+      class="group/needs relative inline-flex cursor-default items-center gap-0.5 text-amber-600"
       aria-label={@note}
     >
       <.icon name="hero-exclamation-circle" class="size-3.5" />
       <span class="text-xs font-semibold">{@count}</span>
+      <span class="pointer-events-none absolute bottom-full right-0 z-50 mb-1 hidden w-max max-w-xs whitespace-normal rounded-md bg-surface-900 px-2.5 py-1.5 text-left text-xs font-normal leading-snug text-white shadow-lg group-hover/needs:block">
+        {@note}
+      </span>
     </span>
     """
   end
