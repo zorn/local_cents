@@ -52,6 +52,14 @@ defmodule LocalCentsWeb.BookReportLiveTest do
       |> visit(~p"/books/#{book.id}/report?range=all")
       |> assert_has("p", text: "No expenses yet", timeout: 500)
     end
+
+    test "the empty state for a trailing range reads range-aware, not book-empty", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}/report?range=3")
+      |> assert_has("p", text: "No spending in this range", timeout: 500)
+    end
   end
 
   describe "refresh on demand" do

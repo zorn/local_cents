@@ -116,8 +116,8 @@ defmodule LocalCentsWeb.BookReportLive do
 
           <Bond.empty_state
             :if={report.empty?}
-            message="No expenses yet"
-            hint="Add expenses and they'll show up here, grouped by category and month."
+            message={empty_message(@range_key)}
+            hint={empty_hint(@range_key)}
           />
           <Bond.report_matrix :if={not report.empty?} report={report} />
         </.async_result>
@@ -189,6 +189,17 @@ defmodule LocalCentsWeb.BookReportLive do
 
   defp domain_range("all"), do: :all
   defp domain_range(key), do: {:trailing_months, String.to_integer(key)}
+
+  # Empty-state copy that stays honest across ranges: an empty `:all` report means the
+  # Book truly has no expenses, but an empty *trailing* range may just have none
+  # recently — the Book can still hold older expenses outside the window.
+  defp empty_message("all"), do: "No expenses yet"
+  defp empty_message(_trailing), do: "No spending in this range"
+
+  defp empty_hint("all"),
+    do: "Add expenses and they'll show up here, grouped by category and month."
+
+  defp empty_hint(_trailing), do: "Try a longer range, or add expenses to this book."
 
   defp redirect_missing(socket, message) do
     socket
