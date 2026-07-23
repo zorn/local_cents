@@ -7,14 +7,17 @@ defmodule LocalCentsWeb.BookLive do
   runtime process is running and subscribes to its change broadcasts so the list
   stays live as the `Book` is edited elsewhere.
 
-  The window lists the Book's expenses (newest first) and drives the full editor —
-  a slide-in panel that adds, edits, and (behind a confirmation) hard-deletes an
-  expense. The editor files an expense under a Category with a `<select>` over the
-  Book's existing categories, committed by the same Save as the text fields (see
-  [ADR 0018](0018-category-assignment-through-the-editor.html)); a blank selection
-  leaves it Uncategorized. The picker's option list is a `@categories` cache
-  refreshed only on the Book's `:categories_updated` broadcast, so ordinary expense
-  edits never churn it. The dumb quick-add capture path is a later ticket.
+  The window lists the Book's expenses (newest first) and offers two capture paths.
+  A **quick-add** bar pinned at the top takes a single line — a trailing amount is
+  the cost, the rest the description (see `LocalCents.Tracking.QuickAdd`) — and
+  creates the expense on Enter, clearing the field for the next one. The **full
+  editor** is a slide-in panel that adds, edits, and (behind a confirmation)
+  hard-deletes an expense. The editor files an expense under a Category with a
+  `<select>` over the Book's existing categories, committed by the same Save as the
+  text fields (see [ADR 0018](0018-category-assignment-through-the-editor.html)); a
+  blank selection leaves it Uncategorized. The picker's option list is a
+  `@categories` cache refreshed only on the Book's `:categories_updated` broadcast,
+  so ordinary expense edits never churn it.
   """
   use LocalCentsWeb, :live_view
 
@@ -34,6 +37,7 @@ defmodule LocalCentsWeb.BookLive do
 
       socket
       |> assign(book: book, page_title: book.name, editor: nil, confirm_delete: nil)
+      |> assign(quick_add_line: "")
       |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
       |> assign_categories(load_categories(id))
       |> ok()
@@ -57,11 +61,40 @@ defmodule LocalCentsWeb.BookLive do
         heading carries the name for assistive tech and document structure. --%>
         <h1 class="sr-only">{@book.name}</h1>
 
+        <%!-- Quick-add sits at the top so a long expense list never scrolls it out
+        of reach. Enter creates the expense and clears the field for the next one;
+        the trailing button opens the reliable full editor. --%>
+        <form
+          id="quick-add-form"
+          phx-submit="quick_add"
+          phx-change="quick_add_change"
+          class="pt-4 pb-3"
+        >
+          <Bond.input_bar>
+            <:leading_content>
+              <%!-- The field shows only a placeholder; this sr-only label gives it an
+              accessible name for assistive tech. --%>
+              <label for="quick-add-input" class="sr-only">Quick add expense</label>
+              <Bond.input
+                id="quick-add-input"
+                name="line"
+                value={@quick_add_line}
+                placeholder="coffee 4.75"
+                class="flex-1"
+                autocomplete="off"
+              />
+            </:leading_content>
+            <:trailing_content>
+              <Bond.button phx-click="new_expense">New Expense</Bond.button>
+            </:trailing_content>
+          </Bond.input_bar>
+        </form>
+
         <div class="flex min-h-0 flex-1 flex-col">
           <Bond.empty_state
             :if={@expenses == []}
             message="No expenses yet"
-            hint="Add one below to get started."
+            hint="Add one above to get started."
           />
 
           <div :if={@expenses != []} id="expenses" class="flex min-h-0 flex-1 flex-col">
@@ -80,9 +113,8 @@ defmodule LocalCentsWeb.BookLive do
           </div>
         </div>
 
-        <div class="flex items-center justify-between p-4">
+        <div class="flex items-center p-4">
           <Bond.button variant={:outline} phx-click="open_categories">Categories</Bond.button>
-          <Bond.button phx-click="new_expense">New Expense</Bond.button>
         </div>
 
         <Bond.side_panel
@@ -183,6 +215,37 @@ defmodule LocalCentsWeb.BookLive do
     socket
     |> push_navigate(to: ~p"/books/#{socket.assigns.book.id}/categories")
     |> noreply()
+  end
+
+  # Mirror the field into an assign so a successful submit can clear it (setting the
+  # bound value back to "") — an uncontrolled input would keep the just-added text.
+  def handle_event("quick_add_change", %{"line" => line}, socket) do
+    socket
+    |> assign(quick_add_line: line)
+    |> noreply()
+  end
+
+  def handle_event("quick_add", %{"line" => line}, socket) do
+    book = socket.assigns.book
+
+    case Tracking.quick_add_expense(book.id, line, today: today(socket.assigns.time_zone)) do
+      {:ok, _expense} ->
+        # Reload now rather than wait for our own broadcast, matching the editor's
+        # save path, and clear the field so the next line can be typed straight away.
+        socket
+        |> assign(quick_add_line: "", expenses: load_expenses(book.id))
+        |> noreply()
+
+      # A blank/whitespace line adds nothing and says nothing — the quiet no-op the
+      # capture path is meant to have.
+      {:error, :blank} ->
+        noreply(socket)
+
+      # The grammar can't actually produce an invalid Expense (a lone amount echoes
+      # itself as the description), so this only guards an unexpected failure.
+      {:error, _reason} ->
+        failed(socket, "Could not add that expense.")
+    end
   end
 
   def handle_event("new_expense", _params, socket) do

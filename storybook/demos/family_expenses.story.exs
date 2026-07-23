@@ -125,7 +125,7 @@ defmodule Storybook.Demos.FamilyExpenses do
               <:leading_content>
                 <Bond.input
                   id="demo-new-expense-input"
-                  placeholder="coffee 4.75 or netflix 22.99 yesterday"
+                  placeholder="coffee 4.75"
                   class="flex-1"
                 />
               </:leading_content>
