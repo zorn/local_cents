@@ -3,6 +3,8 @@ defmodule LocalCents.Tracking.QuickAddTest do
 
   alias LocalCents.Tracking.QuickAdd
 
+  doctest LocalCents.Tracking.QuickAdd
+
   describe "parse/1" do
     test "reads a trailing amount as the cost and the rest as the description" do
       assert QuickAdd.parse("coffee 4.75") == {:ok, %{description: "coffee", cost: "4.75"}}

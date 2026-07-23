@@ -316,13 +316,18 @@ defmodule LocalCents.Tracking do
   Adds an expense to an open Book from a single quick-add `line`, returning the created
   `Expense`.
 
-  The line is parsed by `LocalCents.Tracking.QuickAdd` — a trailing amount becomes the
-  Cost and the rest the Description — and the result is created through `add_expense/3`,
-  so validation, id generation, and the `:now`/`:today` injection are all shared with
-  the full editor. A blank or whitespace-only line creates nothing and yields a
-  `:blank` error; every other error mirrors `add_expense/3`.
+  Quick-add is the one-line capture path: a trailing plain amount (`coffee 4.75`)
+  becomes the Cost and the rest the Description; a line with no trailing amount is all
+  Description with the Cost left absent (`coffee`). The Expense is dated today and left
+  Uncategorized. This shares the same validation and id generation as `add_expense/3`,
+  so a well-formed line can never surface a changeset error — a missing amount is simply
+  absent.
 
-  Options: `:now` and `:today` (see the moduledoc), as in `add_expense/3`.
+  A blank or whitespace-only line creates nothing and returns a `:blank` error; every
+  other error mirrors `add_expense/3` (for example `:not_open` when the Book's process
+  is not running).
+
+  Options: `:now` and `:today` (see the moduledoc).
   """
   @spec quick_add_expense(Book.id(), line :: String.t(), opts :: keyword()) ::
           {:ok, Expense.t()} | {:error, term()}
