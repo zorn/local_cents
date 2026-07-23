@@ -31,6 +31,14 @@ zero, so totals stay honest and a genuine zero-Cost Expense is distinct from one
 whose amount simply has not been entered yet (see
 [ADR 0008](docs/adr/0008-mvp-expense-shape.md)).
 
+**Quick-add**:
+The deliberately minimal capture path for recording an Expense from a single typed
+line: an optional trailing amount is the **Cost** and the rest is the
+**Description**, dated today and **Uncategorized**. It contrasts with the _full
+editor_, the reliable primary path that also sets Date and Category. Quick-add never
+blocks — a missing amount is simply absent — and does no clever parsing (no relative
+dates, currency symbols, or drafts).
+
 **Category**:
 A classification of an Expense that answers "what kind of spending is this?" An
 Expense has _at most one_ Category and may have none — quick entry never blocks on

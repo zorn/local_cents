@@ -175,6 +175,52 @@ defmodule LocalCentsWeb.BookLiveTest do
     end
   end
 
+  describe "quick-add" do
+    test "a line with a trailing amount lists the expense", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> fill_in("Quick add expense", with: "coffee 4.75")
+      |> submit()
+      |> assert_has("#expenses", text: "coffee")
+      |> assert_has("#expenses", text: "$4.75")
+    end
+
+    test "a line with no amount lists a needs-amount expense", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> fill_in("Quick add expense", with: "coffee")
+      |> submit()
+      |> assert_has("#expenses", text: "coffee")
+      # A nil cost renders as an em dash, not a faked $0.00 (ADR 0008).
+      |> assert_has("#expenses", text: "—")
+    end
+
+    test "the field clears after a successful add, ready for the next line", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> fill_in("Quick add expense", with: "coffee 4.75")
+      |> assert_has("#quick-add-input[value='coffee 4.75']")
+      |> submit()
+      |> assert_has("#quick-add-input[value='']")
+    end
+
+    test "a blank submit adds nothing", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> visit(~p"/books/#{book.id}")
+      |> fill_in("Quick add expense", with: "   ")
+      |> submit()
+      |> assert_has("p", text: "No expenses yet")
+    end
+  end
+
   describe "category selection" do
     test "filing a new expense under a category shows its badge in the list", ~M{conn} do
       {:ok, book} = Tracking.create_book("Family Expenses")

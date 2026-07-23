@@ -73,6 +73,7 @@ defmodule LocalCents.Tracking do
   alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.ExAutomerge
   alias LocalCents.Tracking.Expense
+  alias LocalCents.Tracking.QuickAdd
   alias LocalCents.Tracking.Report
 
   require Logger
@@ -309,6 +310,32 @@ defmodule LocalCents.Tracking do
     )
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Adds an expense to an open Book from a single quick-add `line`, returning the created
+  `Expense`.
+
+  Quick-add is the one-line capture path: a trailing plain amount (`coffee 4.75`)
+  becomes the Cost and the rest the Description; a line with no trailing amount is all
+  Description with the Cost left absent (`coffee`). The Expense is dated today and left
+  Uncategorized. This shares the same validation and id generation as `add_expense/3`,
+  so a well-formed line can never surface a changeset error — a missing amount is simply
+  absent.
+
+  A blank or whitespace-only line creates nothing and returns a `:blank` error; every
+  other error mirrors `add_expense/3` (for example `:not_open` when the Book's process
+  is not running).
+
+  Options: `:now` and `:today` (see the moduledoc).
+  """
+  @spec quick_add_expense(Book.id(), line :: String.t(), opts :: keyword()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def quick_add_expense(id, line, opts \\ []) when is_binary(id) and is_binary(line) do
+    case QuickAdd.parse(line) do
+      {:ok, attrs} -> add_expense(id, attrs, opts)
+      :blank -> {:error, :blank}
+    end
   end
 
   @doc """
