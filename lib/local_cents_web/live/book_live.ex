@@ -24,6 +24,7 @@ defmodule LocalCentsWeb.BookLive do
   alias LocalCents.Tracking
   alias LocalCents.Tracking.Expense
   alias LocalCentsWeb.DesktopShell
+  alias LocalCentsWeb.MoneyFormat
 
   @impl Phoenix.LiveView
   def mount(%{"id" => id}, _session, socket) do
@@ -113,8 +114,9 @@ defmodule LocalCentsWeb.BookLive do
           </div>
         </div>
 
-        <div class="flex items-center p-4">
+        <div class="flex items-center gap-2 p-4">
           <Bond.button variant={:outline} phx-click="open_categories">Categories</Bond.button>
+          <Bond.button variant={:outline} phx-click="open_report">Report</Bond.button>
         </div>
 
         <Bond.side_panel
@@ -214,6 +216,13 @@ defmodule LocalCentsWeb.BookLive do
     # window (see [ADR 0017](0017-in-window-secondary-views.html)).
     socket
     |> push_navigate(to: ~p"/books/#{socket.assigns.book.id}/categories")
+    |> noreply()
+  end
+
+  def handle_event("open_report", _params, socket) do
+    # The Report is another in-window secondary page (ADR 0017).
+    socket
+    |> push_navigate(to: ~p"/books/#{socket.assigns.book.id}/report")
     |> noreply()
   end
 
@@ -558,10 +567,10 @@ defmodule LocalCentsWeb.BookLive do
   defp format_date(%Date{} = date), do: Calendar.strftime(date, "%m/%d/%Y")
 
   # Cost is optional; a nil cost is an honest "needs amount", shown as an em dash
-  # rather than a fake $0.00 (see ADR 0008). Currency formatting is minimal here —
-  # a dedicated currency display arrives in a later ticket.
+  # rather than a fake $0.00 (see ADR 0008). A present amount uses the shared house
+  # formatter so this list and the Report render dollars identically.
   defp format_amount(nil), do: "—"
-  defp format_amount(%Decimal{} = cost), do: "$" <> Decimal.to_string(Decimal.round(cost, 2))
+  defp format_amount(%Decimal{} = cost), do: MoneyFormat.dollars(cost)
 
   # The IANA time zone the browser reported on connect (e.g. "America/New_York"),
   # falling back to UTC on the static first render (no connect params yet).

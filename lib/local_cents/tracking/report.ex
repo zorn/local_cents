@@ -10,9 +10,9 @@ defmodule LocalCents.Tracking.Report do
 
   The layout is row-oriented, mirroring how the matrix reads and renders:
 
-    * `months` — the ordered column axis, contiguous from the earliest to the latest
-      populated Month (see `LocalCents.Tracking.Month.range/2`). A Month with no
-      spending still appears, as an explicit zero cell — absence is signal.
+    * `months` — the ordered column axis, contiguous across the selected **Report
+      range** (see `compute/2` and `LocalCents.Tracking.Month.range/2`). A Month with
+      no spending still appears, as an explicit zero cell — absence is signal.
     * `rows` — one `Row` per Category that has any Expense, sorted alphabetically by
       name (ties broken by the Category's stable `id`), with the **Uncategorized**
       row (`category: nil`) pinned last. A Category with no Expenses produces no row.
@@ -71,8 +71,9 @@ defmodule LocalCents.Tracking.Report do
     **Uncategorized** row (the computed bucket of Expenses filed under no Category).
     `cells` is keyed by `LocalCents.Tracking.Month` and holds an entry for *every*
     Month in the Report's span — an in-range Month with no spending is an explicit
-    zero cell, not a missing key. `total` is the row's lifetime sum (the flat
-    per-Category total, which is a strict subset of this matrix).
+    zero cell, not a missing key. `total` is the row's sum across that span — the
+    Category's lifetime total only when the range is `:all`, otherwise its total
+    within the range (see `compute/2` / [ADR 0021](0021-bounded-report-range.html)).
     """
 
     alias LocalCents.Tracking.Category
@@ -99,20 +100,45 @@ defmodule LocalCents.Tracking.Report do
           grand_total: Cell.t()
         }
 
+  @typedoc """
+  The **Report range** — how far back the Report looks. `:all` is the whole Book;
+  `{:trailing_months, n}` is the last `n` calendar Months ending at the current one
+  (see [ADR 0021](0021-bounded-report-range.html)).
+  """
+  @type range() :: :all | {:trailing_months, pos_integer()}
+
   # The row-key for Uncategorized Expenses (those with a `nil` category_id). A plain
   # atom can't collide with a Category id (a UUID string), so it groups cleanly.
   @uncategorized :uncategorized
 
   @doc """
   Computes the `Report` for `document` — a pure fold over its categories and
-  expenses, deriving the whole matrix and every total. Stores nothing; recompute on
-  demand.
+  expenses, deriving the matrix and every total for the selected **Report range**.
+  Stores nothing; recompute on demand.
+
+  Options (see [ADR 0021](0021-bounded-report-range.html)):
+
+    * `:range` — `:all` (the whole Book, earliest → latest Expense) or
+      `{:trailing_months, n}`, the last `n` calendar Months ending at the current
+      Month. Defaults to `:all`.
+    * `:now` — the reference time that fixes "the current Month" for a trailing
+      range; ignored by `:all`. Defaults to the current UTC time.
+
+  A trailing range is anchored to `now` and clamped to the Book's earliest Expense:
+  a younger Book shows only the Months it has, and a stale Book shows the trailing
+  empty Months honestly. Expenses outside the range are excluded from every row,
+  cell, and total, so the whole matrix reconciles to what it shows — only `:all`
+  yields lifetime figures.
   """
-  @spec compute(BookDocument.t()) :: t()
-  def compute(%BookDocument{categories: categories, expenses: expenses}) do
-    months = month_span(expenses)
+  @spec compute(BookDocument.t(), opts :: keyword()) :: t()
+  def compute(document, opts \\ [])
+
+  def compute(%BookDocument{categories: categories, expenses: expenses}, opts) do
+    range = Keyword.get(opts, :range, :all)
+    months = month_span(expenses, range, opts[:now])
+    in_range = expenses_in_span(expenses, months)
     categories_by_id = Map.new(categories, &{&1.id, &1})
-    grouped = Enum.group_by(expenses, &row_key(&1, categories_by_id))
+    grouped = Enum.group_by(in_range, &row_key(&1, categories_by_id))
 
     rows =
       grouped
@@ -125,15 +151,15 @@ defmodule LocalCents.Tracking.Report do
       months: months,
       rows: rows,
       column_totals: column_totals(months, rows),
-      grand_total: cell_for(expenses)
+      grand_total: cell_for(in_range)
     }
   end
 
-  # The contiguous column axis: earliest → latest Month any Expense falls in, gaps
-  # filled. Empty when the Book has no Expenses at all.
-  defp month_span([]), do: []
+  # The contiguous column axis for the selected range. Empty when the Book has no
+  # Expenses at all, or when a trailing range falls entirely before the first one.
+  defp month_span([], _range, _now), do: []
 
-  defp month_span(expenses) do
+  defp month_span(expenses, :all, _now) do
     # `Month` owns chronological ordering, so hand it the comparator rather than
     # re-deriving a year/month key here.
     {earliest, latest} =
@@ -142,6 +168,31 @@ defmodule LocalCents.Tracking.Report do
       |> Enum.min_max_by(& &1, Month)
 
     Month.range(earliest, latest)
+  end
+
+  defp month_span(expenses, {:trailing_months, n}, now) do
+    anchor = Month.from_date(DateTime.to_date(now || DateTime.utc_now()))
+    earliest = expenses |> Enum.map(&Month.from_date(&1.date)) |> Enum.min(Month)
+    # Clamp the window start up to the earliest Expense — never pad Months before the
+    # Book began. An entirely-future Book leaves the start after the anchor: no span.
+    start = later_month(Month.shift(anchor, -(n - 1)), earliest)
+
+    case Month.compare(start, anchor) do
+      :gt -> []
+      _ -> Month.range(start, anchor)
+    end
+  end
+
+  defp later_month(a, b), do: if(Month.compare(a, b) == :gt, do: a, else: b)
+
+  # Keeps only Expenses whose Month is on the span. For `:all` this is every Expense
+  # (the span already covers them); for a trailing range it drops the out-of-window
+  # ones so no total counts them.
+  defp expenses_in_span(_expenses, []), do: []
+
+  defp expenses_in_span(expenses, months) do
+    on_span = MapSet.new(months)
+    Enum.filter(expenses, &MapSet.member?(on_span, Month.from_date(&1.date)))
   end
 
   # An Expense's row: its Category's stable id, or the Uncategorized marker. An id

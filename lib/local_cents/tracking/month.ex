@@ -81,6 +81,20 @@ defmodule LocalCents.Tracking.Month do
   def next(%__MODULE__{year: year, month: month}), do: new(year, month + 1)
 
   @doc """
+  Steps `count` Months from `month` — forward for a positive `count`, backward for a
+  negative one — rolling the year as needed. `shift(m, 0)` returns `m`.
+
+  Anchors a trailing column axis: the start of a "last _N_ Months" **Report range** is
+  `shift(current_month, -(n - 1))` (see
+  [ADR 0021](0021-bounded-report-range.html)).
+  """
+  @spec shift(t(), count :: integer()) :: t()
+  def shift(%__MODULE__{year: year, month: month}, count) when is_integer(count) do
+    total = year * 12 + (month - 1) + count
+    new(Integer.floor_div(total, 12), Integer.mod(total, 12) + 1)
+  end
+
+  @doc """
   Returns every Month from `earliest` to `latest`, inclusive and contiguous — the
   gap-filled column axis a `Report` spans, so a Month with no spending still appears
   rather than collapsing.

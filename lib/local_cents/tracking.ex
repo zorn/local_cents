@@ -58,14 +58,16 @@ defmodule LocalCents.Tracking do
 
   # The tracking context boundary. It is a top-level boundary (a peer of the
   # core and web layers rather than nested inside `LocalCents`) so that other
-  # layers can depend on the context directly. It exports the `Book`, `Expense`,
-  # and `Category` types that make up its API contract, plus `Supervisor` so the
-  # application supervision tree can start the context's runtime; the remaining
-  # implementation modules (`BookServer`, `BookStore`, `ExAutomerge`) stay private.
+  # layers can depend on the context directly. It exports the domain types that make
+  # up its API contract — `Book`, `Expense`, `Category`, `Month`, and the `Report`
+  # read model with the `Report.Cell`/`Report.Row` structs its shape is built from —
+  # plus `Supervisor` so the application supervision tree can start the context's
+  # runtime; the remaining implementation modules (`BookServer`, `BookStore`,
+  # `ExAutomerge`) stay private.
   use Boundary,
     top_level?: true,
     deps: [],
-    exports: [Book, Category, Expense, Month, Report, Supervisor]
+    exports: [Book, Category, Expense, Month, Report, Report.Cell, Report.Row, Supervisor]
 
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.BookServer
@@ -85,11 +87,15 @@ defmodule LocalCents.Tracking do
   @books_dir_opt [type: :string]
   @now_opt [type: {:struct, DateTime}]
   @today_opt [type: {:struct, Date}]
+  # `:all` is a safe compile-time default (a plain atom); the runtime `now` used by a
+  # trailing range still defaults in `opt_now/1`, not here.
+  @range_opt [type: {:custom, __MODULE__, :validate_range, []}, default: :all]
 
   @books_dir_now_schema NimbleOptions.new!(books_dir: @books_dir_opt, now: @now_opt)
   @books_dir_schema NimbleOptions.new!(books_dir: @books_dir_opt)
   @now_today_schema NimbleOptions.new!(now: @now_opt, today: @today_opt)
   @now_schema NimbleOptions.new!(now: @now_opt)
+  @report_schema NimbleOptions.new!(range: @range_opt, now: @now_opt)
 
   @doc """
   Creates a new, empty Book named `name`, persists it, and starts its runtime
@@ -411,16 +417,26 @@ defmodule LocalCents.Tracking do
 
   @doc """
   Returns the open Book's `Report` — its Category × Month matrix of spending totals
-  (see [ADR 0020](0020-bounded-time-series-in-review.html)).
+  for the selected **Report range** (see
+  [ADR 0020](0020-bounded-time-series-in-review.html) /
+  [ADR 0021](0021-bounded-report-range.html)).
 
-  A pure, recomputed-on-demand read model: it stamps no change and reads no clock,
-  so it takes no options and mirrors `list_expenses/1`/`list_categories/1` rather
-  than the command functions. Returns a `:not_open` error if the Book's process is
-  not running (`open_book/2`).
+  A pure, recomputed-on-demand read model that stamps no change; it mirrors
+  `list_expenses/1`/`list_categories/1` rather than the command functions. Unlike
+  the other reads it takes options, because a trailing range is defined relative to
+  a clock:
+
+    * `:range` — `:all` or `{:trailing_months, n}` (see `LocalCents.Tracking.Report`).
+      Defaults to `:all`, the whole-Book span.
+    * `:now` — the reference time fixing the current Month for a trailing range;
+      defaults to the current time.
+
+  Returns a `:not_open` error if the Book's process is not running (`open_book/2`).
   """
-  @spec report(Book.id()) :: Report.t() | {:error, :not_open}
-  def report(id) when is_binary(id) do
-    BookServer.report(id)
+  @spec report(Book.id(), opts :: keyword()) :: Report.t() | {:error, :not_open}
+  def report(id, opts \\ []) when is_binary(id) do
+    opts = NimbleOptions.validate!(opts, @report_schema)
+    BookServer.report(id, opts[:range] || :all, opt_now(opts))
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
@@ -540,6 +556,17 @@ defmodule LocalCents.Tracking do
   # option, or the platform/app-env default. Injecting a directory is what lets the
   # tracking tests run concurrently (see `docs/research/avoiding-async-false-tests.md`).
   defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
+
+  @doc false
+  # A `NimbleOptions` custom validator for the `:range` option (see `report/2`).
+  @spec validate_range(range :: term()) :: {:ok, Report.range()} | {:error, String.t()}
+  def validate_range(:all), do: {:ok, :all}
+
+  def validate_range({:trailing_months, n} = range) when is_integer(n) and n > 0,
+    do: {:ok, range}
+
+  def validate_range(other),
+    do: {:error, "expected :all or {:trailing_months, pos_integer}, got: #{inspect(other)}"}
 
   # The change clock, defaulting to now. Kept out of the `NimbleOptions` schema
   # because a schema default is captured at compile time (see the schema comment).
