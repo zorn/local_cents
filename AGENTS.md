@@ -100,6 +100,7 @@ Do **not** add a separate IPC mechanism (e.g., Tauri commands, custom TCP socket
 - Keep Rust logic minimal. Business logic belongs in Elixir; Rust is responsible only for native window management and process lifecycle.
 - Do **not** add Tauri commands (`#[tauri::command]`) for data work that can be done in Phoenix/LiveView.
 - The `SECRET_KEY_BASE` in `lib.rs` is a hardcoded placeholder suitable only for local desktop use — it is not a production web deployment.
+- CI enforces Rust bumpers via the `Rust Quality` workflow (`.github/workflows/rust-quality.yaml`): `cargo fmt` (formatting), `cargo clippy -D warnings` (lints as hard failures), and `cargo test`, run against both `native/ex_automerge` and `tauri/`. Run `cargo fmt` and `cargo clippy --all-targets -- -D warnings` locally before pushing to match it.
 
 ## Agent skills
 

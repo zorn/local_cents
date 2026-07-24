@@ -17,4 +17,4 @@ The following is a list of attributes we are considering for phase 1 of the proj
 - Notes - A longer multi-line Markdown-friendly field for the user to capture any additional information they want to capture. **(Deferred past the MVP — see [ADR 0008](0008-mvp-expense-shape.md).)**
 - Attachments - A list of files the user can attach to an expense for reference, generally expected to be a photo of a receipt or a PDF of an invoice. **(Deferred past the MVP — see [ADR 0008](0008-mvp-expense-shape.md).)**
 
- We will store the cost as a decimal value and render it in the user's chosen currency format (of which the book will have a single chosen currency format).
+ We will store the cost as a decimal value and render it in the user's chosen currency format (of which the book will have a single chosen currency format). **(Amended: for the MVP, costs render as USD only and no currency is stored on the Book — a per-Book currency setting is deferred until multi-currency is designed against real requirements. See [ADR 0010](0010-cost-as-decimal-string.md).)**
