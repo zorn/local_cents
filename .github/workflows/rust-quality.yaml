@@ -105,6 +105,14 @@ jobs:
         with:
           workspaces: tauri
 
+      # `tauri.conf.json` bundles `target/rel` (the Elixir release) as a resource,
+      # and the `tauri-build` build script fails the compile if that path is
+      # missing — but the release only exists after a full `cargo tauri build`,
+      # which we deliberately don't run here. An empty placeholder directory
+      # satisfies the existence check so `clippy`/`test` can compile the crate.
+      - name: Create placeholder release resource directory
+        run: mkdir -p tauri/target/rel
+
       # `cargo fmt` runs WITHOUT `--all`: `--all` also reformats local path
       # dependencies, and `elixirkit_rs` lives inside the repo's Cargo workspace
       # directory without being a member, which makes `cargo metadata` (and thus
