@@ -100,7 +100,7 @@ fn commit_at(doc: &mut AutoCommit, time: i64) {
 #[rustler::nif]
 fn new_document<'a>(env: Env<'a>, name: String, time: i64) -> Result<Binary<'a>, rustler::Error> {
     let mut doc = AutoCommit::new();
-    autosurgeon::reconcile(&mut doc, &BookDoc::empty(name)).map_err(to_badarg)?;
+    autosurgeon::reconcile(&mut doc, BookDoc::empty(name)).map_err(to_badarg)?;
     commit_at(&mut doc, time);
     Ok(binary_from_bytes(env, &doc.save()))
 }

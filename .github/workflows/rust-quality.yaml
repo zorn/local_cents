@@ -1,0 +1,125 @@
+name: Rust Quality
+
+"on":
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+permissions:
+  contents: read
+
+# Cancel any in-progress instances of this workflow when this instance is triggered.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Rust equivalents of the Elixir lane's bumpers: `cargo fmt` mirrors
+# `mix format --check`, and `cargo clippy -D warnings` mirrors Credo `--strict`
+# plus our `--warnings-as-errors` posture (every lint is a hard failure, not a
+# warning). `cargo test` is wired in even though there are no `#[test]` blocks
+# today, so tests run the moment someone adds one. Kept as its own workflow so a
+# red Rust mark is unambiguous, mirroring how lint/security/dialyzer are split.
+jobs:
+  # The standalone Rustler NIF crate. It has no path dependency on the gitignored
+  # Mix `deps/` tree, so it checks without any Elixir setup.
+  native:
+    name: Native NIF (ex_automerge)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: native/ex_automerge
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/ex_automerge
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+        if: always()
+
+      - name: Run tests
+        run: cargo test
+        if: always()
+
+  # The Tauri desktop shell. Its Cargo.toml has a path dependency on
+  # `../deps/elixirkit/elixirkit_rs`, which only exists after `mix deps.get`
+  # materializes the gitignored Mix `deps/` tree — so we run the Elixir setup
+  # (deps only, no compile) before any cargo command. Compiling the crate also
+  # links the Tauri/WebKitGTK system libraries, installed via apt below.
+  tauri:
+    name: Tauri Shell
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MIX_ENV: dev
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # Tauri v2 links against WebKitGTK and friends at compile time, so even a
+      # `clippy`/`test` build (no bundling) needs these system libraries present.
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libxdo-dev \
+            libssl-dev
+
+      # Fetch Mix deps so the `elixirkit_rs` path dependency resolves. We skip
+      # dep/app compilation (`build-*: false`) — only the `deps/` source tree is
+      # needed for cargo to see the path dependency.
+      - name: Setup Elixir Project
+        uses: ./.github/actions/elixir-setup
+        with:
+          build-deps: false
+          build-app: false
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tauri
+
+      # `cargo fmt` runs WITHOUT `--all`: `--all` also reformats local path
+      # dependencies, and `elixirkit_rs` lives inside the repo's Cargo workspace
+      # directory without being a member, which makes `cargo metadata` (and thus
+      # `cargo fmt --all`) error out. Dropping `--all` formats only the Tauri
+      # crate's own sources, which is all we own here.
+      - name: Check formatting
+        run: cargo fmt --check
+        working-directory: tauri
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: tauri
+        if: always()
+
+      - name: Run tests
+        run: cargo test
+        working-directory: tauri
+        if: always()
