@@ -20,6 +20,15 @@ Use **"Delete"** for permanent removal of an entity. Use **"Remove"** only when 
 
 Use **"Open"** when referencing the action of opening a Book in its document window.
 
+## Viewing the Report
+
+The computed summary of a Book's spending is the **Report** — always singular,
+because a Book has exactly one. Use **"Report"** for the affordance that opens it and
+for the view itself; do not write "Reports" (there is only one) and do not call the
+surface "Review." *Review* was the MVP proposal's earlier name for this surface and
+is retired from user-facing language in favor of the domain noun **Report** (see
+[`CONTEXT.md`](../CONTEXT.md)).
+
 ## Confirming destructive actions
 
 When a destructive action needs a confirmation dialog, follow Apple's long-standing

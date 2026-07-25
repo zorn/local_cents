@@ -146,6 +146,82 @@ defmodule LocalCents.Tracking.ReportTest do
     end
   end
 
+  describe "the Report range" do
+    # A reference "now" so the trailing window is deterministic: current month is July.
+    @now ~U[2026-07-15 12:00:00Z]
+
+    defp trailing(document, n),
+      do: Report.compute(document, range: {:trailing_months, n}, now: @now)
+
+    test ":all (and compute/1) spans the whole Book" do
+      expenses = [expense(~D[2026-01-10], "10.00", nil), expense(~D[2026-04-05], "20.00", nil)]
+      doc = document([], expenses)
+
+      whole = Month.range(Month.new(2026, 1), Month.new(2026, 4))
+      assert Report.compute(doc, range: :all).months == whole
+      assert Report.compute(doc).months == whole
+    end
+
+    test "a trailing range spans the last N months from now, inclusive of the current month" do
+      expenses = [expense(~D[2026-01-10], "10.00", nil), expense(~D[2026-06-05], "20.00", nil)]
+
+      report = trailing(document([], expenses), 3)
+
+      assert report.months == [Month.new(2026, 5), Month.new(2026, 6), Month.new(2026, 7)]
+    end
+
+    test "excludes expenses outside the range from rows, cells, and every total" do
+      categories = [category("c1", "Groceries")]
+
+      expenses = [
+        # January is outside the trailing-3 window (May–Jul) and must not count.
+        expense(~D[2026-01-10], "999.00", "c1"),
+        expense(~D[2026-06-05], "20.00", "c1")
+      ]
+
+      report = trailing(document(categories, expenses), 3)
+
+      assert report.grand_total == cell("20.00", 0)
+      [row] = report.rows
+      assert row.total == cell("20.00", 0)
+      assert row.cells[Month.new(2026, 6)] == cell("20.00", 0)
+      refute Map.has_key?(row.cells, Month.new(2026, 1))
+    end
+
+    test "clamps the range start up to the Book's earliest expense" do
+      # Earliest expense is June; a trailing-12 window would reach back to Aug 2025,
+      # but there is no pre-June data to show, so the span starts at June.
+      expenses = [expense(~D[2026-06-10], "10.00", nil), expense(~D[2026-07-01], "5.00", nil)]
+
+      report = trailing(document([], expenses), 12)
+
+      assert report.months == [Month.new(2026, 6), Month.new(2026, 7)]
+    end
+
+    test "shows trailing empty months for a stale Book" do
+      # Latest activity was May; now is July, so June and July are in-range zeros.
+      expenses = [expense(~D[2026-05-10], "10.00", nil)]
+
+      report = trailing(document([], expenses), 3)
+
+      assert report.months == [Month.new(2026, 5), Month.new(2026, 6), Month.new(2026, 7)]
+      [row] = report.rows
+      assert row.cells[Month.new(2026, 7)] == cell("0", 0)
+      assert report.column_totals[Month.new(2026, 7)] == cell("0", 0)
+    end
+
+    test "a range entirely before the earliest expense yields an empty Report" do
+      # All spending is in the future (December); the trailing-3 window (May–Jul) holds none.
+      expenses = [expense(~D[2026-12-10], "10.00", nil)]
+
+      report = trailing(document([], expenses), 3)
+
+      assert report.months == []
+      assert report.rows == []
+      assert report.grand_total == cell("0", 0)
+    end
+  end
+
   describe "nil-cost expenses" do
     test "are counted per cell, never summed as zero, alongside known costs" do
       categories = [category("c1", "Groceries")]

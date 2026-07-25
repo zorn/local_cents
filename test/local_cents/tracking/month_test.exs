@@ -53,6 +53,22 @@ defmodule LocalCents.Tracking.MonthTest do
     end
   end
 
+  describe "shift/2" do
+    test "returns the same month when shifting by zero" do
+      assert Month.shift(Month.new(2026, 3), 0) == Month.new(2026, 3)
+    end
+
+    test "steps forward within and across a year" do
+      assert Month.shift(Month.new(2026, 3), 2) == Month.new(2026, 5)
+      assert Month.shift(Month.new(2026, 11), 2) == Month.new(2027, 1)
+    end
+
+    test "steps backward within and across a year" do
+      assert Month.shift(Month.new(2026, 3), -5) == Month.new(2025, 10)
+      assert Month.shift(Month.new(2026, 1), -1) == Month.new(2025, 12)
+    end
+  end
+
   describe "range/2" do
     test "returns a single month when earliest equals latest" do
       m = Month.new(2026, 3)
