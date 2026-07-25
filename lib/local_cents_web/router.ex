@@ -29,9 +29,16 @@ defmodule LocalCentsWeb.Router do
 
     live "/", HomeLive
     live "/library", LibraryLive
-    live "/books/:id", BookLive
-    live "/books/:book_id/categories", BookCategoriesLive
-    live "/books/:book_id/report", BookReportLive
+
+    # A Book's document-window views share the mount contract in
+    # `LocalCentsWeb.BookWindow` (open the runtime, redirect if gone, subscribe +
+    # register as a viewer) — see ADR 0007 and ADR 0017. The `:book_id` param is
+    # uniform across all three so the hook reads one key.
+    live_session :book_window, on_mount: {LocalCentsWeb.BookWindow, :default} do
+      live "/books/:book_id", BookLive
+      live "/books/:book_id/categories", BookCategoriesLive
+      live "/books/:book_id/report", BookReportLive
+    end
 
     live_storybook("/storybook", backend_module: LocalCentsWeb.Storybook)
   end

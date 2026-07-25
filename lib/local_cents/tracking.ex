@@ -548,9 +548,32 @@ defmodule LocalCents.Tracking do
 
   After subscribing, the caller receives `{:book_updated, id}` messages whenever
   the Book changes and should re-read via `list_expenses/1`.
+
+  This is *passive*: subscribing keeps a process informed but does **not** mark it a
+  *viewer*, so it never keeps a Book's runtime resident (the library subscribes to
+  every Book this way — see `register_viewer/1`).
   """
   @spec subscribe(Book.id()) :: :ok | {:error, term()}
   def subscribe(id) when is_binary(id), do: BookServer.subscribe(id)
+
+  @doc """
+  Registers the calling process as a *viewer* of an open Book, so the Book's runtime
+  stays resident while it is on screen and auto-shuts-down once the last viewer
+  disconnects (see [ADR 0007](0007-book-runtime-and-persistence.html) and
+  `docs/book-runtime-lifecycle.md`).
+
+  A document-window LiveView calls this on connected mount (via the shared
+  `LocalCentsWeb.BookWindow` `on_mount` hook), on top of `subscribe/1`. The two are
+  distinct on purpose: `subscribe/1` is passive listening; registering here tracks the
+  caller in `LocalCents.Tracking.Presence` and is what counts toward keeping the
+  Book open. When the caller dies its registration is dropped automatically, and the
+  Book's `BookServer` reaps itself after a short grace period if no other viewer
+  remains.
+
+  Call `open_book/2` first — this only tracks presence; it does not start the runtime.
+  """
+  @spec register_viewer(Book.id()) :: {:ok, ref :: binary()} | {:error, term()}
+  def register_viewer(id) when is_binary(id), do: BookServer.register_viewer(id)
 
   # The books directory an entry point operates in: the caller's injected `:books_dir`
   # option, or the platform/app-env default. Injecting a directory is what lets the

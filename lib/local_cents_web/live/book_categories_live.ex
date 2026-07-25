@@ -24,21 +24,15 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   alias LocalCentsWeb.DesktopShell
 
   @impl Phoenix.LiveView
-  def mount(%{"book_id" => book_id}, _session, socket) do
-    with :ok <- Tracking.open_book(book_id),
-         %Tracking.Book{} = book <- Tracking.get_book(book_id) do
-      if connected?(socket), do: Tracking.subscribe(book_id)
+  def mount(_params, _session, socket) do
+    # `@book`/`@page_title` and the open-runtime + subscribe + register-viewer contract
+    # are handled by the shared `LocalCentsWeb.BookWindow` `on_mount` hook.
+    book_id = socket.assigns.book.id
 
-      socket
-      |> assign(book: book, page_title: book.name, editing: nil, form: nil)
-      |> assign(confirm_delete: nil, add_nonce: 0, categories: load_categories(book_id))
-      |> ok()
-    else
-      _ ->
-        socket
-        |> redirect_missing("That book could not be found.")
-        |> ok()
-    end
+    socket
+    |> assign(editing: nil, form: nil)
+    |> assign(confirm_delete: nil, add_nonce: 0, categories: load_categories(book_id))
+    |> ok()
   end
 
   @impl Phoenix.LiveView

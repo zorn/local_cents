@@ -62,6 +62,15 @@ config :tailwind,
     cd: Path.expand("../assets", __DIR__)
   ]
 
+# How long a `LocalCents.Tracking.BookServer` lingers after its last viewer
+# disconnects before it persists once more and stops (see ADR 0007's lifecycle and
+# `docs/book-runtime-lifecycle.md`). The grace period bridges the brief zero-viewer
+# gap of an in-window `push_navigate` between a Book's views (ADR 0017) so ordinary
+# navigation doesn't tear the process down and reload from disk, and doubles as a
+# "recently-closed stays warm for instant reopen" window. `:test` shrinks it so the
+# shutdown suite doesn't wait a real minute.
+config :local_cents, LocalCents.Tracking.BookServer, viewer_grace_ms: 60_000
+
 # Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",

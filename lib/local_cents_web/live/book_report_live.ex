@@ -42,20 +42,13 @@ defmodule LocalCentsWeb.BookReportLive do
   @default_range_key "6"
 
   @impl Phoenix.LiveView
-  def mount(%{"book_id" => book_id}, _session, socket) do
-    with :ok <- Tracking.open_book(book_id),
-         %Book{} = book <- Tracking.get_book(book_id) do
-      if connected?(socket), do: Tracking.subscribe(book_id)
-
-      socket
-      |> assign(book: book, page_title: book.name, stale?: false)
-      |> ok()
-    else
-      _ ->
-        socket
-        |> redirect_missing("Book #{book_id} could not be found.")
-        |> ok()
-    end
+  def mount(_params, _session, socket) do
+    # `@book`/`@page_title` and the open-runtime + subscribe + register-viewer contract
+    # are handled by the shared `LocalCentsWeb.BookWindow` `on_mount` hook; the range
+    # (and the async Report load) is driven from `handle_params/3`.
+    socket
+    |> assign(stale?: false)
+    |> ok()
   end
 
   @impl Phoenix.LiveView

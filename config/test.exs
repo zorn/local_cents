@@ -23,6 +23,13 @@ config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_
 # defaults on (dev, prod), so a developer's empty library still gets the demos.
 config :local_cents, :demo_seeding, false
 
+# Shrink the BookServer viewer-disconnect grace period (default 60s — see
+# `config/config.exs`) so the auto-shutdown suite observes a reap promptly. Kept below
+# 100ms so a `refute_receive` window (house rule: literal <= 100) still outlasts a
+# wrongful reap; a viewer re-registering within the window (the navigation-gap test)
+# cancels the pending reap in the low-single-digit ms it takes to propagate locally.
+config :local_cents, LocalCents.Tracking.BookServer, viewer_grace_ms: 50
+
 # The endpoint PhoenixTest drives when running feature tests.
 config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 
