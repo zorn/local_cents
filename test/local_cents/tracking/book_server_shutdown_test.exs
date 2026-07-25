@@ -4,6 +4,8 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
   # grace period is a shared (unmutated) config value, so it forces no serialization.
   use ExUnit.Case, async: true
 
+  import LocalCents.Eventually
+
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
 
@@ -170,22 +172,5 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
   # observed it — which would otherwise coalesce into a net-empty diff and never arm.
   defp await_viewer_observed(server) do
     wait_until(fn -> :sys.get_state(server).ever_had_viewer? end)
-  end
-
-  defp wait_until(fun, remaining \\ 1_000)
-
-  defp wait_until(_fun, remaining) when remaining <= 0, do: flunk("condition not met in time")
-
-  defp wait_until(fun, remaining) do
-    case fun.() do
-      false -> then_retry(fun, remaining)
-      nil -> then_retry(fun, remaining)
-      truthy -> truthy
-    end
-  end
-
-  defp then_retry(fun, remaining) do
-    Process.sleep(10)
-    wait_until(fun, remaining - 10)
   end
 end

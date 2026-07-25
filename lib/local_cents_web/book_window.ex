@@ -27,6 +27,8 @@ defmodule LocalCentsWeb.BookWindow do
   alias LocalCents.Tracking
   alias Phoenix.LiveView.Socket
 
+  require Logger
+
   @spec on_mount(:default, params :: map(), session :: map(), Socket.t()) ::
           {:cont, Socket.t()} | {:halt, Socket.t()}
   def on_mount(:default, %{"book_id" => book_id}, _session, socket) do
@@ -37,7 +39,7 @@ defmodule LocalCentsWeb.BookWindow do
          %Tracking.Book{} = book <- Tracking.get_book(book_id) do
       if connected?(socket) do
         Tracking.subscribe(book_id)
-        Tracking.register_viewer(book_id)
+        register_viewer(book_id)
       end
 
       {:cont, assign(socket, book: book, page_title: book.name)}
@@ -49,6 +51,21 @@ defmodule LocalCentsWeb.BookWindow do
           |> push_navigate(to: ~p"/library")
 
         {:halt, socket}
+    end
+  end
+
+  # Registering the viewer is what keeps the Book resident while its window is open, so
+  # a failure here silently forfeits the lifecycle guarantee (the BookServer could reap
+  # under an open window). It shouldn't block the mount — a failed track is far less
+  # disruptive than refusing to render — so we log it loudly and carry on.
+  defp register_viewer(book_id) do
+    case Tracking.register_viewer(book_id) do
+      {:ok, _ref} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to register viewer for book #{book_id}: #{inspect(reason)}")
+        :ok
     end
   end
 end

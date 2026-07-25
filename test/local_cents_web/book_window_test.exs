@@ -12,6 +12,7 @@ defmodule LocalCentsWeb.BookWindowTest do
 
   import Phoenix.LiveViewTest
   import LocalCents.BooksDirHelper
+  import LocalCents.Eventually
 
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
@@ -36,17 +37,5 @@ defmodule LocalCentsWeb.BookWindowTest do
     # viewer left, the server persists once more and stops after the grace period.
     GenServer.stop(view.pid)
     assert_receive {:DOWN, ^ref, :process, ^server, :normal}, 1_000
-  end
-
-  defp wait_until(fun, remaining \\ 1_000)
-  defp wait_until(_fun, remaining) when remaining <= 0, do: flunk("condition not met in time")
-
-  defp wait_until(fun, remaining) do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(10)
-      wait_until(fun, remaining - 10)
-    end
   end
 end

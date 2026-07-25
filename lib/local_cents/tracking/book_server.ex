@@ -308,9 +308,10 @@ defmodule LocalCents.Tracking.BookServer do
   """
   @spec register_viewer(Book.id()) :: {:ok, ref :: binary()} | {:error, term()}
   def register_viewer(id) when is_binary(id) do
-    # Key each viewer by its own pid so distinct viewers stay distinct entries (two
-    # windows on one Book both count); the server only inspects emptiness, but a
-    # per-pid key keeps the presence list honest for any future "who's viewing" use.
+    # Key each viewer by a string form of its pid so distinct viewers stay distinct
+    # entries (two windows on one Book both count) — Presence keys are conventionally
+    # strings. The server only inspects emptiness, but a per-pid key keeps the presence
+    # list honest for any future "who's viewing" use.
     Presence.track(self(), presence_topic(id), inspect(self()), %{})
   end
 
