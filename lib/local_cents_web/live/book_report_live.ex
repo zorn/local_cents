@@ -53,7 +53,7 @@ defmodule LocalCentsWeb.BookReportLive do
     else
       _ ->
         socket
-        |> redirect_missing("That book could not be found.")
+        |> redirect_missing("Book #{book_id} could not be found.")
         |> ok()
     end
   end
@@ -106,10 +106,13 @@ defmodule LocalCentsWeb.BookReportLive do
           <:loading>
             <Bond.loading_state message="Building your report…" />
           </:loading>
-          <:failed :let={_reason}>
+          <:failed :let={failure}>
             <div class="m-4 flex flex-col items-center gap-3 rounded-lg px-6 py-12 text-center">
               <.icon name="hero-exclamation-circle" class="size-6 text-surface-400" />
               <p class="text-sm font-medium text-surface-700">Couldn't build the report.</p>
+              <p class="max-w-md font-mono text-xs break-words text-surface-500">
+                {failure_detail(failure)}
+              </p>
               <Bond.button variant={:outline} phx-click="refresh">Retry</Bond.button>
             </div>
           </:failed>
@@ -200,6 +203,13 @@ defmodule LocalCentsWeb.BookReportLive do
     do: "Add expenses and they'll show up here, grouped by category and month."
 
   defp empty_hint(_trailing), do: "Try a longer range, or add expenses to this book."
+
+  # The reason behind a failed compute, rendered for the reader rather than only the
+  # logs. `assign_async` reports a returned `{:error, reason}` verbatim and wraps a
+  # crash as `{:exit, _}`; both are shown so a stuck report is diagnosable in place.
+  defp failure_detail({:error, reason}), do: inspect(reason)
+  defp failure_detail({:exit, _reason}), do: "The report process stopped unexpectedly."
+  defp failure_detail(other), do: inspect(other)
 
   defp redirect_missing(socket, message) do
     socket

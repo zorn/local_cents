@@ -1,6 +1,11 @@
 defmodule Storybook.Composites.ReportMatrix do
   use LocalCentsWeb.Storybook.Story, :component
 
+  alias LocalCentsWeb.ReportPresenter.Cell
+  alias LocalCentsWeb.ReportPresenter.Column
+  alias LocalCentsWeb.ReportPresenter.Row
+  alias LocalCentsWeb.ReportPresenter.ViewModel
+
   def function, do: &Bond.Composites.ReportMatrix.report_matrix/1
   def render_source, do: :function
 
@@ -27,35 +32,35 @@ defmodule Storybook.Composites.ReportMatrix do
   # All four cell kinds appear: known money, a genuine zero, a bare needs-amount count,
   # and money-plus-needs — including in the row, column, and grand totals.
   defp populated do
-    %{
+    %ViewModel{
       empty?: false,
-      months: [%{label: "May '26"}, %{label: "Jun '26"}, %{label: "Jul '26"}],
+      months: [%Column{label: "May '26"}, %Column{label: "Jun '26"}, %Column{label: "Jul '26"}],
       rows: [
-        %{
+        %Row{
           name: "Groceries",
           cells: [
-            %{kind: :money, text: "$184.50"},
-            %{kind: :zero},
-            %{kind: :money, text: "$96.20"}
+            %Cell{kind: :money, text: "$184.50"},
+            %Cell{kind: :zero},
+            %Cell{kind: :money, text: "$96.20"}
           ],
-          total: %{kind: :money, text: "$280.70"}
+          total: %Cell{kind: :money, text: "$280.70"}
         },
-        %{
+        %Row{
           name: "Uncategorized",
           cells: [
-            %{kind: :zero},
-            %{kind: :needs, count: 2},
-            %{kind: :money_needs, text: "$38.50", count: 1}
+            %Cell{kind: :zero},
+            %Cell{kind: :needs, count: 2},
+            %Cell{kind: :money_needs, text: "$38.50", count: 1}
           ],
-          total: %{kind: :money_needs, text: "$38.50", count: 3}
+          total: %Cell{kind: :money_needs, text: "$38.50", count: 3}
         }
       ],
       column_totals: [
-        %{kind: :money, text: "$184.50"},
-        %{kind: :needs, count: 2},
-        %{kind: :money_needs, text: "$134.70", count: 1}
+        %Cell{kind: :money, text: "$184.50"},
+        %Cell{kind: :needs, count: 2},
+        %Cell{kind: :money_needs, text: "$134.70", count: 1}
       ],
-      grand_total: %{kind: :money_needs, text: "$319.20", count: 3}
+      grand_total: %Cell{kind: :money_needs, text: "$319.20", count: 3}
     }
   end
 
@@ -68,37 +73,37 @@ defmodule Storybook.Composites.ReportMatrix do
     n = 14
     last = n - 1
 
-    %{
+    %ViewModel{
       empty?: false,
-      months: for(o <- 0..last, do: %{label: wide_label(o)}),
+      months: for(o <- 0..last, do: %Column{label: wide_label(o)}),
       rows: [
-        %{
+        %Row{
           name: "Groceries",
-          cells: for(_ <- 0..last, do: %{kind: :money, text: "$120.00"}),
-          total: %{kind: :money, text: "$1680.00"}
+          cells: for(_ <- 0..last, do: %Cell{kind: :money, text: "$120.00"}),
+          total: %Cell{kind: :money, text: "$1680.00"}
         },
-        %{
+        %Row{
           name: "Utilities",
-          cells: for(_ <- 0..last, do: %{kind: :money, text: "$80.00"}),
-          total: %{kind: :money, text: "$1120.00"}
+          cells: for(_ <- 0..last, do: %Cell{kind: :money, text: "$80.00"}),
+          total: %Cell{kind: :money, text: "$1120.00"}
         },
-        %{
+        %Row{
           name: "Uncategorized",
           cells:
             for(
               o <- 0..last,
-              do: if(o == last, do: %{kind: :needs, count: 2}, else: %{kind: :zero})
+              do: if(o == last, do: %Cell{kind: :needs, count: 2}, else: %Cell{kind: :zero})
             ),
-          total: %{kind: :needs, count: 2}
+          total: %Cell{kind: :needs, count: 2}
         }
       ],
       column_totals:
         for o <- 0..last do
           if o == last,
-            do: %{kind: :money_needs, text: "$200.00", count: 2},
-            else: %{kind: :money, text: "$200.00"}
+            do: %Cell{kind: :money_needs, text: "$200.00", count: 2},
+            else: %Cell{kind: :money, text: "$200.00"}
         end,
-      grand_total: %{kind: :money_needs, text: "$2800.00", count: 2}
+      grand_total: %Cell{kind: :money_needs, text: "$2800.00", count: 2}
     }
   end
 
@@ -108,18 +113,18 @@ defmodule Storybook.Composites.ReportMatrix do
   end
 
   defp single_month do
-    %{
+    %ViewModel{
       empty?: false,
-      months: [%{label: "Jul '26"}],
+      months: [%Column{label: "Jul '26"}],
       rows: [
-        %{
+        %Row{
           name: "Housing",
-          cells: [%{kind: :money, text: "$2150.00"}],
-          total: %{kind: :money, text: "$2150.00"}
+          cells: [%Cell{kind: :money, text: "$2150.00"}],
+          total: %Cell{kind: :money, text: "$2150.00"}
         }
       ],
-      column_totals: [%{kind: :money, text: "$2150.00"}],
-      grand_total: %{kind: :money, text: "$2150.00"}
+      column_totals: [%Cell{kind: :money, text: "$2150.00"}],
+      grand_total: %Cell{kind: :money, text: "$2150.00"}
     }
   end
 end

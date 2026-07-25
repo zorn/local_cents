@@ -1,6 +1,7 @@
 defmodule LocalCentsWeb.MoneyFormat do
   @moduledoc """
-  The one place a known monetary amount becomes user-facing text.
+  Renders a known monetary amount as user-facing text — the single place a `Decimal`
+  cost becomes a `$X.XX` string.
 
   `dollars/1` renders a `Decimal` in the house `$X.XX` form (a leading `$`, always
   two decimal places). It deliberately handles only a *present* amount — how an

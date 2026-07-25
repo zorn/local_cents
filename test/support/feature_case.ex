@@ -11,6 +11,14 @@ defmodule LocalCentsWeb.FeatureCase do
 
   use ExUnit.CaseTemplate
 
+  # PhoenixTest defaults `assert_has`/`refute_has` to `timeout: 0` — a single, eager
+  # check. That is too eager for our pages that load content via `assign_async` (e.g.
+  # the Report), which resolves a beat after the initial render. Rather than sprinkle
+  # `timeout:` on every such assertion, `FeatureCase` defaults them all to this small
+  # retry window; an assertion still returns the instant it is satisfied, so tests that
+  # do not wait pay nothing. Pass an explicit `timeout:` to override per call.
+  @default_assertion_timeout 500
+
   using do
     quote do
       # The default endpoint for testing
@@ -18,13 +26,32 @@ defmodule LocalCentsWeb.FeatureCase do
 
       use LocalCentsWeb, :verified_routes
 
+      # Shadow PhoenixTest's `assert_has`/`refute_has` with the default-timeout wrappers
+      # below; everything else comes straight from PhoenixTest.
+      import PhoenixTest, except: [assert_has: 2, assert_has: 3, refute_has: 2, refute_has: 3]
       import LocalCentsWeb.FeatureCase
-      import PhoenixTest
 
       # The `~M` sigil for map shorthand, e.g. `~M{conn}` for `%{conn: conn}`.
       import TinyMaps
     end
   end
+
+  @typedoc "A PhoenixTest session — the value threaded through `visit/2`, `click_*`, etc."
+  @type session() :: term()
+
+  @doc "Like `PhoenixTest.assert_has/3`, but defaulting `timeout:` (see the module note)."
+  @spec assert_has(session(), String.t(), keyword()) :: session()
+  def assert_has(session, selector, opts \\ []) do
+    PhoenixTest.assert_has(session, selector, with_default_timeout(opts))
+  end
+
+  @doc "Like `PhoenixTest.refute_has/3`, but defaulting `timeout:` (see the module note)."
+  @spec refute_has(session(), String.t(), keyword()) :: session()
+  def refute_has(session, selector, opts \\ []) do
+    PhoenixTest.refute_has(session, selector, with_default_timeout(opts))
+  end
+
+  defp with_default_timeout(opts), do: Keyword.put_new(opts, :timeout, @default_assertion_timeout)
 
   setup _tags do
     conn = PhoenixTest.put_endpoint(Phoenix.ConnTest.build_conn(), LocalCentsWeb.Endpoint)

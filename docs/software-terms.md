@@ -71,3 +71,18 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
   functional core (see [ADR 0014](adr/0014-functional-core-process-shell.md)).
   This is about *where* the data lives (not a process), not whether it is typed, so
   it is a different axis from **raw**.
+
+## Stamping a change
+
+* **Stamp** (verb) -- to record the unix-seconds `time` on an Automerge change so a
+  Book's **Last Updated** advances. A command that mutates a Book *stamps* the change
+  with a `DateTime` (the injected `:now`), which the shell converts to whole unix
+  seconds and hands the NIF; `document_updated_at/1` reads the most recent such stamp
+  back out (see [ADR 0012](adr/0012-book-last-updated-timestamp.md)). Prefer this verb
+  over "timestamp" when you mean the act of recording that value on a write. By
+  contrast, a read-only path — a **Report**, `list_expenses/1` — *stamps no change*:
+  it writes nothing, so it never advances `updated_at`.
+
+  Unrelated: the `bond-stamp` CSS class in the web layer is the rubber-stamp *press*
+  interaction on a button (it shifts toward its shadow on hover) and has nothing to do
+  with change times.

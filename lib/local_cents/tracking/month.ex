@@ -81,11 +81,11 @@ defmodule LocalCents.Tracking.Month do
   def next(%__MODULE__{year: year, month: month}), do: new(year, month + 1)
 
   @doc """
-  Steps `count` Months from `month` — forward for a positive `count`, backward for a
-  negative one — rolling the year as needed. `shift(m, 0)` returns `m`.
+  Returns the Month `count` steps from `month`, rolling the year as needed.
 
-  Anchors a trailing column axis: the start of a "last _N_ Months" **Report range** is
-  `shift(current_month, -(n - 1))` (see
+  `count` is signed — positive steps forward, negative steps back — and `shift(m, 0)`
+  returns `m`. This anchors a trailing column axis: the start of a "last _N_ Months"
+  **Report range** is `shift(current_month, -(n - 1))` (see
   [ADR 0021](0021-bounded-report-range.html)).
   """
   @spec shift(t(), count :: integer()) :: t()

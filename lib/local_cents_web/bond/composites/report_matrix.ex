@@ -24,12 +24,13 @@ defmodule LocalCentsWeb.Bond.Composites.ReportMatrix do
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
+  alias LocalCentsWeb.ReportPresenter
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
   attr :id, :string, default: "report-matrix"
 
-  attr :report, :map,
+  attr :report, ReportPresenter.ViewModel,
     required: true,
     doc: "The formatted view model from `LocalCentsWeb.ReportPresenter.to_view_model/1`"
 
@@ -106,7 +107,7 @@ defmodule LocalCentsWeb.Bond.Composites.ReportMatrix do
 
   # One cell of the matrix, drawn by its kind. A needs-amount cell is never shown as
   # `$0` — its count is surfaced as a marker instead (see the moduledoc).
-  attr :cell, :map, required: true
+  attr :cell, ReportPresenter.Cell, required: true
 
   defp cell(%{cell: %{kind: :money}} = assigns) do
     ~H|<span class="text-surface-800">{@cell.text}</span>|

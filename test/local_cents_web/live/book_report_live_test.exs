@@ -42,7 +42,7 @@ defmodule LocalCentsWeb.BookReportLiveTest do
 
       conn
       |> visit(~p"/books/#{book.id}/report?range=all")
-      |> assert_has("td", text: "$30.00", timeout: 500)
+      |> assert_has("td", text: "$30.00")
     end
 
     test "shows an empty state when the book has no expenses", ~M{conn} do
@@ -50,7 +50,7 @@ defmodule LocalCentsWeb.BookReportLiveTest do
 
       conn
       |> visit(~p"/books/#{book.id}/report?range=all")
-      |> assert_has("p", text: "No expenses yet", timeout: 500)
+      |> assert_has("p", text: "No expenses yet")
     end
 
     test "the empty state for a trailing range reads range-aware, not book-empty", ~M{conn} do
@@ -58,7 +58,7 @@ defmodule LocalCentsWeb.BookReportLiveTest do
 
       conn
       |> visit(~p"/books/#{book.id}/report?range=3")
-      |> assert_has("p", text: "No spending in this range", timeout: 500)
+      |> assert_has("p", text: "No spending in this range")
     end
   end
 
@@ -70,16 +70,16 @@ defmodule LocalCentsWeb.BookReportLiveTest do
       session =
         conn
         |> visit(~p"/books/#{book.id}/report?range=all")
-        |> assert_has("td", text: "$10.00", timeout: 500)
+        |> assert_has("td", text: "$10.00")
 
       # A change in another view broadcasts {:book_updated}; the report goes stale
       # rather than recomputing under the reader.
       add_expense(book.id, %{date: ~D[2026-01-11], description: "Eggs", cost: "5.00"})
 
       session
-      |> assert_has("span", text: "This report may be out of date.", timeout: 500)
+      |> assert_has("span", text: "This report may be out of date.")
       |> click_button("Refresh")
-      |> assert_has("td", text: "$15.00", timeout: 500)
+      |> assert_has("td", text: "$15.00")
       |> refute_has("span", text: "This report may be out of date.")
     end
   end

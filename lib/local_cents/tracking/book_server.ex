@@ -181,7 +181,7 @@ defmodule LocalCents.Tracking.BookServer do
   from one consistent snapshot. `range`/`now` are passed through to
   `LocalCents.Tracking.Report.compute/2`.
   """
-  @spec report(Book.id(), Report.range(), DateTime.t()) :: Report.t()
+  @spec report(Book.id(), Report.range(), now :: DateTime.t()) :: Report.t()
   def report(id, range, now), do: GenServer.call(via(id), {:report, range, now})
 
   @doc """
