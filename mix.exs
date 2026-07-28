@@ -113,6 +113,7 @@ defmodule LocalCents.MixProject do
       "docs/testing-coverage.md",
       "docs/book-runtime-architecture.md",
       "docs/book-runtime-lifecycle.md",
+      "docs/inspecting-a-running-app.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
       "docs/proposals/mvp.md",
@@ -140,6 +141,7 @@ defmodule LocalCents.MixProject do
         "docs/testing-coverage.md",
         "docs/book-runtime-architecture.md",
         "docs/book-runtime-lifecycle.md",
+        "docs/inspecting-a-running-app.md",
         "docs/command-line-history.md",
         "docs/breadboard-demo.md"
       ],

@@ -142,11 +142,15 @@ could in principle be reaped; neither corrupts data or misleads the user:
 
 - **Orphan crash-restart:** a server that crash-restarts *after* all its viewers
   already left comes back with an empty `Presence` list and, since it never observes a
-  last-viewer-leaves transition, lingers resident until the app quits. A fix — an ETS
-  marker owned by `Tracking.Supervisor`, checked at `init` to distinguish a restart
-  from a first start — is noted but deliberately not built for the MVP.
+  last-viewer-leaves transition, lingers resident until the app quits.
 - **Fast open-then-close:** a viewer that registers and dies before the server
   processes the join can coalesce into a single net-empty `presence_diff`, leaving
   `ever_had_viewer?` false, so the server never arms a reap and stays resident. This
   needs a viewer whose whole lifetime is shorter than one presence-diff round-trip —
   not a real window — and is reclaimed on `close_book/1` or app quit.
+
+Both share one root cause — `ever_had_viewer?` is process-local, so a viewer that
+existed without *this* process observing it leaves the gate shut forever. Deferred out
+of the MVP and tracked in
+[issue #176](https://github.com/zorn/local_cents/issues/176), which carries the fix
+sketch and the open design questions.
