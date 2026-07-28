@@ -81,42 +81,19 @@ defmodule LocalCents.Tracking.BookServer do
   only takes effect when the server is first started: an already-running server
   keeps the directory it was started with.
 
-  Guards the **open-after-close race**: the `Registry` clears a stopped server's
-  entry asynchronously, so in the narrow window after a reap (or `close/1`) the
-  supervisor can still answer `{:already_started, dead_pid}`. Handing that back would
-  give a caller a pid whose next `GenServer.call` exits `:noproc`. Auto-shutdown makes
-  this stop/start churn routine, so we confirm liveness and, for a dead entry, retry
-  briefly while the registry drains rather than return the corpse.
+  Auto-shutdown makes open/close churn routine, which raises the question of whether a
+  reopen can be handed a just-stopped pid. It cannot: `Registry` registration for
+  `:unique` keys checks the holder's liveness and evicts a dead entry before failing,
+  so `{:already_started, pid}` is only ever reported for a live process. No liveness
+  guard is needed here.
   """
   @spec ensure_started(Book.id(), dir :: String.t()) :: {:ok, pid()} | {:error, term()}
-  def ensure_started(id, dir), do: ensure_started(id, dir, 5)
-
-  @spec ensure_started(Book.id(), dir :: String.t(), attempts :: non_neg_integer()) ::
-          {:ok, pid()} | {:error, term()}
-  defp ensure_started(id, dir, attempts) do
+  def ensure_started(id, dir) do
     case DynamicSupervisor.start_child(@supervisor, {__MODULE__, {id, dir}}) do
-      {:ok, pid} ->
-        {:ok, pid}
-
-      {:error, {:already_started, pid}} ->
-        cond do
-          Process.alive?(pid) -> {:ok, pid}
-          attempts > 0 -> ensure_started_after_drain(id, dir, attempts)
-          # The registry never drained within the retry budget (should not happen);
-          # surface the stale result rather than loop forever.
-          true -> {:error, {:already_started, pid}}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+      {:error, reason} -> {:error, reason}
     end
-  end
-
-  # The offending entry belongs to an already-dead process, so yield briefly to let the
-  # `Registry` process the pid's `:DOWN` and clear it, then retry the start.
-  defp ensure_started_after_drain(id, dir, attempts) do
-    Process.sleep(2)
-    ensure_started(id, dir, attempts - 1)
   end
 
   @doc """

@@ -89,11 +89,12 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
     end
 
     test "reopening right after closing yields a live, serving process", %{tmp_dir: dir} do
-      # Open-after-close race: `close_book/1` stops the server, but the Registry clears
-      # its entry asynchronously, so an immediate reopen can be answered with the
-      # not-yet-cleared (dead) pid whose next call would exit :noproc. `ensure_started/2`
-      # confirms liveness and retries while the registry drains, so the caller always
-      # gets a live, serving process.
+      # Open-after-close: `close_book/1` stops the server, and auto-shutdown makes this
+      # churn routine. The reopen is safe with no guard in `ensure_started/2` because
+      # `Registry` registration for `:unique` keys evicts a dead holder and retries
+      # before it will report `{:already_started, _}` — so the pid handed back is always
+      # live. This pins that, since a regression there would surface as a `:noproc` exit
+      # on the next call rather than anything louder.
       {:ok, book} = Tracking.create_book("Family", books_dir: dir)
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
