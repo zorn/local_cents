@@ -58,8 +58,8 @@ graph TD
     TS --> Pres
     TS --> DS
 
-    DS -.->|started on open| BS1
-    DS -.->|started on open| BS2
+    DS -.->|started when a Book opens| BS1
+    DS -.->|started when a Book opens| BS2
 
     BS1 -.->|registers id| Reg
     BS2 -.->|registers id| Reg

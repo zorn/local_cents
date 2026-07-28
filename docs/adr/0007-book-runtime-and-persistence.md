@@ -55,16 +55,19 @@ not query into the CRDT with SQL.
 
 ## Implementation note (MVP)
 
-The runtime landed in #59, and auto-shutdown-on-last-viewer in #74, with the
-following choices for the items left open above:
+The runtime landed in [issue #59](https://github.com/zorn/local_cents/issues/59), and
+auto-shutdown-on-last-viewer in
+[issue #74](https://github.com/zorn/local_cents/issues/74), with the following choices
+for the items left open above:
 
 - **Supervision / registry:** a `LocalCents.Tracking.Supervisor` owns a unique
   `Registry` (`LocalCents.Tracking.BookRegistry`, Book id → process), a
   `LocalCents.Tracking.Presence` tracker, and a `DynamicSupervisor`
   (`LocalCents.Tracking.BookSupervisor`) that starts one
   `LocalCents.Tracking.BookServer` per open Book on demand.
-- **Lifecycle:** a `BookServer` starts on open, persists on every change, and
-  **auto-shuts-down once its last viewer disconnects**. A *viewer* is a process that
+- **Lifecycle:** a `BookServer` starts when a Book is opened in its document window —
+  not at app launch; nothing is resident until a Book is opened — persists on every
+  change, and **auto-shuts-down once its last viewer disconnects**. A *viewer* is a process that
   registered via `Tracking.register_viewer/1` (a document-window LiveView, through the
   shared `LocalCentsWeb.BookWindow` `on_mount` hook), tracked in `Presence` on a
   dedicated `"book_presence:<id>"` topic — kept distinct from the passive `subscribe/1`
