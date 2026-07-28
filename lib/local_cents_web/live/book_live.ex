@@ -27,27 +27,17 @@ defmodule LocalCentsWeb.BookLive do
   alias LocalCentsWeb.MoneyFormat
 
   @impl Phoenix.LiveView
-  def mount(%{"id" => id}, _session, socket) do
-    # `open_book/1` fails for an id with no `.lcbook` on disk; `get_book/1` still
-    # returns nil if the file vanished between the two calls (a delete race). Both
-    # mean "no Book to show here", so both fall through to the library redirect
-    # and `@book` is only ever a real struct by the time `render/1` runs.
-    with :ok <- Tracking.open_book(id),
-         %Tracking.Book{} = book <- Tracking.get_book(id) do
-      if connected?(socket), do: Tracking.subscribe(id)
+  def mount(_params, _session, socket) do
+    # `@book` (and `@page_title`) are assigned by the shared `LocalCentsWeb.BookWindow`
+    # `on_mount` hook, which also opens the runtime, subscribes, and registers this
+    # process as a viewer — so this mount only loads the view's own data.
+    id = socket.assigns.book.id
 
-      socket
-      |> assign(book: book, page_title: book.name, editor: nil, confirm_delete: nil)
-      |> assign(quick_add_line: "")
-      |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
-      |> assign_categories(load_categories(id))
-      |> ok()
-    else
-      _ ->
-        socket
-        |> redirect_missing("That book could not be found.")
-        |> ok()
-    end
+    socket
+    |> assign(editor: nil, confirm_delete: nil, quick_add_line: "")
+    |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
+    |> assign_categories(load_categories(id))
+    |> ok()
   end
 
   @impl Phoenix.LiveView

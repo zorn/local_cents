@@ -76,6 +76,16 @@ defmodule LocalCents.Tracking.BookDocument do
   def name(doc_bytes), do: ExAutomerge.document_name(doc_bytes)
 
   @doc """
+  Reads only the Book's last-change stamp from document `doc_bytes`, in unix seconds,
+  without decoding the whole document. `nil` for a document that carries no stamp.
+
+  The counterpart to `name/1`, and together they are the Book's library view (see
+  [ADR 0012](0012-book-last-updated-timestamp.html)).
+  """
+  @spec updated_at(doc_bytes :: binary()) :: integer() | nil
+  def updated_at(doc_bytes), do: ExAutomerge.document_updated_at(doc_bytes)
+
+  @doc """
   Builds a `BookDocument` from the raw state map produced by
   `LocalCents.Tracking.ExAutomerge.decode/1`, parsing each category into a
   `Category` and each expense's stored `date` string into a `Date` and `cost`

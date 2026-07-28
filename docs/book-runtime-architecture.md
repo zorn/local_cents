@@ -42,6 +42,7 @@ graph TD
 
     TS["LocalCents.Tracking.Supervisor<br/><small>Supervisor, :one_for_one</small>"]
     Reg["LocalCents.Tracking.BookRegistry<br/><small>Registry, :unique</small>"]
+    Pres["LocalCents.Tracking.Presence<br/><small>tracks each Book's viewers</small>"]
     DS["LocalCents.Tracking.BookSupervisor<br/><small>DynamicSupervisor, :one_for_one</small>"]
 
     BS1["BookServer<br/><small>one open Book</small>"]
@@ -54,19 +55,22 @@ graph TD
     App --> EP
 
     TS --> Reg
+    TS --> Pres
     TS --> DS
 
-    DS -.->|started on open| BS1
-    DS -.->|started on open| BS2
+    DS -.->|started when a Book opens| BS1
+    DS -.->|started when a Book opens| BS2
 
     BS1 -.->|registers id| Reg
     BS2 -.->|registers id| Reg
 ```
 
 > The `BookServer` children are **transient at the tree level**: none exist until a
-> Book is opened, and in the MVP each stays resident until explicitly closed. Only
-> Books actually open on screen consume a process. (Solid edges are static children;
-> dashed edges are created at runtime.)
+> Book is opened, and each **auto-shuts-down once its last viewer disconnects** (or
+> is explicitly closed). Only Books actually open on screen consume a process.
+> (Solid edges are static children; dashed edges are created at runtime.) For the
+> viewer-driven start/stop lifecycle see
+> [Book Runtime Lifecycle](book-runtime-lifecycle.html).
 
 ### Who's who
 
@@ -75,6 +79,7 @@ graph TD
 | `LocalCents.Tracking.Supervisor` | `Supervisor` (named) | Roots the context's runtime; boots the registry and dynamic supervisor. |
 | `LocalCents.Tracking.BookRegistry` | `Registry`, `:unique` (named) | Maps a Book **id → BookServer pid** so callers reach a Book's process by id. |
 | `LocalCents.Tracking.BookSupervisor` | `DynamicSupervisor` (named) | Starts/stops one `BookServer` per open Book. |
+| `LocalCents.Tracking.Presence` | `Phoenix.Presence` (named) | Tracks each Book's live **viewers** on `"book_presence:<id>"` so a `BookServer` can auto-shut-down when the last one disconnects. Survives a `BookServer` crash. |
 | `LocalCents.Tracking.BookServer` | `GenServer` (one per open Book) | Holds the in-memory Automerge document; runs each command through the functional core (`BookDocument`), persists, and broadcasts. Owns no domain rules itself. |
 
 ## Data flow of a change

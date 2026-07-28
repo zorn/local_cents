@@ -53,18 +53,39 @@ not query into the CRDT with SQL.
   persistence (append changes rather than rewrite the whole document). Flagged now
   so the concern is on record; not work for the MVP.
 
-## Interim implementation note (MVP)
+## Implementation note (MVP)
 
-The runtime landed in #59 with the following choices for the items left open above:
+The runtime landed in [issue #59](https://github.com/zorn/local_cents/issues/59), and
+auto-shutdown-on-last-viewer in
+[issue #74](https://github.com/zorn/local_cents/issues/74), with the following choices
+for the items left open above:
 
 - **Supervision / registry:** a `LocalCents.Tracking.Supervisor` owns a unique
-  `Registry` (`LocalCents.Tracking.BookRegistry`, Book id → process) and a
-  `DynamicSupervisor` (`LocalCents.Tracking.BookSupervisor`) that starts one
+  `Registry` (`LocalCents.Tracking.BookRegistry`, Book id → process), a
+  `LocalCents.Tracking.Presence` tracker, and a `DynamicSupervisor`
+  (`LocalCents.Tracking.BookSupervisor`) that starts one
   `LocalCents.Tracking.BookServer` per open Book on demand.
-- **Lifecycle (interim):** a `BookServer` starts on open, persists on every change,
-  and **stays resident until explicitly closed** (`Tracking.close_book/1`) or the app
-  shuts down. The full **auto-shutdown-on-last-viewer** behavior described under
-  "Lifecycle" above is **deferred** until the windows/LiveViews that create
-  subscribers exist — it requires monitoring subscriber presence, which is only
-  meaningfully testable against real viewers. Tracked in
-  [#74](https://github.com/zorn/local_cents/issues/74).
+- **Lifecycle:** a `BookServer` starts when a Book is opened in its document window —
+  not at app launch; nothing is resident until a Book is opened — persists on every
+  change, and **auto-shuts-down once its last viewer disconnects**. A *viewer* is a process that
+  registered via `Tracking.register_viewer/1` (a document-window LiveView, through the
+  shared `LocalCentsWeb.BookWindow` `on_mount` hook), tracked in `Presence` on a
+  dedicated `"book_presence:<id>"` topic — kept distinct from the passive `subscribe/1`
+  used by the library, which watches every Book's "Last Updated" without being a
+  viewer. The following choices were made and are documented, with the full state
+  machine, in [`docs/book-runtime-lifecycle.md`](../book-runtime-lifecycle.md):
+    - **Grace period (default 60s, configurable):** the server waits out a short grace
+      period before reaping, so the brief zero-viewer gap of an in-window
+      `push_navigate` between a Book's views ([ADR 0017](0017-in-window-secondary-views.md))
+      doesn't tear the process down and reload from disk.
+    - **Reap only after a viewer leaves:** a Book that *never* had a viewer (created but
+      unopened, or a bare `open_book/1`) stays resident until `close_book/1` or app
+      shutdown, matching the earlier interim behavior for those paths.
+    - **Crash resilience:** because `Presence` is a separate process, a crash-restarted
+      `BookServer` reads the still-open viewers via `Presence.list/1` at `init` and
+      does not reap out from under them.
+- **Known deferred edge:** a `BookServer` that crash-restarts *after* all its viewers
+  already left comes back with an empty `Presence` list and — since it never observes a
+  last-viewer-leaves transition — lingers resident until the app quits. This is
+  memory-only and benign; a fix (an ETS marker owned by the supervisor, checked at
+  `init` to tell a restart from a first start) is noted but not built.

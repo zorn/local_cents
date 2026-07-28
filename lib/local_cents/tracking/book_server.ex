@@ -16,15 +16,27 @@ defmodule LocalCents.Tracking.BookServer do
   Processes are registered by Book id in `LocalCents.Tracking.BookRegistry` and
   started under `LocalCents.Tracking.BookSupervisor`.
 
-  ## Lifecycle (interim)
+  ## Lifecycle
 
-  For the MVP a BookServer starts when a Book is opened and **stays resident until
-  it is explicitly closed** (`close/1`) or the application shuts down. ADR 0007
-  ultimately calls for the process to persist once more and stop when the *last
-  viewer disconnects* (auto-shutdown-on-last-viewer). That requires monitoring
-  LiveView subscribers, which we defer until the windows/LiveViews that create
-  those subscribers exist — tracked in
-  [issue #74](https://github.com/zorn/local_cents/issues/74).
+  A BookServer starts when a Book is opened and **auto-shuts-down once its last
+  viewer disconnects** (ADR 0007). A *viewer* is a process that registered through
+  `register_viewer/1` — a document-window LiveView — tracked in
+  `LocalCents.Tracking.Presence` on the Book's `presence_topic/1`. The server watches
+  that topic and, when a `presence_diff` leaves the viewer set empty, it arms a
+  grace-period timer; if no viewer re-registers before it fires, the server stops
+  `:normal` (persisting once more via `terminate/2`). A viewer re-registering cancels
+  the pending reap — which is what keeps an in-window `push_navigate` between a Book's
+  views (ADR 0017) from tearing the process down and reloading from disk.
+
+  A Book that has **never** had a viewer (e.g. one created by `create_book/1` with no
+  window, or a bare `open_book/1`) stays resident until `close/1` or app shutdown. That
+  falls out of the topic scoping rather than any server-side bookkeeping: `presence_topic/1`
+  is only ever tracked on by `register_viewer/1`, so a Book nobody viewed is never sent a
+  diff and never wakes to reconcile. Because presence lives in a
+  separate process, a crash-restarted server sees its still-open viewers via
+  `Presence.list/1` at `init` and does not reap out from under them. The grace period
+  is configurable (`config :local_cents, LocalCents.Tracking.BookServer,
+  viewer_grace_ms:`); see `docs/book-runtime-lifecycle.md` for the full state machine.
   """
 
   # BookServer is the process shell that mirrors the entire Tracking context API, so
@@ -45,6 +57,7 @@ defmodule LocalCents.Tracking.BookServer do
   alias LocalCents.Tracking.BookStore
   alias LocalCents.Tracking.Category
   alias LocalCents.Tracking.Expense
+  alias LocalCents.Tracking.Presence
   alias LocalCents.Tracking.Report
 
   @registry LocalCents.Tracking.BookRegistry
@@ -69,6 +82,12 @@ defmodule LocalCents.Tracking.BookServer do
   tests run concurrently — see `docs/research/avoiding-async-false-tests.md`). It
   only takes effect when the server is first started: an already-running server
   keeps the directory it was started with.
+
+  Auto-shutdown makes open/close churn routine, which raises the question of whether a
+  reopen can be handed a just-stopped pid. It cannot: `Registry` registration for
+  `:unique` keys checks the holder's liveness and evicts a dead entry before failing,
+  so `{:already_started, pid}` is only ever reported for a live process. No liveness
+  guard is needed here.
   """
   @spec ensure_started(Book.id(), dir :: String.t()) :: {:ok, pid()} | {:error, term()}
   def ensure_started(id, dir) do
@@ -101,6 +120,16 @@ defmodule LocalCents.Tracking.BookServer do
   @doc "Returns the Book's name."
   @spec name(Book.id()) :: Book.name()
   def name(id), do: GenServer.call(via(id), :name)
+
+  @doc """
+  Returns the Book's library view — its name and `updated_at` in unix seconds — read
+  from the in-memory document rather than from disk.
+
+  The caller assembles the `Book` struct; this process holds the document, not the
+  `updated_at` conversion (see `LocalCents.Tracking.register_viewer/1`).
+  """
+  @spec book_view(Book.id()) :: {Book.name(), seconds :: integer() | nil}
+  def book_view(id), do: GenServer.call(via(id), :book_view)
 
   @doc """
   Returns the Book's expenses. The list order is not a contract callers should
@@ -257,6 +286,25 @@ defmodule LocalCents.Tracking.BookServer do
   end
 
   @doc """
+  Registers the calling process as a viewer of the Book, tracking it in
+  `LocalCents.Tracking.Presence` on the Book's `presence_topic/1`.
+
+  This is the counter to `subscribe/1`: subscribing is passive listening, while a
+  tracked viewer is what keeps the runtime resident and, when the last one
+  disconnects, triggers auto-shutdown (see the module's Lifecycle section). Presence
+  monitors the caller, so its registration is dropped automatically when it dies —
+  callers never explicitly unregister.
+  """
+  @spec register_viewer(Book.id()) :: {:ok, ref :: binary()} | {:error, term()}
+  def register_viewer(id) when is_binary(id) do
+    # Key each viewer by a string form of its pid so distinct viewers stay distinct
+    # entries (two windows on one Book both count) — Presence keys are conventionally
+    # strings. The server only inspects emptiness, but a per-pid key keeps the presence
+    # list honest for any future "who's viewing" use.
+    Presence.track(self(), presence_topic(id), inspect(self()), %{})
+  end
+
+  @doc """
   Broadcasts that the Book was deleted, so subscribers (e.g. an open document
   window) can react. Called after the file is removed, when no process remains to
   broadcast from within.
@@ -272,7 +320,15 @@ defmodule LocalCents.Tracking.BookServer do
   # books directory it persists to (injected at start so the persistence path is not
   # coupled to a global — see `ensure_started/2`). Every command decodes `doc` into a
   # `BookDocument`, runs, and re-encodes.
-  @typep state() :: %{id: Book.id(), doc: binary(), dir: String.t()}
+  #
+  # `reap_timer` is the pending auto-shutdown timer ref (or `nil`), armed when the
+  # last viewer leaves and cancelled when one returns.
+  @typep state() :: %{
+           id: Book.id(),
+           doc: binary(),
+           dir: String.t(),
+           reap_timer: reference() | nil
+         }
 
   # A pure `BookDocument` command: given the decoded document it returns the new
   # document — with an optional result value (the created/updated Expense or
@@ -295,7 +351,13 @@ defmodule LocalCents.Tracking.BookServer do
 
     with {:ok, doc} <- BookStore.load(dir, id),
          :ok <- validate_document(doc) do
-      {:ok, %{id: id, doc: doc, dir: dir}}
+      # Subscribe on the way up so no viewer join is missed. A crash-restart while a
+      # window is still open is the case that matters: presence lives in its own
+      # process, so those viewers survive our crash and are still tracked. We need no
+      # snapshot of them here — the next diff reconciles against `Presence.list/1`, and
+      # until one arrives there is nothing to reap.
+      Phoenix.PubSub.subscribe(LocalCents.PubSub, presence_topic(id))
+      {:ok, %{id: id, doc: doc, dir: dir, reap_timer: nil}}
     else
       {:error, :invalid_document} -> {:stop, {:invalid_document, id}}
       {:error, reason} -> {:stop, {:load_failed, reason}}
@@ -322,6 +384,10 @@ defmodule LocalCents.Tracking.BookServer do
   @impl GenServer
   def handle_call(:name, _from, state) do
     {:reply, BookDocument.name(state.doc), state}
+  end
+
+  def handle_call(:book_view, _from, state) do
+    {:reply, {BookDocument.name(state.doc), BookDocument.updated_at(state.doc)}, state}
   end
 
   def handle_call(:list_expenses, _from, state) do
@@ -370,6 +436,68 @@ defmodule LocalCents.Tracking.BookServer do
 
   def handle_call({:unassign_category, expense_id, time}, _from, state) do
     run(state, time, &BookDocument.unassign_category(&1, expense_id))
+  end
+
+  # A viewer joined or left the Book's presence topic (see `register_viewer/1`).
+  # Re-derive whether any viewer remains and arm or cancel the reap accordingly.
+  @impl GenServer
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff"}, state) do
+    {:noreply, reconcile_viewers(state)}
+  end
+
+  # The grace period elapsed with no viewer. Re-check presence one last time — a
+  # viewer can register in the window between the timer firing and this message being
+  # handled — and only then persist-and-stop. `terminate/2` performs the final save;
+  # every change was already persisted on write, so it is belt-and-suspenders (see
+  # ADR 0007). Stopping `:normal` keeps the `:transient` child from being restarted.
+  def handle_info(:reap, state) do
+    if viewers_present?(state.id) do
+      {:noreply, %{state | reap_timer: nil}}
+    else
+      {:stop, :normal, %{state | reap_timer: nil}}
+    end
+  end
+
+  # Ignore stray messages rather than crash on them (ADR 0019).
+  def handle_info(_message, state), do: {:noreply, state}
+
+  # Reconciles the reap timer with the current presence set: a present viewer cancels
+  # any pending reap, an empty set arms one. Arming is a no-op when a timer is already
+  # pending.
+  #
+  # Reaching here at all means a viewer joined or left this Book's presence topic —
+  # nothing else ever tracks on it — so "has this Book ever had a window?" needs no
+  # separate flag. the rule that a Book which never had a window is never reaped holds
+  # because a never-viewed Book is never sent a diff and so never reconciles.
+  @spec reconcile_viewers(state()) :: state()
+  defp reconcile_viewers(state) do
+    if viewers_present?(state.id), do: cancel_reap(state), else: arm_reap(state)
+  end
+
+  defp arm_reap(%{reap_timer: nil} = state) do
+    %{state | reap_timer: Process.send_after(self(), :reap, grace_ms())}
+  end
+
+  defp arm_reap(state), do: state
+
+  defp cancel_reap(%{reap_timer: nil} = state), do: state
+
+  defp cancel_reap(%{reap_timer: ref} = state) do
+    Process.cancel_timer(ref)
+    %{state | reap_timer: nil}
+  end
+
+  # True when at least one viewer is tracked on the Book's presence topic.
+  @spec viewers_present?(Book.id()) :: boolean()
+  defp viewers_present?(id), do: Presence.list(presence_topic(id)) != %{}
+
+  # The viewer-disconnect grace period in milliseconds (default 60s), read at arm
+  # time so config (and the test override) always wins over a compile-time capture.
+  @spec grace_ms() :: non_neg_integer()
+  defp grace_ms do
+    :local_cents
+    |> Application.get_env(__MODULE__, [])
+    |> Keyword.get(:viewer_grace_ms, 60_000)
   end
 
   # Decodes the current bytes into the functional core, runs one pure `command`, and
@@ -427,6 +555,14 @@ defmodule LocalCents.Tracking.BookServer do
   """
   @spec topic(Book.id()) :: String.t()
   def topic(id), do: "book:" <> id
+
+  @doc """
+  The `Phoenix.PubSub` topic a Book's viewers are tracked on in
+  `LocalCents.Tracking.Presence`, kept distinct from `topic/1` so viewer-presence
+  churn never mixes with the far more frequent `:book_updated` change broadcasts.
+  """
+  @spec presence_topic(Book.id()) :: String.t()
+  def presence_topic(id), do: "book_presence:" <> id
 
   defp via(id), do: {:via, Registry, {@registry, id}}
 end
