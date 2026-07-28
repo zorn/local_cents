@@ -54,28 +54,36 @@ graph LR
 
 ## Lifecycle state machine
 
-The server reaps **only after it has held at least one viewer and then lost the last
-one** ("Philosophy B"). A Book that never had a viewer — one created by `create_book/1`
-with no window, or a bare `open_book/1` — stays resident until it is explicitly closed.
+The server reaps when a `presence_diff` leaves the viewer set empty. A Book that never
+had a viewer — one created by `create_book/1` with no window, or a bare `open_book/1` —
+stays resident until it is explicitly closed ("Philosophy B").
+
+That guarantee needs no server-side bookkeeping. `presence_topic/1` is tracked on by
+exactly one thing, `register_viewer/1`, so a Book nobody ever viewed is never sent a
+diff, never reconciles, and never arms a reap. The arrival of a diff *is* the proof that
+a viewer existed.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> NoViewerYet : init (Presence list empty)
-    [*] --> Resident : init (Presence list non-empty)
+    [*] --> Idle : init
 
-    note right of NoViewerYet
-      A fresh, viewerless open. Never reaps
-      on its own — only close_book/1 or app
-      shutdown stops it (matches interim behavior).
+    note right of Idle
+      No diff has arrived yet. A Book nobody
+      viewed stays here forever — nothing tracks
+      on its topic, so it is never woken to
+      reconcile. Only close_book/1 or app
+      shutdown stops it.
     end note
 
     note right of Resident
-      Reached directly at init after a crash-restart
-      while a window is still open: Presence lives in
-      its own process, so the viewer survived the crash.
+      A crash-restart with a window still open lands
+      here on the next diff: Presence lives in its own
+      process, so the viewer survived the crash and is
+      still listed.
     end note
 
-    NoViewerYet --> Resident : first viewer joins
+    Idle --> Resident : diff — a viewer is present
+    Idle --> GraceCountdown : diff — viewer set already empty<br/>(a viewer came and went)
     Resident --> Resident : viewer joins / leaves (>=1 remain)
     Resident --> GraceCountdown : last viewer leaves<br/>(arm timer, grace_ms)
 
@@ -83,7 +91,7 @@ stateDiagram-v2
     GraceCountdown --> Reaped : timer fires, still no viewer<br/>(persist, stop &#58;normal)
 
     Resident --> Reaped : close_book/1<br/>(stop &#58;normal)
-    NoViewerYet --> Reaped : close_book/1<br/>(stop &#58;normal)
+    Idle --> Reaped : close_book/1<br/>(stop &#58;normal)
 
     Reaped --> [*]
 ```
@@ -117,7 +125,7 @@ sequenceDiagram
     T->>S: ensure_started (init subscribes to book_presence:<id>)
     V->>T: subscribe(id) + register_viewer(id)
     T->>P: track(self(), "book_presence:<id>")
-    P-->>S: presence_diff (join) → cancel any reap, mark ever_had_viewer
+    P-->>S: presence_diff (join) → cancel any pending reap
 
     Note over V,S: window is open — server stays resident
 
@@ -133,24 +141,22 @@ sequenceDiagram
 ## Crash resilience and a known deferred edge
 
 Because `Presence` is a **separate process**, a `BookServer` crash doesn't lose the
-viewer set. The `:transient` server is restarted by its `DynamicSupervisor`, reads
-`Presence.list/1` at `init`, and — if a window is still open — sees the viewer and
-stays resident rather than reaping out from under it.
+viewer set. The `:transient` server is restarted by its `DynamicSupervisor` and, on the
+next diff, reconciles against `Presence.list/1` — so a window still open keeps the
+restarted server resident rather than reaping out from under it.
 
-Two uncovered cases, both **memory-only and benign** — a Book stays resident that
-could in principle be reaped; neither corrupts data or misleads the user:
+One uncovered case remains, **memory-only and benign** — a Book stays resident that
+could in principle be reaped; it corrupts nothing and misleads no one:
 
-- **Orphan crash-restart:** a server that crash-restarts *after* all its viewers
-  already left comes back with an empty `Presence` list and, since it never observes a
-  last-viewer-leaves transition, lingers resident until the app quits.
-- **Fast open-then-close:** a viewer that registers and dies before the server
-  processes the join can coalesce into a single net-empty `presence_diff`, leaving
-  `ever_had_viewer?` false, so the server never arms a reap and stays resident. This
-  needs a viewer whose whole lifetime is shorter than one presence-diff round-trip —
-  not a real window — and is reclaimed on `close_book/1` or app quit.
+- **Orphan crash-restart:** a server that crash-restarts *after* all its viewers have
+  already left receives no further diffs, so it never reconciles and lingers resident
+  until the app quits. Reclaimed by `close_book/1` or app quit. Deferred out of the MVP
+  and tracked in [issue #176](https://github.com/zorn/local_cents/issues/176).
 
-Both share one root cause — `ever_had_viewer?` is process-local, so a viewer that
-existed without *this* process observing it leaves the gate shut forever. Deferred out
-of the MVP and tracked in
-[issue #176](https://github.com/zorn/local_cents/issues/176), which carries the fix
-sketch and the open design questions.
+A second case — a viewer that registers and dies before the server drains its mailbox,
+so that *both* its join and leave diffs are handled against an already-empty presence
+set — was fixed by deleting the `ever_had_viewer?` state field it depended on. The
+server now arms a reap whenever a diff finds the viewer set empty, and the "never reap
+a Book that never had a window" rule is carried by the topic scoping instead. See the
+`what actually gates the reap` tests in
+`test/local_cents/tracking/book_server_shutdown_test.exs`, which pin both halves.

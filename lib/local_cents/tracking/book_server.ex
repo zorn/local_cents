@@ -22,15 +22,17 @@ defmodule LocalCents.Tracking.BookServer do
   viewer disconnects** (ADR 0007). A *viewer* is a process that registered through
   `register_viewer/1` — a document-window LiveView — tracked in
   `LocalCents.Tracking.Presence` on the Book's `presence_topic/1`. The server watches
-  that topic and, when the viewer set empties **after having held at least one**, it
-  arms a grace-period timer; if no viewer re-registers before it fires, the server
-  stops `:normal` (persisting once more via `terminate/2`). A viewer re-registering
-  cancels the pending reap — which is what keeps an in-window `push_navigate` between
-  a Book's views (ADR 0017) from tearing the process down and reloading from disk.
+  that topic and, when a `presence_diff` leaves the viewer set empty, it arms a
+  grace-period timer; if no viewer re-registers before it fires, the server stops
+  `:normal` (persisting once more via `terminate/2`). A viewer re-registering cancels
+  the pending reap — which is what keeps an in-window `push_navigate` between a Book's
+  views (ADR 0017) from tearing the process down and reloading from disk.
 
   A Book that has **never** had a viewer (e.g. one created by `create_book/1` with no
-  window, or a bare `open_book/1`) stays resident until `close/1` or app shutdown —
-  the server only reaps after a viewer has come and gone. Because presence lives in a
+  window, or a bare `open_book/1`) stays resident until `close/1` or app shutdown. That
+  falls out of the topic scoping rather than any server-side bookkeeping: `presence_topic/1`
+  is only ever tracked on by `register_viewer/1`, so a Book nobody viewed is never sent a
+  diff and never wakes to reconcile. Because presence lives in a
   separate process, a crash-restarted server sees its still-open viewers via
   `Presence.list/1` at `init` and does not reap out from under them. The grace period
   is configurable (`config :local_cents, LocalCents.Tracking.BookServer,
@@ -310,16 +312,12 @@ defmodule LocalCents.Tracking.BookServer do
   # `BookDocument`, runs, and re-encodes.
   #
   # `reap_timer` is the pending auto-shutdown timer ref (or `nil`), armed when the
-  # last viewer leaves and cancelled when one returns. `ever_had_viewer?` gates that
-  # arming: the server reaps only after it has held at least one viewer, so a Book
-  # that never had a window (created but unopened) is never reaped (see the module's
-  # Lifecycle section).
+  # last viewer leaves and cancelled when one returns.
   @typep state() :: %{
            id: Book.id(),
            doc: binary(),
            dir: String.t(),
-           reap_timer: reference() | nil,
-           ever_had_viewer?: boolean()
+           reap_timer: reference() | nil
          }
 
   # A pure `BookDocument` command: given the decoded document it returns the new
@@ -343,16 +341,13 @@ defmodule LocalCents.Tracking.BookServer do
 
     with {:ok, doc} <- BookStore.load(dir, id),
          :ok <- validate_document(doc) do
-      # Subscribe before reading the presence list so no viewer join between the read
-      # and the subscribe is missed. A non-empty list means viewers are already
-      # present — the case that matters is a crash-restart while a window is still
-      # open: presence lives in its own process, so the still-open viewers survive our
-      # crash and we must not reap out from under them (so `ever_had_viewer?` starts
-      # true). A first, viewerless open starts false, honoring the "only reap after a
-      # viewer has come and gone" rule.
+      # Subscribe on the way up so no viewer join is missed. A crash-restart while a
+      # window is still open is the case that matters: presence lives in its own
+      # process, so those viewers survive our crash and are still tracked. We need no
+      # snapshot of them here — the next diff reconciles against `Presence.list/1`, and
+      # until one arrives there is nothing to reap.
       Phoenix.PubSub.subscribe(LocalCents.PubSub, presence_topic(id))
-      present? = viewers_present?(id)
-      {:ok, %{id: id, doc: doc, dir: dir, reap_timer: nil, ever_had_viewer?: present?}}
+      {:ok, %{id: id, doc: doc, dir: dir, reap_timer: nil}}
     else
       {:error, :invalid_document} -> {:stop, {:invalid_document, id}}
       {:error, reason} -> {:stop, {:load_failed, reason}}
@@ -455,17 +450,17 @@ defmodule LocalCents.Tracking.BookServer do
   # with a catch-all — the same defensive posture ADR 0019 documents for LiveViews.
   def handle_info(_message, state), do: {:noreply, state}
 
-  # Reconciles the reap timer with the current presence set. A present viewer cancels
-  # any pending reap and records that we have held one; an empty set arms the reap —
-  # but only if a viewer was ever present (Philosophy B: never reap a Book that never
-  # had a window). Arming is a no-op when a timer is already pending.
+  # Reconciles the reap timer with the current presence set: a present viewer cancels
+  # any pending reap, an empty set arms one. Arming is a no-op when a timer is already
+  # pending.
+  #
+  # Reaching here at all means a viewer joined or left this Book's presence topic —
+  # nothing else ever tracks on it — so "has this Book ever had a window?" needs no
+  # separate flag. Philosophy B (never reap a Book that never had a window) holds
+  # because a never-viewed Book is never sent a diff and so never reconciles.
   @spec reconcile_viewers(state()) :: state()
   defp reconcile_viewers(state) do
-    cond do
-      viewers_present?(state.id) -> %{cancel_reap(state) | ever_had_viewer?: true}
-      state.ever_had_viewer? -> arm_reap(state)
-      true -> state
-    end
+    if viewers_present?(state.id), do: cancel_reap(state), else: arm_reap(state)
   end
 
   defp arm_reap(%{reap_timer: nil} = state) do

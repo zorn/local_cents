@@ -4,8 +4,6 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
   # grace period is a shared (unmutated) config value, so it forces no serialization.
   use ExUnit.Case, async: true
 
-  import LocalCents.Eventually
-
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
 
@@ -140,6 +138,46 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
     end
   end
 
+  describe "what actually gates the reap" do
+    test "a Book that never had a viewer receives no presence_diff at all", %{tmp_dir: dir} do
+      # The load-bearing fact behind Philosophy B. A `presence_diff` is only broadcast on
+      # a topic something has tracked on, and the only thing that ever tracks on
+      # `presence_topic/1` is `register_viewer/1`. So a never-viewed Book's server is
+      # never woken to reconcile, which is what keeps it resident — no server-side flag
+      # is required to achieve it.
+      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+
+      Phoenix.PubSub.subscribe(LocalCents.PubSub, BookServer.presence_topic(book.id))
+
+      refute_receive %Phoenix.Socket.Broadcast{event: "presence_diff"}, 100
+      assert BookServer.alive?(book.id)
+    end
+
+    test "a viewer gone before the server observes its join still arms the reap", %{tmp_dir: dir} do
+      # The server reconciles by re-reading `Presence.list/1`, not by inspecting the
+      # diff payload, so a viewer that dies before the server drains its mailbox is
+      # never *seen* as present — both the join and the leave diff are processed against
+      # an already-empty presence set. The Book must still reap: a viewer did exist, and
+      # the arrival of a diff on this topic is itself the proof.
+      #
+      # Suspending the server makes that ordering deterministic rather than a race:
+      # both diffs queue while it is frozen and are handled only after the viewer is
+      # gone. `register_viewer/1` talks to the Presence shard, never to this process,
+      # so it is unaffected by the suspension.
+      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+
+      server = server_pid(book.id)
+      ref = Process.monitor(server)
+
+      :sys.suspend(server)
+      viewer = start_viewer(book.id)
+      stop_viewer(viewer)
+      :sys.resume(server)
+
+      assert_receive {:DOWN, ^ref, :process, ^server, :normal}, 1_000
+    end
+  end
+
   # A viewer is any process that registers itself via `Tracking.register_viewer/1`;
   # no LiveView is needed to exercise the runtime. It stays alive until `stop_viewer/1`
   # kills it, at which point Presence drops it and the server reconciles.
@@ -168,10 +206,13 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
     pid
   end
 
-  # Blocks until the server has processed a presence join (so `ever_had_viewer?` is
-  # set), avoiding a race where a viewer registers and leaves before the server has
-  # observed it — which would otherwise coalesce into a net-empty diff and never arm.
+  # Blocks until the server has processed the viewer's join diff. The tracker reports a
+  # join *before* it records the presence, so by the time `register_viewer/1` returns
+  # the diff is already in this server's mailbox; a `:sys.get_state/1` round-trip is
+  # therefore a sufficient barrier — it is replied to only after the queued diff has
+  # been handled. No polling needed.
   defp await_viewer_observed(server) do
-    wait_until(fn -> :sys.get_state(server).ever_had_viewer? end)
+    _ = :sys.get_state(server)
+    :ok
   end
 end
