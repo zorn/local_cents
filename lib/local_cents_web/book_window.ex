@@ -32,16 +32,12 @@ defmodule LocalCentsWeb.BookWindow do
   @spec on_mount(:default, params :: map(), session :: map(), Socket.t()) ::
           {:cont, Socket.t()} | {:halt, Socket.t()}
   def on_mount(:default, %{"book_id" => book_id}, _session, socket) do
-    # `open_book/1` fails for an id with no `.lcbook`; `get_book/1` still returns nil if
-    # the file vanished between the two calls (a delete race). Both mean "no Book here",
-    # so both redirect and `@book` is only ever a real struct once a view renders.
+    # `open_book/1` fails for an id with no `.lcbook`; the follow-up read still comes
+    # back empty if the file vanished between the two calls (a delete race). Both mean
+    # "no Book here", so both redirect and `@book` is only ever a real struct once a
+    # view renders.
     with :ok <- Tracking.open_book(book_id),
-         %Tracking.Book{} = book <- Tracking.get_book(book_id) do
-      if connected?(socket) do
-        Tracking.subscribe(book_id)
-        register_viewer(book_id)
-      end
-
+         %Tracking.Book{} = book <- fetch_book(socket, book_id) do
       {:cont, assign(socket, book: book, page_title: book.name)}
     else
       _ ->
@@ -54,18 +50,32 @@ defmodule LocalCentsWeb.BookWindow do
     end
   end
 
+  # The connected mount both registers the viewer and gets the Book back from the
+  # runtime's in-memory document, so there is no second disk read and no gap in which
+  # the file could be deleted. The disconnected mount only renders the dead first
+  # paint, so it reads from disk and registers nothing.
+  defp fetch_book(socket, book_id) do
+    if connected?(socket) do
+      Tracking.subscribe(book_id)
+      register_viewer(book_id)
+    else
+      Tracking.get_book(book_id)
+    end
+  end
+
   # Registering the viewer is what keeps the Book resident while its window is open, so
   # a failure here silently forfeits the lifecycle guarantee (the BookServer could reap
   # under an open window). It shouldn't block the mount — a failed track is far less
-  # disruptive than refusing to render — so we log it loudly and carry on.
+  # disruptive than refusing to render — so we log it and fall back to the disk read
+  # rather than redirecting a window whose Book is perfectly readable.
   defp register_viewer(book_id) do
     case Tracking.register_viewer(book_id) do
-      {:ok, _ref} ->
-        :ok
+      {:ok, %Tracking.Book{} = book} ->
+        book
 
       {:error, reason} ->
         Logger.error("Failed to register viewer for book #{book_id}: #{inspect(reason)}")
-        :ok
+        Tracking.get_book(book_id)
     end
   end
 end

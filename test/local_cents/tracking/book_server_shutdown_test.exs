@@ -74,7 +74,7 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert_receive {:DOWN, ^ref, :process, ^server, :normal}, 1_000
     end
 
-    test "a Book that never had a viewer stays resident (Philosophy B)", %{tmp_dir: dir} do
+    test "a Book that never had a viewer stays resident", %{tmp_dir: dir} do
       # create_book starts a server with no window; a bare open_book likewise. Neither
       # ever holds a viewer, so neither is ever reaped — only explicit close/1 stops it.
       {:ok, book} = Tracking.create_book("Family", books_dir: dir)
@@ -140,7 +140,7 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
 
   describe "what actually gates the reap" do
     test "a Book that never had a viewer receives no presence_diff at all", %{tmp_dir: dir} do
-      # The load-bearing fact behind Philosophy B. A `presence_diff` is only broadcast on
+      # The load-bearing fact behind that rule. A `presence_diff` is only broadcast on
       # a topic something has tracked on, and the only thing that ever tracks on
       # `presence_topic/1` is `register_viewer/1`. So a never-viewed Book's server is
       # never woken to reconcile, which is what keeps it resident — no server-side flag
@@ -162,15 +162,17 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       #
       # Suspending the server makes that ordering deterministic rather than a race:
       # both diffs queue while it is frozen and are handled only after the viewer is
-      # gone. `register_viewer/1` talks to the Presence shard, never to this process,
-      # so it is unaffected by the suspension.
+      # gone. This one tracks through `BookServer.register_viewer/1` rather than the
+      # `Tracking` facade, because the facade also reads the Book back from the server
+      # and would block on the suspension; the presence side — all this test cares
+      # about — is identical either way.
       {:ok, book} = Tracking.create_book("Family", books_dir: dir)
 
       server = server_pid(book.id)
       ref = Process.monitor(server)
 
       :sys.suspend(server)
-      viewer = start_viewer(book.id)
+      viewer = start_tracked_only_viewer(book.id)
       stop_viewer(viewer)
       :sys.resume(server)
 
@@ -182,11 +184,21 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
   # no LiveView is needed to exercise the runtime. It stays alive until `stop_viewer/1`
   # kills it, at which point Presence drops it and the server reconciles.
   defp start_viewer(book_id) do
+    spawn_viewer(fn -> {:ok, %Tracking.Book{}} = Tracking.register_viewer(book_id) end)
+  end
+
+  # Tracks presence without the facade's follow-up read of the Book, for the one test
+  # that runs against a suspended server.
+  defp start_tracked_only_viewer(book_id) do
+    spawn_viewer(fn -> {:ok, _ref} = BookServer.register_viewer(book_id) end)
+  end
+
+  defp spawn_viewer(register) do
     test = self()
 
     pid =
       spawn(fn ->
-        {:ok, _ref} = Tracking.register_viewer(book_id)
+        register.()
         send(test, :registered)
         Process.sleep(:infinity)
       end)

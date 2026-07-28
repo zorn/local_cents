@@ -56,7 +56,7 @@ graph LR
 
 The server reaps when a `presence_diff` leaves the viewer set empty. A Book that never
 had a viewer — one created by `create_book/1` with no window, or a bare `open_book/1` —
-stays resident until it is explicitly closed ("Philosophy B").
+stays resident until it is explicitly closed.
 
 That guarantee needs no server-side bookkeeping. `presence_topic/1` is tracked on by
 exactly one thing, `register_viewer/1`, so a Book nobody ever viewed is never sent a

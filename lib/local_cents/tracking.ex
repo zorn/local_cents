@@ -570,10 +570,21 @@ defmodule LocalCents.Tracking do
   Book's `BookServer` reaps itself after a short grace period if no other viewer
   remains.
 
+  Returns the Book, read from the runtime's in-memory document. A viewer needs the
+  Book it is about to render anyway, and taking it from here rather than a second
+  `get_book/1` avoids a disk read and closes the window in which the file could be
+  deleted between the two calls. (Livebook's `Session.register_client/3` returns the
+  session's state for the same reason.)
+
   Call `open_book/2` first — this only tracks presence; it does not start the runtime.
   """
-  @spec register_viewer(Book.id()) :: {:ok, ref :: binary()} | {:error, term()}
-  def register_viewer(id) when is_binary(id), do: BookServer.register_viewer(id)
+  @spec register_viewer(Book.id()) :: {:ok, Book.t()} | {:error, term()}
+  def register_viewer(id) when is_binary(id) do
+    with {:ok, _ref} <- BookServer.register_viewer(id) do
+      {name, seconds} = BookServer.book_view(id)
+      {:ok, %Book{id: id, name: name, updated_at: to_datetime(seconds)}}
+    end
+  end
 
   # The books directory an entry point operates in: the caller's injected `:books_dir`
   # option, or the platform/app-env default. Injecting a directory is what lets the

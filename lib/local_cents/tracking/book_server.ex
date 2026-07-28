@@ -122,6 +122,16 @@ defmodule LocalCents.Tracking.BookServer do
   def name(id), do: GenServer.call(via(id), :name)
 
   @doc """
+  Returns the Book's library view — its name and `updated_at` in unix seconds — read
+  from the in-memory document rather than from disk.
+
+  The caller assembles the `Book` struct; this process holds the document, not the
+  `updated_at` conversion (see `LocalCents.Tracking.register_viewer/1`).
+  """
+  @spec book_view(Book.id()) :: {Book.name(), seconds :: integer() | nil}
+  def book_view(id), do: GenServer.call(via(id), :book_view)
+
+  @doc """
   Returns the Book's expenses. The list order is not a contract callers should
   rely on (it is not stable across a CRDT merge); the view sorts for display.
   """
@@ -376,6 +386,10 @@ defmodule LocalCents.Tracking.BookServer do
     {:reply, BookDocument.name(state.doc), state}
   end
 
+  def handle_call(:book_view, _from, state) do
+    {:reply, {BookDocument.name(state.doc), BookDocument.updated_at(state.doc)}, state}
+  end
+
   def handle_call(:list_expenses, _from, state) do
     {:reply, BookDocument.expenses(decode(state)), state}
   end
@@ -444,10 +458,7 @@ defmodule LocalCents.Tracking.BookServer do
     end
   end
 
-  # Now that this server matches on specific `handle_info/2` messages, an unexpected
-  # one would raise a `FunctionClauseError` and crash it (before there were no
-  # clauses, so the GenServer default ignored stray messages). Restore that tolerance
-  # with a catch-all — the same defensive posture ADR 0019 documents for LiveViews.
+  # Ignore stray messages rather than crash on them (ADR 0019).
   def handle_info(_message, state), do: {:noreply, state}
 
   # Reconciles the reap timer with the current presence set: a present viewer cancels
@@ -456,7 +467,7 @@ defmodule LocalCents.Tracking.BookServer do
   #
   # Reaching here at all means a viewer joined or left this Book's presence topic —
   # nothing else ever tracks on it — so "has this Book ever had a window?" needs no
-  # separate flag. Philosophy B (never reap a Book that never had a window) holds
+  # separate flag. the rule that a Book which never had a window is never reaped holds
   # because a never-viewed Book is never sent a diff and so never reconciles.
   @spec reconcile_viewers(state()) :: state()
   defp reconcile_viewers(state) do
