@@ -77,13 +77,13 @@ stateDiagram-v2
 
     NoViewerYet --> Resident : first viewer joins
     Resident --> Resident : viewer joins / leaves (>=1 remain)
-    Resident --> GraceCountdown : last viewer leaves\n(arm timer, grace_ms)
+    Resident --> GraceCountdown : last viewer leaves<br/>(arm timer, grace_ms)
 
-    GraceCountdown --> Resident : a viewer returns\n(cancel timer)
-    GraceCountdown --> Reaped : timer fires, still no viewer\n(persist, stop :normal)
+    GraceCountdown --> Resident : a viewer returns<br/>(cancel timer)
+    GraceCountdown --> Reaped : timer fires, still no viewer<br/>(persist, stop &#58;normal)
 
-    Resident --> Reaped : close_book/1\n(stop :normal)
-    NoViewerYet --> Reaped : close_book/1\n(stop :normal)
+    Resident --> Reaped : close_book/1<br/>(stop &#58;normal)
+    NoViewerYet --> Reaped : close_book/1<br/>(stop &#58;normal)
 
     Reaped --> [*]
 ```
@@ -119,7 +119,7 @@ sequenceDiagram
     T->>P: track(self(), "book_presence:<id>")
     P-->>S: presence_diff (join) → cancel any reap, mark ever_had_viewer
 
-    Note over V,S: window is open; server stays resident
+    Note over V,S: window is open — server stays resident
 
     V--xP: window closes (LiveView process dies)
     P-->>S: presence_diff (leave) → viewer set empty → arm reap (grace_ms)
