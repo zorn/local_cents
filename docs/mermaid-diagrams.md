@@ -36,6 +36,38 @@ Two more details are load-bearing:
   notice; CI runs it with `--strict`, where a check that cannot run is a failure.
   If you have a browser somewhere unusual, point `CHROME_BIN` at it.
 
+## Why this is homegrown
+
+A check we maintain ourselves is the kind of thing worth justifying, so: as of
+July 2026 Mermaid ships `mermaid.parse()` as an API and nothing else — no
+official linter, no official Action. Every tool in this space is a wrapper around
+the same call this check makes, so the choice was never "official versus
+homegrown," only whose wrapper.
+
+The field surveyed:
+
+- [`@mermaid-js/mermaid-cli`](https://github.com/mermaid-js/mermaid-cli) is the
+  only mature option, but it renders rather than validates — you infer the
+  verdict from an exit code after producing an SVG you throw away — and its
+  Markdown mode never opens `lib/*.ex`. It also arrives via npm and Puppeteer, or
+  a Docker image.
+- [`maid`](https://github.com/probelabs/maid) reimplements the grammar in
+  Chevrotain. That answers "is this plausibly Mermaid," not "does *our pinned
+  version* accept it" — and both gotchas below are exactly that second question.
+- The rest ([`md-mermaid-lint`](https://github.com/suwa-sh/md-mermaid-lint),
+  [`mermaid-validate`](https://github.com/Zabaca/mermaid-validate) and friends)
+  do call the real parser, but are single-maintainer projects in the single
+  digits of stars, and none document pinning the Mermaid version.
+
+That last point is what settled it. The pin coupling described above is the whole
+value of the check, and adopting any of these turns one fact into two that have
+to be hand-synced — a Docker tag or npm version on one side, `@version` on the
+other. Drift there reintroduces precisely the bugs this exists to catch.
+
+The cost we accept in exchange is a dependency on Chrome's `--dump-dom` and
+`--virtual-time-budget` flags. If those ever change behaviour the harness reports
+no results, which `--strict` turns into a red build rather than a silent pass.
+
 ## Gotchas worth knowing
 
 Both of these produced a broken diagram in this repo, and neither produces a
