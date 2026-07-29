@@ -66,7 +66,7 @@ jobs:
       # `--strict` because the runner has Chrome and a network: here an
       # un-runnable check is a failure, not the skip `mix precommit` allows.
       - name: Check Mermaid diagrams parse
-        run: mix docs.mermaid --strict
+        run: mix mermaid.check --strict
         if: always()
 
   # Security checks whose remedy is "bump a dep or triage a CVE": Sobelow scans

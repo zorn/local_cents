@@ -141,7 +141,7 @@ every boundary we declare — which Boundary reports as an unclassified module, 
 `classify_to:` is the answer:
 
 ```elixir
-defmodule Mix.Tasks.Docs.Mermaid do
+defmodule Mix.Tasks.Mermaid.Check do
   use Mix.Task
   use Boundary, classify_to: LocalCents
 end

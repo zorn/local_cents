@@ -58,7 +58,7 @@ defmodule LocalCents.MixProject do
 
   # The Mermaid URL comes from `LocalCents.Docs.Mermaid` rather than being written
   # out here, so the version the published pages load and the version
-  # `mix docs.mermaid` validates against are one fact. ExDoc calls this after the
+  # `mix mermaid.check` validates against are one fact. ExDoc calls this after the
   # app is compiled, so the module is loadable by then.
   defp before_closing_head_tag(:html) do
     """
@@ -408,7 +408,7 @@ defmodule LocalCents.MixProject do
         "cmd sh -c 'MIX_ENV=dev mix docs --warnings-as-errors'",
         # Deliberately not `--strict`: a contributor without Chrome or without a
         # network connection gets a skip here, and CI (which has both) enforces it.
-        "docs.mermaid",
+        "mermaid.check",
         "test --warnings-as-errors"
       ]
     ]

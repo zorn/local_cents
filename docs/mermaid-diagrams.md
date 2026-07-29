@@ -6,12 +6,12 @@ script tag loads Mermaid from a CDN, which parses the block in the reader's
 browser. That means a diagram with a syntax error is not a build failure — it is
 a bomb icon on the published page, discovered by whoever reads it next.
 
-This has happened more than once, so `mix docs.mermaid` now checks the diagrams.
+This has happened more than once, so `mix mermaid.check` now checks the diagrams.
 
 ## The check
 
-    $ mix docs.mermaid                 # every tracked `.md` and `lib/*.ex`
-    $ mix docs.mermaid docs/adr/*.md   # just these
+    $ mix mermaid.check                 # every tracked `.md` and `lib/*.ex`
+    $ mix mermaid.check docs/adr/*.md   # just these
 
 It extracts every Mermaid block, runs each through the real `mermaid.parse()`
 inside a headless Chrome, and exits non-zero listing `file:line|block N|error`

@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Docs.Mermaid do
+defmodule Mix.Tasks.Mermaid.Check do
   @shortdoc "Checks that every Mermaid diagram in our Markdown parses"
 
   @moduledoc """
@@ -7,8 +7,8 @@ defmodule Mix.Tasks.Docs.Mermaid do
   reads a diagram. Background and the syntax traps that have caught us out:
   [Mermaid Diagrams](mermaid-diagrams.html).
 
-      $ mix docs.mermaid                    # every tracked `.md` and `lib/*.ex`
-      $ mix docs.mermaid docs/adr/*.md      # just these
+      $ mix mermaid.check                    # every tracked `.md` and `lib/*.ex`
+      $ mix mermaid.check docs/adr/*.md      # just these
 
   With no arguments the scope is what git tracks, Markdown *and* `lib/*.ex` — a
   fence inside a `@moduledoc` reaches the published page the same way one in a
@@ -30,6 +30,11 @@ defmodule Mix.Tasks.Docs.Mermaid do
   not in the search list.
   """
 
+  # Named `mermaid.check` rather than `docs.mermaid`, which would read better next
+  # to `mix docs`: a Mix task's module name *is* its task name, so nesting under
+  # `docs` would put this module inside `Mix.Tasks.Docs`, a namespace ExDoc owns.
+  # Sharing it works until ExDoc ships a task of the same name, and the failure
+  # then is a module collision rather than anything easy to read.
   use Mix.Task
   use Boundary, classify_to: LocalCents
 

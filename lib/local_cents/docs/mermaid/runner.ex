@@ -4,7 +4,7 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   pinned Mermaid build, and drives the two together.
 
   Everything the check needs from the outside world lives here, so
-  `mix docs.mermaid` is left holding only the parts a reader of a Mix task expects
+  `mix mermaid.check` is left holding only the parts a reader of a Mix task expects
   — arguments, which files to read, and what to print. That separation also keeps
   policy out of the mechanism: `run/1` reports anything that stopped it from
   reaching a verdict as `{:skip, reason}` and leaves the caller to decide whether
