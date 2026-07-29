@@ -160,16 +160,7 @@ defmodule LocalCentsWeb.LibraryLive do
                       Delete
                     </button>
                   </Bond.menu>
-                  <%!-- One affordance, two mechanisms. On the desktop Open asks the
-                  native shell for a window; in the browser it is navigation, so it
-                  renders as a real link and the browser's own affordances (cmd-click
-                  for a new tab) stand in for several-windows-at-once. --%>
-                  <Bond.button
-                    variant={:outline}
-                    navigate={if @client == :browser, do: ~p"/books/#{book.id}"}
-                    phx-click={if @client == :desktop, do: "open"}
-                    phx-value-id={book.id}
-                  >
+                  <Bond.button variant={:outline} {open_attrs(@client, book)}>
                     Open
                   </Bond.button>
                 </:actions>
@@ -411,6 +402,15 @@ defmodule LocalCentsWeb.LibraryLive do
         socket |> put_flash(:error, "Could not create the book.") |> noreply()
     end
   end
+
+  # Open is one affordance with two mechanisms. On the desktop it asks the native shell
+  # for a window; in the browser it is navigation, so it renders as a real link and the
+  # browser's own affordances (cmd-click for a new tab) stand in for
+  # several-windows-at-once. Built here rather than as conditionals inside the markup so
+  # each mechanism reads whole, and so the LiveView-only attributes never land on the
+  # anchor, where they would be meaningless.
+  defp open_attrs(:browser, book), do: %{navigate: ~p"/books/#{book.id}"}
+  defp open_attrs(:desktop, book), do: %{"phx-click": "open", "phx-value-id": book.id}
 
   # Creating a Book opens it straight away (ADR 0006) — you just named it, so you are
   # about to fill it. On the desktop that means a new native window and the library

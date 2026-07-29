@@ -2,7 +2,9 @@
 # The router is a table, not a design: it names every module the app routes to, so its
 # dependency count tracks how many screens exist rather than how tangled anything is.
 # Same reasoning as the `LocalCentsWeb.Bond` delegation hub, which carries this for the
-# same reason.
+# same reason. Added deliberately when `/dev/docs` took the router past `max_deps: 15`,
+# in preference to raising the ceiling globally and weakening the check everywhere —
+# a net-new skip of the kind issue #175 wants made an explicit, reviewable decision.
 defmodule LocalCentsWeb.Router do
   use LocalCentsWeb, :router
   import PhoenixStorybook.Router
