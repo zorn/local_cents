@@ -1,7 +1,7 @@
 defmodule LocalCentsWeb.BookCategoriesLive do
   @moduledoc """
   A single open `Book`'s category management view, mounted at
-  `/books/:id/categories`.
+  `/books/:book_id/categories`.
 
   This is a secondary page of the Book's one native document window, reached by
   navigating from `LocalCentsWeb.BookLive` rather than by opening a second window

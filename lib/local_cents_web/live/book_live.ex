@@ -1,6 +1,6 @@
 defmodule LocalCentsWeb.BookLive do
   @moduledoc """
-  A single open `Book`, mounted at `/books/:id` — the document view.
+  A single open `Book`, mounted at `/books/:book_id` — the document view.
 
   On the desktop this LiveView is loaded into its own native window, one per `Book`
   (see [ADR 0006](0006-multi-window-desktop-shell.html)). Its mount contract comes from
