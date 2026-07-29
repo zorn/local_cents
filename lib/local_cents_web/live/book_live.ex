@@ -1,11 +1,10 @@
 defmodule LocalCentsWeb.BookLive do
   @moduledoc """
-  A single open `Book`, mounted at `/books/:id` — the document view.
+  A single open `Book`, mounted at `/books/:book_id` — the document view.
 
   On the desktop this LiveView is loaded into its own native window, one per `Book`
-  (see [ADR 0006](0006-multi-window-desktop-shell.html)). It ensures the `Book`'s
-  runtime process is running and subscribes to its change broadcasts so the list
-  stays live as the `Book` is edited elsewhere.
+  (see [ADR 0006](0006-multi-window-desktop-shell.html)). Its mount contract comes from
+  `LocalCentsWeb.BookWindow`, so the list stays live as the `Book` is edited elsewhere.
 
   The window lists the Book's expenses (newest first) and offers two capture paths.
   A **quick-add** bar pinned at the top takes a single line — a trailing amount is
@@ -21,18 +20,16 @@ defmodule LocalCentsWeb.BookLive do
   """
   use LocalCentsWeb, :live_view
 
+  on_mount LocalCentsWeb.BookWindow
+
   alias LocalCents.Tracking
+  alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.Expense
   alias LocalCentsWeb.DesktopShell
   alias LocalCentsWeb.MoneyFormat
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
-    # `@book` (and `@page_title`) are assigned by the shared `LocalCentsWeb.BookWindow`
-    # `on_mount` hook, which also opens the runtime, subscribes, and registers this
-    # process as a viewer — so this mount only loads the view's own data.
-    id = socket.assigns.book.id
-
+  def mount(_params, _session, %{assigns: %{book: %Book{id: id}}} = socket) do
     socket
     |> assign(editor: nil, confirm_delete: nil, quick_add_line: "")
     |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))

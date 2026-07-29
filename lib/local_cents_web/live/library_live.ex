@@ -7,7 +7,7 @@ defmodule LocalCentsWeb.LibraryLive do
   [ADR 0006](0006-multi-window-desktop-shell.html)). Creating a `Book` from the
   inline form both persists it and opens its document window; opening an existing
   `Book` asks the native shell — via `LocalCentsWeb.DesktopShell` — to open (or
-  focus) a separate window at `/books/:id`, so several `Book`s can be open at once
+  focus) a separate window at `/books/:book_id`, so several `Book`s can be open at once
   while the library window itself stays put.
 
   New books are created from a bar pinned to the bottom of the window: a **New

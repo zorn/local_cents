@@ -50,7 +50,13 @@ window is a Book, not a view.
   view inherits this pattern directly — a new LiveView + route + a link in the
   document window, no new window plumbing. Because every view is a real route, the
   deferred web mirror (ADR 0006) gets these pages for free as ordinary navigation.
-* **Carried forward:** each page re-establishes its own `open_book`/`subscribe`
-  contract, so the per-page mount boilerplate is duplicated rather than shared —
-  acceptable now, and a candidate for a small `on_mount` hook if the view count
-  grows.
+* **Carried forward, since resolved:** each page re-established its own
+  `open_book`/`subscribe` contract, so the per-page mount boilerplate was duplicated
+  rather than shared — flagged here as a candidate for a small `on_mount` hook if the
+  view count grew. It did, and the hook is now `LocalCentsWeb.BookWindow`. Each view
+  attaches it in its own module rather than through the router's `live_session`, so
+  the dependency is visible from the module that relies on it, and
+  `test/local_cents_web/book_window_attachment_test.exs` fails the build if a routed
+  document-window view omits it (see
+  [issue #181](https://github.com/zorn/local_cents/issues/181) and
+  `docs/research/book-window-on-mount-contract.md`).
