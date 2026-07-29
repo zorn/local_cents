@@ -12,7 +12,8 @@ A `BookServer` starts when a Book is opened and **stops itself once its last vie
 disconnects**, so the library can hold many Books without keeping every document
 resident. A **viewer** is a process that called `LocalCents.Tracking.register_viewer/1`
 — in practice a document-window LiveView, wired uniformly through the shared
-`LocalCentsWeb.BookWindow` `on_mount` hook. Viewers are tracked in
+`LocalCentsWeb.BookWindow` `on_mount` hook, which each such view attaches in its own
+module (a router-driven test fails the build if one forgets). Viewers are tracked in
 `LocalCents.Tracking.Presence` on a Book's dedicated `"book_presence:<id>"` topic. When
 the last viewer leaves, the server waits out a short **grace period** and then persists
 once more and stops; a viewer returning within that window cancels the reap.

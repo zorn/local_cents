@@ -5,9 +5,8 @@ defmodule LocalCentsWeb.BookReportLive do
 
   A secondary page of the Book's one native document window, reached by navigating
   from `LocalCentsWeb.BookLive` (see
-  [ADR 0017](0017-in-window-secondary-views.html)). It repeats that view's mount
-  contract — ensure the Book's runtime process is running, then subscribe to its
-  change broadcasts.
+  [ADR 0017](0017-in-window-secondary-views.html)). Its mount contract comes from
+  `LocalCentsWeb.BookWindow`.
 
   Two decisions shape how it loads and stays current:
 
@@ -24,6 +23,8 @@ defmodule LocalCentsWeb.BookReportLive do
       redirects to the library.
   """
   use LocalCentsWeb, :live_view
+
+  on_mount LocalCentsWeb.BookWindow
 
   alias LocalCents.Tracking
   alias LocalCents.Tracking.Book
@@ -42,10 +43,9 @@ defmodule LocalCentsWeb.BookReportLive do
   @default_range_key "6"
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
-    # `@book`/`@page_title` and the open-runtime + subscribe + register-viewer contract
-    # are handled by the shared `LocalCentsWeb.BookWindow` `on_mount` hook; the range
-    # (and the async Report load) is driven from `handle_params/3`.
+  def mount(_params, _session, %{assigns: %{book: %Book{}}} = socket) do
+    # The range (and the async Report load) is driven from `handle_params/3`, so the
+    # mount itself only seeds the staleness flag.
     socket
     |> assign(stale?: false)
     |> ok()

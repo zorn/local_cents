@@ -30,11 +30,13 @@ defmodule LocalCentsWeb.Router do
     live "/", HomeLive
     live "/library", LibraryLive
 
-    # A Book's document-window views share the mount contract in
-    # `LocalCentsWeb.BookWindow` (open the runtime, redirect if gone, subscribe +
-    # register as a viewer) — see ADR 0007 and ADR 0017. The `:book_id` param is
-    # uniform across all three so the hook reads one key.
-    live_session :book_window, on_mount: {LocalCentsWeb.BookWindow, :default} do
+    # A Book's document-window views share the `LocalCentsWeb.BookWindow` mount
+    # contract, but each view attaches that hook itself so the dependency is visible
+    # from the module that relies on it. This session carries no `on_mount:` on
+    # purpose — attaching in both places would run the hook twice, and the second
+    # `register_viewer/1` would fail as an already-tracked presence. It groups the
+    # routes only so navigation between them stays on the socket.
+    live_session :book_window do
       live "/books/:book_id", BookLive
       live "/books/:book_id/categories", BookCategoriesLive
       live "/books/:book_id/report", BookReportLive

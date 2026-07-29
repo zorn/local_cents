@@ -1,8 +1,8 @@
 defmodule LocalCentsWeb.BookWindow do
   @moduledoc """
   The shared `on_mount` hook for a Book's document-window views — the expenses list
-  (`LocalCentsWeb.BookLive`), category management, and the Report — attached via the
-  `:book_window` `live_session` (see `LocalCentsWeb.Router`).
+  (`LocalCentsWeb.BookLive`), category management, and the Report — attached by each
+  view in its own module, so the dependency is visible where it is relied on.
 
   Every such page repeats the same mount contract (see
   [ADR 0017](0017-in-window-secondary-views.html)): ensure the Book's runtime is
@@ -17,6 +17,13 @@ defmodule LocalCentsWeb.BookWindow do
   The hook assigns `:book` and `:page_title`; each view reads `@book` and loads its own
   data. It reads the Book id from the `:book_id` route param, uniform across all three
   routes.
+
+  Attach it with `on_mount LocalCentsWeb.BookWindow` under the view's `use` line, and
+  match the assign in the mount head (`%{assigns: %{book: %Book{}}} = socket`) so the
+  contract is stated in the signature. Do **not** also attach it in the router: hooks
+  from the `live_session` and the module are additive, and the second `register_viewer/1`
+  would fail as an already-tracked presence. `LocalCentsWeb.BookWindowAttachmentTest`
+  fails the build if a routed document-window view omits the hook.
   """
 
   use LocalCentsWeb, :verified_routes

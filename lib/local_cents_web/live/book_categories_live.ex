@@ -5,9 +5,8 @@ defmodule LocalCentsWeb.BookCategoriesLive do
 
   This is a secondary page of the Book's one native document window, reached by
   navigating from `LocalCentsWeb.BookLive` rather than by opening a second window
-  (see [ADR 0017](0017-in-window-secondary-views.html)). It repeats that view's
-  mount contract — ensure the Book's runtime process is running, then subscribe to
-  its change broadcasts — so the category list and per-category expense counts stay
+  (see [ADR 0017](0017-in-window-secondary-views.html)). Its mount contract comes from
+  `LocalCentsWeb.BookWindow`, so the category list and per-category expense counts stay
   live as the Book is edited elsewhere.
 
   Categories are the curated "hard list" a Book totals its spending by (see
@@ -19,16 +18,15 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   """
   use LocalCentsWeb, :live_view
 
+  on_mount LocalCentsWeb.BookWindow
+
   alias LocalCents.Tracking
+  alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.Category
   alias LocalCentsWeb.DesktopShell
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
-    # `@book`/`@page_title` and the open-runtime + subscribe + register-viewer contract
-    # are handled by the shared `LocalCentsWeb.BookWindow` `on_mount` hook.
-    book_id = socket.assigns.book.id
-
+  def mount(_params, _session, %{assigns: %{book: %Book{id: book_id}}} = socket) do
     socket
     |> assign(editing: nil, form: nil)
     |> assign(confirm_delete: nil, add_nonce: 0, categories: load_categories(book_id))
