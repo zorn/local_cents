@@ -109,7 +109,10 @@ defmodule Storybook.Demos.FamilyExpenses do
   end
 
   def handle_event("request_delete", _params, socket) do
-    {:noreply, assign(socket, :confirming_delete, true)}
+    # Delete is only offered inside the open editor, so a request arriving with no
+    # expense in hand can only come from a stale client. Staying closed keeps the
+    # modal's `@editing.description` read total.
+    {:noreply, assign(socket, :confirming_delete, socket.assigns.editing != nil)}
   end
 
   def handle_event("cancel_delete", _params, socket) do
