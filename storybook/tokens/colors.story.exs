@@ -10,8 +10,6 @@ defmodule Storybook.Tokens.Colors do
   @families [
     {"surface", "Blue-tinted neutral — the app backbone (backgrounds, text, borders)"},
     {"primary", "Brand blue — interactive and emphasis"},
-    {"secondary", "Terracotta — warm accent"},
-    {"tertiary", "Kraft / paper — warm neutral"},
     {"success", "Emerald — positive amounts and confirmations"},
     {"warning", "Amber — cautions"},
     {"error", "Red — destructive actions and negative amounts"}
@@ -39,11 +37,21 @@ defmodule Storybook.Tokens.Colors do
         CSS variable and utility classes for each shade, so components reference them via
         utilities like <code>text-surface-800</code>
         or <code>bg-primary-700</code>, and via <code>var(--color-*)</code>
-        inline for composite styles. Most families also define a <code>*-contrast-500</code>
-        token — a readable text color for placing on top of that family's mid fill — while <code>surface</code>, which spans light and dark backgrounds, defines
-        <code>surface-contrast-50</code>
-        and <code>surface-contrast-900</code>
-        instead.
+        inline for composite styles.
+      </p>
+      <p>
+        There are five families, not the seven Bond started with: the decorative
+        <code>secondary</code>
+        (terracotta) and <code>tertiary</code>
+        (kraft) accents were cut because no component ever adopted them, along with the
+        <code>*-contrast-*</code>
+        tokens that nothing referenced. <code>warning</code>
+        stays despite having no current use — it is a semantic slot the app will need, not a
+        decorative one.
+      </p>
+      <p>
+        Ramps are kept whole even where only a shade or two is in use. A ramp is a design
+        tool: reaching for a neighboring shade should be a class change, not an edit to <code>bond.css</code>.
       </p>
     </section>
 
