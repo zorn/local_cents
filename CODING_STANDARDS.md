@@ -152,10 +152,19 @@ gets its own guide or ADR.
   components under `lib/local_cents_web/bond/{elements,composites,layouts}/` and
   give each a mirrored story in `storybook/`; a component is not done until it
   appears in Storybook. Where Bond lives and why:
-  [ADR 0003](docs/adr/0003-bond-namespace-location.md). Note that
-  `bond/composites/expense_cell.ex` and `bond/elements/tag_pill.ex` still encode
-  the pre-decision "tags" design and need reworking to the single-Category model
-  ([ADR 0005](docs/adr/0005-categories-not-tags.md)).
+  [ADR 0003](docs/adr/0003-bond-namespace-location.md).
+
+- **Bond carries only what the app renders.** The catalog is not a place to park
+  components for a design we might build someday — an unused component reads as
+  a supported option and quietly drifts out of date. When a design is cut, delete
+  the components it left behind (`tag_pill`, the tag-picking `checkbox`,
+  `action_chip`, and `list_controls` all went this way once categories replaced
+  tags, [ADR 0005](docs/adr/0005-categories-not-tags.md)), and keep the demo
+  stories tracking the real screens rather than an older sketch of them. The same
+  applies to `bond.css`: prune color families and utility classes nothing
+  references (see [#54](https://github.com/zorn/local_cents/issues/54)). The one
+  deliberate exception is `warning`, kept at zero use as a semantic slot the app
+  will need — decorative tokens get no such grace.
 
 - **A Bond attribute that takes a pre-formatted display string carries a `_display`
   suffix.** When an attribute represents an underlying domain value — a `Date`,
