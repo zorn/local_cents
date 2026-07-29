@@ -30,9 +30,6 @@ defmodule LocalCentsWeb.Router do
     live "/", HomeLive
     live "/library", LibraryLive
 
-    # Groups the routes only so navigation between them stays on the socket. It carries
-    # no `on_mount:` on purpose — each view attaches `LocalCentsWeb.BookWindow` itself;
-    # see that module for why.
     live_session :book_window do
       live "/books/:book_id", BookLive
       live "/books/:book_id/categories", BookCategoriesLive
