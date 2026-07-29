@@ -81,7 +81,13 @@ defmodule LocalCentsWeb.Layouts do
       bar; this strip drags the window and shows the centered title over the native
       traffic lights (ADR 0013). It is a fixed-height flex child, so the content
       below reserves clear of the traffic lights on its own. --%>
-      <Bond.window_bar title={@window_title} client={@client} back_path={@back_path} />
+      <%!-- The bar renders two facts, not a client: this is the one place that knows how
+      a client maps onto them (ADR 0023). --%>
+      <Bond.window_bar
+        title={@window_title}
+        drag_region={@client == :desktop}
+        back_path={if @client == :browser, do: @back_path}
+      />
 
       <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
         {render_slot(@inner_block)}

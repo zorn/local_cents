@@ -18,14 +18,18 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
   `.window-inactive` class on `<html>` from the WKWebView's window focus/blur, which
   the `.bond-window-title` rule in `bond.css` keys off.
 
-  In the `:browser` client the same strip is drawn without the drag region, which is
-  inert there, and the leading space the traffic lights would occupy carries a back
-  link to the library instead (see
-  [ADR 0023](0023-browser-as-a-second-client.html)) — the app's one window-level
-  destination, so the label is fixed rather than an attribute. That link is
-  the *window-level* way out — "leave this Book" — and is distinct from the in-page
-  back link the secondary views draw for "leave this sub-view"; on those pages the two
-  together read as a breadcrumb.
+  Both of those are conditional, because the same strip is drawn in a browser tab, where
+  dragging is meaningless and there are no traffic lights to leave room for (see
+  [ADR 0023](0023-browser-as-a-second-client.html)). Rather than take the client and
+  decide for itself, the bar takes the two facts it actually renders — `drag_region` and
+  `back_path` — and `LocalCentsWeb.Layouts` derives them. Bond stays presentational: it
+  has no business knowing what a client is.
+
+  `back_path` fills the leading space the traffic lights would otherwise occupy. It is
+  the *window-level* way out — "leave this Book" — and is distinct from the in-page back
+  link the secondary views draw for "leave this sub-view"; on those pages the two read as
+  a breadcrumb. Its label is fixed rather than an attribute, the library being the app's
+  one window-level destination.
   """
 
   use Phoenix.Component
@@ -37,27 +41,29 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
 
   attr :title, :string, default: nil, doc: "Text shown centered in the bar; omitted when nil"
 
-  attr :client, :atom,
-    required: true,
-    values: [:desktop, :browser],
-    doc: "Which client the bar is drawn in; `:browser` drops the native-only drag region"
+  attr :drag_region, :boolean,
+    default: false,
+    doc: """
+    Whether the strip drags the native window. Named for the thing rather than
+    `draggable`, which is a different HTML attribute (drag-and-drop)
+    """
 
   attr :back_path, :string,
     default: nil,
-    doc: "When set, a back link is shown at the leading edge; ignored in the `:desktop` client"
+    doc: "When set, a back link to the library is shown at the leading edge"
 
   @spec window_bar(Socket.assigns()) :: Rendered.t()
   def window_bar(assigns) do
     ~H"""
     <div
-      data-tauri-drag-region={@client == :desktop}
+      data-tauri-drag-region={@drag_region}
       class="bond-marble relative flex h-7 shrink-0 select-none items-center justify-center border-b border-surface-950"
     >
       <%!-- The leading slot the traffic lights occupy in a native window is free in a
       browser, so that is where the way back goes. It is absolutely positioned so the
       title stays centered on the bar rather than on the space left over beside it. --%>
       <.link
-        :if={@client == :browser and @back_path}
+        :if={@back_path}
         navigate={@back_path}
         class="absolute left-2 inline-flex items-center gap-0.5 text-xs font-semibold text-white/80 transition-colors hover:text-white"
       >
