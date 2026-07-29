@@ -9,14 +9,13 @@ defmodule LocalCents.Docs.Mermaid do
 
   This module is the pure half of the check that closes the gap: pull the blocks
   out of a file, build a page that runs them through `mermaid.parse()`, and read
-  the verdict back out of the DOM that page leaves behind. `mix mermaid.check` and
-  `LocalCents.Docs.Mermaid.Runner` supply the parts that touch the world.
+  the verdict back out of the DOM that page leaves behind. Nothing here touches a
+  browser, a network, or a disk.
 
-  `version/0` and `cdn_url/0` are the single source of the Mermaid pin: `mix.exs`
-  interpolates `cdn_url/0` into the `<script>` tag ExDoc injects into every
-  generated page, and the check fetches the same URL. Because Mermaid's grammar
-  changes between versions, that shared source is what stops the check from
-  blessing syntax our readers' browsers would reject.
+  `version/0` and `cdn_url/0` are the single source of the Mermaid pin. Because
+  Mermaid's grammar changes between versions, deriving both the tag readers load
+  and the bundle the check parses with from one function is what stops the check
+  from blessing syntax our readers' browsers would reject.
   """
 
   defmodule Block do
@@ -60,10 +59,8 @@ defmodule LocalCents.Docs.Mermaid do
   def version, do: @version
 
   @doc """
-  The CDN URL for the pinned Mermaid build.
-
-  Called from `mix.exs` to build the `<script>` tag ExDoc injects, and from
-  `mix mermaid.check` to fetch the same file for the check.
+  The CDN URL for the pinned Mermaid build — the one the published pages load and
+  the one the check parses with.
   """
   @spec cdn_url() :: String.t()
   def cdn_url, do: "https://cdn.jsdelivr.net/npm/mermaid@#{@version}/dist/mermaid.min.js"

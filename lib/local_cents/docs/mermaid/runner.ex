@@ -3,13 +3,12 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   Runs `LocalCents.Docs.Mermaid`'s parse harness: finds a browser, fetches the
   pinned Mermaid build, and drives the two together.
 
-  Everything the check needs from the outside world lives here, so
-  `mix mermaid.check` is left holding only the parts a reader of a Mix task expects
-  — arguments, which files to read, and what to print. That separation also keeps
-  policy out of the mechanism: `run/1` reports anything that stopped it from
-  reaching a verdict as `{:skip, reason}` and leaves the caller to decide whether
-  that is a notice or a failure (see the task's `--strict` option). What the check
-  is for: [Mermaid Diagrams](mermaid-diagrams.html).
+  Everything the check needs from the outside world is gathered here, which leaves
+  the rest of it — arguments, which files to read, what to print — free of any of
+  that. The split also keeps policy out of the mechanism: `run/1` reports anything
+  that stopped it from reaching a verdict as `{:skip, reason}` and decides nothing
+  about whether that is a notice or a failure. What the check is for:
+  [Mermaid Diagrams](mermaid-diagrams.html).
 
   This is Mix-time tooling, not application code — it writes to `Mix.shell/0` and
   caches under `_build/`, and nothing in the running app calls it.
@@ -53,9 +52,23 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   def run(blocks) do
     with {:ok, browser} <- find_browser(),
          {:ok, mermaid_js} <- fetch_mermaid() do
-      dump_dom(browser, write_harness(blocks, mermaid_js), length(blocks))
+      run_dir = run_dir()
+
+      try do
+        dump_dom(browser, write_harness(run_dir, blocks, mermaid_js), run_dir, length(blocks))
+      after
+        File.rm_rf(run_dir)
+      end
     end
   end
+
+  # Everything one run scribbles — the harness page and Chrome's profile — lives
+  # under a directory named for the OS process, so two checks running at once
+  # cannot read each other's harness or contend for Chrome's profile lock. That
+  # happens more here than it sounds: several agents may share one working
+  # directory, and a hand-run check can overlap a `mix precommit`. Only the
+  # Mermaid bundle is shared, and it is written once and then only read.
+  defp run_dir, do: Path.join(System.tmp_dir!(), "local-cents-mermaid-#{System.pid()}")
 
   defp find_browser do
     candidate =
@@ -105,18 +118,18 @@ defmodule LocalCents.Docs.Mermaid.Runner do
     end
   end
 
-  defp write_harness(blocks, mermaid_js) do
-    harness = Path.join(@cache_dir, "harness.html")
-    File.mkdir_p!(@cache_dir)
-    File.write!(harness, Mermaid.harness_html(blocks, Path.basename(mermaid_js)))
+  defp write_harness(run_dir, blocks, mermaid_js) do
+    harness = Path.join(run_dir, "harness.html")
+    File.mkdir_p!(run_dir)
+    File.write!(harness, Mermaid.harness_html(blocks, "file://#{Path.expand(mermaid_js)}"))
 
     harness
   end
 
-  defp dump_dom(browser, harness, count) do
+  defp dump_dom(browser, harness, run_dir, count) do
     Mix.shell().info("Parsing #{count} diagram(s) with Mermaid #{Mermaid.version()} ...")
 
-    case System.cmd(browser, browser_args(harness), env: []) do
+    case System.cmd(browser, browser_args(harness, run_dir), env: []) do
       {dom, 0} -> decode(dom)
       {_dom, status} -> {:skip, "#{Path.basename(browser)} exited with status #{status}"}
     end
@@ -129,7 +142,7 @@ defmodule LocalCents.Docs.Mermaid.Runner do
     end
   end
 
-  defp browser_args(harness) do
+  defp browser_args(harness, run_dir) do
     [
       "--headless",
       "--disable-gpu",
@@ -137,11 +150,11 @@ defmodule LocalCents.Docs.Mermaid.Runner do
       "--no-sandbox",
       "--no-first-run",
       "--no-default-browser-check",
-      # The harness loads Mermaid from a sibling `file://` URL.
+      # The harness pulls Mermaid from the cache by absolute `file://` URL, which
+      # is a different directory than its own.
       "--allow-file-access-from-files",
-      # Keep out of the developer's real Chrome profile, which may be in use — and
-      # out of `@cache_dir`, which CI caches.
-      "--user-data-dir=#{Path.join(System.tmp_dir!(), "local-cents-mermaid-chrome")}",
+      # Keep out of the developer's real Chrome profile, which may be in use.
+      "--user-data-dir=#{Path.join(run_dir, "chrome-profile")}",
       "--dump-dom",
       "--virtual-time-budget=#{@virtual_time_budget_ms}",
       "file://#{Path.expand(harness)}"

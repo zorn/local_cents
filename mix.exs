@@ -56,10 +56,8 @@ defmodule LocalCents.MixProject do
     ]
   end
 
-  # The Mermaid URL comes from `LocalCents.Docs.Mermaid` rather than being written
-  # out here, so the version the published pages load and the version
-  # `mix mermaid.check` validates against are one fact. ExDoc calls this after the
-  # app is compiled, so the module is loadable by then.
+  # Sourcing the URL is what keeps the version readers load and the version we
+  # check against identical.
   defp before_closing_head_tag(:html) do
     """
     <script defer src="#{LocalCents.Docs.Mermaid.cdn_url()}"></script>
