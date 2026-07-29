@@ -14,10 +14,11 @@ defmodule LocalCentsWeb.ClientConn do
       conn |> browser_conn() |> visit(~p"/library")
   """
 
-  # A stand-in for what `desktop_user_agent()` in `tauri/src/lib.rs` stamps. The
-  # version is deliberately not the real one — detection matches the `LocalCents/`
-  # token as a substring, and pinning a version here would suggest otherwise.
-  @desktop_user_agent "LocalCents/0.0.0-test (desktop)"
+  # A stand-in for what `desktop_user_agent()` in `tauri/src/lib.rs` stamps, built from
+  # the same token the detection matches so there is only one Elixir-side copy of it.
+  # The version is deliberately not the real one — the token is matched as a substring,
+  # and pinning a version here would suggest otherwise.
+  @desktop_user_agent LocalCentsWeb.Client.desktop_token() <> "0.0.0-test (desktop)"
 
   @browser_user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " <>
                         "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"

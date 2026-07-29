@@ -55,7 +55,7 @@ defmodule LocalCentsWeb.Client do
   Anything without the desktop token — including a request that sent no user agent
   at all — is a browser.
   """
-  @spec from_user_agent(String.t() | nil) :: t()
+  @spec from_user_agent(user_agent :: String.t() | nil) :: t()
   def from_user_agent(user_agent) when is_binary(user_agent) do
     if String.contains?(user_agent, @desktop_token), do: :desktop, else: :browser
   end

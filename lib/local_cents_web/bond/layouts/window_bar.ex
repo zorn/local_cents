@@ -20,7 +20,9 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
 
   In the `:browser` client the same strip is drawn without the drag region, which is
   inert there, and the leading space the traffic lights would occupy carries a back
-  link instead (see [ADR 0023](0023-browser-as-a-second-client.html)). That link is
+  link to the library instead (see
+  [ADR 0023](0023-browser-as-a-second-client.html)) — the app's one window-level
+  destination, so the label is fixed rather than an attribute. That link is
   the *window-level* way out — "leave this Book" — and is distinct from the in-page
   back link the secondary views draw for "leave this sub-view"; on those pages the two
   together read as a breadcrumb.
@@ -36,15 +38,13 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
   attr :title, :string, default: nil, doc: "Text shown centered in the bar; omitted when nil"
 
   attr :client, :atom,
-    default: :desktop,
+    required: true,
     values: [:desktop, :browser],
     doc: "Which client the bar is drawn in; `:browser` drops the native-only drag region"
 
   attr :back_path, :string,
     default: nil,
     doc: "When set, a back link is shown at the leading edge; ignored in the `:desktop` client"
-
-  attr :back_label, :string, default: "Library", doc: "Label for the back link"
 
   @spec window_bar(Socket.assigns()) :: Rendered.t()
   def window_bar(assigns) do
@@ -61,7 +61,7 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
         navigate={@back_path}
         class="absolute left-2 inline-flex items-center gap-0.5 text-xs font-semibold text-white/80 transition-colors hover:text-white"
       >
-        <.icon name="hero-chevron-left" class="h-3 w-3" />{@back_label}
+        <.icon name="hero-chevron-left" class="h-3 w-3" />Library
       </.link>
 
       <span

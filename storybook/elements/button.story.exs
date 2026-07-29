@@ -35,6 +35,15 @@ defmodule Storybook.Elements.Button do
         description: "Disabled state — dimmed, not-allowed cursor, and no stamp press on hover.",
         attributes: %{variant: :primary, disabled: true},
         slots: ["Create"]
+      },
+      %Variation{
+        id: :navigate,
+        description:
+          "Given `navigate`, the same button renders as a link — for an action that is " <>
+            "really navigation, such as the library's Open in the browser client " <>
+            "(ADR 0023). Identical to the eye, but hover it and the browser shows a URL.",
+        attributes: %{variant: :outline, navigate: "/library"},
+        slots: ["Open"]
       }
     ]
   end

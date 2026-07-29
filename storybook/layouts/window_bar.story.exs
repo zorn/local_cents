@@ -25,13 +25,13 @@ defmodule Storybook.Layouts.WindowBar do
       %Variation{
         id: :default,
         description: "The library window's title bar. #{@dots_note}",
-        attributes: %{title: "Library"},
+        attributes: %{title: "Library", client: :desktop},
         template: paper("<.psb-variation/>")
       },
       %Variation{
         id: :untitled,
         description: "No title — a bare draggable strip.",
-        attributes: %{},
+        attributes: %{client: :desktop},
         template: paper("<.psb-variation/>")
       },
       %Variation{

@@ -160,21 +160,14 @@ defmodule LocalCentsWeb.LibraryLive do
                       Delete
                     </button>
                   </Bond.menu>
-                  <%!-- In the browser Open is navigation, so it is a real link: the
-                  browser's own affordances (cmd-click for a new tab) then stand in for
-                  the desktop's several-windows-at-once. On the desktop it stays a
-                  button that asks the native shell for a window. --%>
+                  <%!-- One affordance, two mechanisms. On the desktop Open asks the
+                  native shell for a window; in the browser it is navigation, so it
+                  renders as a real link and the browser's own affordances (cmd-click
+                  for a new tab) stand in for several-windows-at-once. --%>
                   <Bond.button
-                    :if={@client == :browser}
                     variant={:outline}
-                    navigate={~p"/books/#{book.id}"}
-                  >
-                    Open
-                  </Bond.button>
-                  <Bond.button
-                    :if={@client == :desktop}
-                    variant={:outline}
-                    phx-click="open"
+                    navigate={if @client == :browser, do: ~p"/books/#{book.id}"}
+                    phx-click={if @client == :desktop, do: "open"}
                     phx-value-id={book.id}
                   >
                     Open
