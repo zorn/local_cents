@@ -265,7 +265,7 @@ end
 
 The property is the one issue #181 wants: **a route cannot be declared outside the session, because declaring the route and declaring the session are the same act.**
 
-`PhoenixStorybook.Mount` also shows the fail-loud posture on the *other* end of the contract (`deps/phoenix_storybook/lib/phoenix_storybook/mount.ex:6`–`:14`) — every value it pulls out of the session is `Map.fetch!/2`, so a misconfigured session raises rather than assigning `nil`.
+PhoenixStorybook's mount hook also shows the fail-loud posture on the *other* end of the contract (`deps/phoenix_storybook/lib/phoenix_storybook/mount.ex:6`–`:14`) — every value it pulls out of the session is `Map.fetch!/2`, so a misconfigured session raises rather than assigning `nil`.
 
 ### 3.4 E and F — put the hook's assigns in a signature (Livebook)
 
@@ -405,7 +405,7 @@ with each route's `live_session.extra.on_mount` holding a single hook whose `id`
 
 Three of the surveyed libraries never face this question, because they removed the plural:
 
-- **One LiveView, many page modules.** LiveDashboard routes all three of its paths to a single `Phoenix.LiveDashboard.PageLive` (`deps/phoenix_live_dashboard/lib/phoenix/live_dashboard/router.ex:112`–`:114`); the "pages" are `@behaviour Phoenix.LiveDashboard.PageBuilder` modules, and `use PageBuilder` injects the behaviour but **no `on_mount`**. Oban Web (`DashboardLive`) and Beacon LiveAdmin (`PageLive`) do the same. With one LiveView the contract cannot drift. LocalCents deliberately went the other way — ADR 0017 rejected folding the secondary views into `BookLive` as `live_action`s (`docs/adr/0017-in-window-secondary-views.md:44`–`:46`) — so this is closed, but it is worth knowing it is what the libraries chose.
+- **One LiveView, many page modules.** LiveDashboard routes all three of its paths to a single page LiveView (`deps/phoenix_live_dashboard/lib/phoenix/live_dashboard/router.ex:112`–`:114`); the "pages" are `@behaviour Phoenix.LiveDashboard.PageBuilder` modules, and `use PageBuilder` injects the behaviour but **no `on_mount`**. Oban Web (`DashboardLive`) and Beacon LiveAdmin (`PageLive`) do the same. With one LiveView the contract cannot drift. LocalCents deliberately went the other way — ADR 0017 rejected folding the secondary views into `BookLive` as `live_action`s (`docs/adr/0017-in-window-secondary-views.md:44`–`:46`) — so this is closed, but it is worth knowing it is what the libraries chose.
 - **Generate the LiveViews.** Backpex's `use Backpex.LiveResource` `defmodule`s three LiveViews per resource and calls `on_mount` inside each (`lib/backpex/live_resource.ex:335`–`:366`), so a resource cannot exist without its hooks. The honest footnote: **Backpex's own `Backpex.InitAssigns` hook is not injected this way.** It is documented prose telling the user to write `live_session :default, on_mount: Backpex.InitAssigns` in their router. Backpex has issue #181's exact bug for its own hook and did not fix it.
 
 ### 3.9 The cost nobody advertises: nested LiveViews do not get router hooks
