@@ -53,6 +53,22 @@ jobs:
         run: mix docs --warnings-as-errors
         if: always()
 
+      # Holds the pinned Mermaid bundle the check downloads, so the steady state
+      # needs no network. Keyed on the module that pins the version, so bumping
+      # the pin fetches the new build.
+      - name: Get Mermaid cache
+        uses: actions/cache@v5
+        if: always()
+        with:
+          path: _build/mermaid
+          key: mermaid-${{ runner.os }}-${{ hashFiles('lib/local_cents/docs/mermaid.ex') }}
+
+      # `--strict` because the runner has Chrome and a network: here an
+      # un-runnable check is a failure, not the skip `mix precommit` allows.
+      - name: Check Mermaid diagrams parse
+        run: mix mermaid.check --strict
+        if: always()
+
   # Security checks whose remedy is "bump a dep or triage a CVE": Sobelow scans
   # our own Phoenix code for insecure patterns; mix_audit cross-references the
   # locked dependency tree against known advisories; hex.audit flags any locked

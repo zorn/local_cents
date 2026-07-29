@@ -133,6 +133,25 @@ graph TD
 types, but calling `LocalCents.Tracking.ExAutomerge` directly is a boundary
 violation.
 
+### Mix tasks
+
+Boundary classifies every module by name, and a `Mix.Tasks.*` module falls outside
+every boundary we declare — which Boundary reports as an unclassified module, and
+`--warnings-as-errors` turns into a failed build. Mix tasks are the one place
+`classify_to:` is the answer:
+
+```elixir
+defmodule Mix.Tasks.Mermaid.Check do
+  use Mix.Task
+  use Boundary, classify_to: LocalCents
+end
+```
+
+The task then lives inside the named boundary and may call it freely. `classify_to:`
+is only permitted for Mix tasks and protocol implementations — an ordinary module
+cannot opt into a boundary its name does not put it in, which is what keeps
+name-based classification meaningful.
+
 ## Demo: make a violation appear
 
 You can watch Boundary catch a bad call in about a minute.

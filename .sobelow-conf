@@ -1,1 +1,7 @@
-[verbose: true, private: true, skip: true, router: nil, exit: "Low", format: "txt", out: nil, threshold: :low, ignore: [], ignore_files: [], version: false]
+# Sobelow scans our Phoenix code for web-facing vulnerabilities. The Mermaid
+# check is Mix-time tooling with no web surface: it shells out to a browser found
+# in a fixed candidate list (or the developer's own CHROME_BIN) and writes only
+# under `_build/`, both of which read as command-injection and traversal sinks to
+# a scanner that assumes request data. Excluded here rather than with per-function
+# `@sobelow_skip` attributes, which would need one on each of four call sites.
+[verbose: true, private: true, skip: true, router: nil, exit: "Low", format: "txt", out: nil, threshold: :low, ignore: [], ignore_files: ["lib/local_cents/docs/mermaid/runner.ex"], version: false]
