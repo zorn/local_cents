@@ -1,3 +1,8 @@
+# credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
+# The router is a table, not a design: it names every module the app routes to, so its
+# dependency count tracks how many screens exist rather than how tangled anything is.
+# Same reasoning as the `LocalCentsWeb.Bond` delegation hub, which carries this for the
+# same reason.
 defmodule LocalCentsWeb.Router do
   use LocalCentsWeb, :router
   import PhoenixStorybook.Router
@@ -59,6 +64,10 @@ defmodule LocalCentsWeb.Router do
 
       live_dashboard "/dashboard", metrics: LocalCentsWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+
+      # The debug bar's Docs link goes here rather than straight at `/doc/index.html`,
+      # so missing or stale docs can offer to rebuild themselves (see ADR 0023).
+      live "/docs", LocalCentsWeb.DevDocsLive
     end
   end
 end

@@ -59,6 +59,17 @@ What changes between the two clients:
   gated on the same flag that guards LiveDashboard so the bar and its targets appear and
   disappear together. ExDoc's output is served by a dev-only `Plug.Static` at `/doc`.
 
+**The Docs link goes through a gateway, not straight at `doc/index.html`.** That directory
+is a gitignored build artifact, so "show me the docs" has three honest answers, not one:
+they are current, they are behind the source, or they were never built.
+`LocalCentsWeb.DevDocsLive` at `/dev/docs` picks between them. Current — much the
+commonest — redirects straight through, so the link costs nothing; the other two render a
+short panel that says which it is and offers the button that fixes it, running `mix docs`
+in a subprocess off the LiveView process. Staleness is decided by comparing
+`doc/index.html`'s modification time against the sources ExDoc reads, which is advisory
+rather than exact: touching a file without changing it counts, and the only cost of being
+wrong is a rebuild nobody needed.
+
 `HomeLive` is deleted and `/` redirects to `/library`, keeping one canonical URL for the
 library. `LocalCentsWeb.ConnCase` and `LocalCentsWeb.FeatureCase` stamp the desktop user
 agent on the conn they build, so the suite tests the primary client by default and browser
@@ -96,6 +107,18 @@ shell is listening.
   rendering the wrong chrome. Each new branch is a place the two clients can drift.
 * **Accepted:** the debug bar is gated at compile time, so it never renders in the test
   environment and is covered by its Storybook story rather than a test — matching how the
-  rest of Bond is covered.
+  rest of Bond is covered. `LocalCentsWeb.DevDocsLive` is behind the same gate and so is
+  likewise untested; the staleness logic it rests on lives in `LocalCentsWeb.DevDocs`,
+  which is tested against a fixture project directory.
+* **Considered:** letting the Docs link 404 when `doc/` has never been generated, on the
+  grounds that `mix precommit` runs `mix docs` and so any working checkout has them.
+  Rejected — it is exactly the fresh-clone case where a dead end is least welcome, and the
+  same gateway that fixes it also catches the commoner problem of docs that exist but are
+  behind the source, which a direct link would serve silently and wrongly.
+* **Accepted:** the docs gateway shells out to `mix`. That is fine in a dev checkout and
+  meaningless in a release, which is why nothing routes to it outside `:dev_routes`.
+* **Accepted:** once the docs are current the gateway redirects, so the rebuild button is
+  unreachable. That is the intent — there is nothing to rebuild — but it does mean there is
+  no way to force a regeneration from the UI.
 * **Easier:** a hosted LocalCents, should it ever exist, now has a client to be. The
   browser path is exercised every day rather than discovered later.

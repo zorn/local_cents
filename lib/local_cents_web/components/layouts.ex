@@ -107,9 +107,9 @@ defmodule LocalCentsWeb.Layouts do
     defp debug_links do
       [
         %{label: "Storybook", href: ~p"/storybook"},
-        # A plain string, not `~p`: ExDoc's output is served by a `Plug.Static` in the
-        # endpoint, so it is neither a route nor one of `static_paths/0`.
-        %{label: "Docs", href: "/doc/index.html"},
+        # Not `/doc/index.html` directly: `LocalCentsWeb.DevDocsLive` stands in front of
+        # the generated docs so missing or stale ones can offer to rebuild themselves.
+        %{label: "Docs", href: ~p"/dev/docs"},
         %{label: "LiveDashboard", href: ~p"/dev/dashboard"}
       ]
     end
