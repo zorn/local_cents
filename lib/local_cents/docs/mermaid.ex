@@ -3,21 +3,20 @@ defmodule LocalCents.Docs.Mermaid do
   The Mermaid diagrams embedded in our Markdown, and the machinery for proving
   they parse before they ship.
 
-  Mermaid blocks are the one part of our published docs that no build step reads.
-  ExDoc passes a ```` ```mermaid ```` fence through as `<pre><code class="mermaid">`
-  and the browser parses it at read time, so a diagram with a syntax error survives
-  `mix docs --warnings-as-errors` and renders as an error bomb on the live page —
-  which has happened more than once. This module supplies the pure half of the
-  check that closes that gap: pull the blocks out of Markdown, build a page that
-  runs them through `mermaid.parse()`, and read the verdict back out of the DOM
-  that page leaves behind. `mix docs.mermaid` supplies the other half — finding
-  the files, fetching Mermaid, and driving a headless browser.
+  A diagram that fails to parse is invisible to the build and lands on the
+  published page as an error bomb; why that is and what it costs us is covered in
+  [Mermaid Diagrams](mermaid-diagrams.html).
 
-  Mermaid is version-sensitive: syntax the playground accepts (it tracks latest)
-  can fail on the version the docs actually load. `version/0` and `cdn_url/0` are
-  the single source of that pin — `mix.exs` interpolates `cdn_url/0` into the
-  `<script>` tag it injects into every generated page, and the Mix task fetches
-  the same URL, so the check and the docs cannot drift apart.
+  This module is the pure half of the check that closes the gap: pull the blocks
+  out of a file, build a page that runs them through `mermaid.parse()`, and read
+  the verdict back out of the DOM that page leaves behind. `mix docs.mermaid` and
+  `LocalCents.Docs.Mermaid.Runner` supply the parts that touch the world.
+
+  `version/0` and `cdn_url/0` are the single source of the Mermaid pin: `mix.exs`
+  interpolates `cdn_url/0` into the `<script>` tag ExDoc injects into every
+  generated page, and the check fetches the same URL. Because Mermaid's grammar
+  changes between versions, that shared source is what stops the check from
+  blessing syntax our readers' browsers would reject.
   """
 
   defmodule Block do
@@ -254,10 +253,31 @@ defmodule LocalCents.Docs.Mermaid do
   end
 
   @doc """
-  Renders one failing block as a single line: where it is, then what Mermaid said.
+  Pairs `blocks` back up with `results` and renders the failures, one line each:
+  where the diagram is, then what Mermaid said about it.
+
+  The pairing lives here, next to `harness_html/2`, because the two are the same
+  contract seen from opposite ends — the position `harness_html/2` tags a block
+  with is the key its verdict comes back under. Correlating in the caller would
+  put half of that contract out of sight of the half that defines it.
+
+  A block with no verdict at all is reported as a failure: the browser was asked
+  about it and said nothing, so it went unchecked.
   """
-  @spec format_failure(Block.t(), error :: String.t()) :: String.t()
-  def format_failure(%Block{} = block, error) do
+  @spec failures(blocks :: [Block.t()], results()) :: [String.t()]
+  def failures(blocks, results) do
+    blocks
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {block, id} ->
+      case Map.fetch(results, id) do
+        {:ok, nil} -> []
+        {:ok, error} -> [format_failure(block, error)]
+        :error -> [format_failure(block, "the browser reported no result")]
+      end
+    end)
+  end
+
+  defp format_failure(%Block{} = block, error) do
     "#{block.file}:#{block.line}|block #{block.index}|#{one_line(error)}"
   end
 

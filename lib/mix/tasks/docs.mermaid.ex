@@ -2,34 +2,29 @@ defmodule Mix.Tasks.Docs.Mermaid do
   @shortdoc "Checks that every Mermaid diagram in our Markdown parses"
 
   @moduledoc """
-  Parses every ```` ```mermaid ```` block in the repo's Markdown and fails if any
-  of them is invalid.
+  Parses every ```` ```mermaid ```` block we publish and fails if any of them is
+  invalid — the gap `mix docs --warnings-as-errors` leaves open, since ExDoc never
+  reads a diagram. Background and the syntax traps that have caught us out:
+  [Mermaid Diagrams](mermaid-diagrams.html).
 
-  Nothing else in the build reads these blocks. ExDoc emits a Mermaid fence as
-  `<pre><code class="mermaid">` and leaves the parsing to the reader's browser, so
-  a broken diagram sails through `mix docs --warnings-as-errors` and lands on the
-  published page as an error bomb. This task closes that gap by running the blocks
-  through the real `mermaid.parse()`, at the version the docs actually load.
+      $ mix docs.mermaid                    # every tracked `.md` and `lib/*.ex`
+      $ mix docs.mermaid docs/adr/*.md      # just these
 
-  ## How it runs
+  With no arguments the scope is what git tracks, Markdown *and* `lib/*.ex` — a
+  fence inside a `@moduledoc` reaches the published page the same way one in a
+  guide does. Test files are excluded so a fixture may hold a broken diagram.
 
   `mermaid.parse()` needs a DOM, so the check drives a headless Chrome over a
-  generated page — see `LocalCents.Docs.Mermaid` for the page and
-  `LocalCents.Docs.Mermaid.Runner` for the browser. Chrome is used rather than
-  Node + jsdom because GitHub's runners already ship it and this project keeps npm
-  out of the tree. Mermaid itself is fetched once from the same CDN URL the docs
-  load and cached under `_build/mermaid/`.
-
-      $ mix docs.mermaid                    # every Markdown file git tracks
-      $ mix docs.mermaid docs/adr/*.md      # just these
+  generated page: `LocalCents.Docs.Mermaid` builds the page,
+  `LocalCents.Docs.Mermaid.Runner` runs it. Chrome rather than Node + jsdom
+  because GitHub's runners already ship it and this project keeps npm out of the
+  tree ([`CODING_STANDARDS.md`](https://github.com/zorn/local_cents/blob/main/CODING_STANDARDS.md)).
 
   ## Options
 
-    * `--strict` — fail instead of skipping when the check *cannot* run: no
-      browser was found, or Mermaid could not be fetched. CI passes this;
-      `mix precommit` does not, so a contributor without Chrome or without a
-      network connection still gets a green local run rather than a wall they
-      cannot climb.
+    * `--strict` — fail instead of skipping when the check cannot produce a
+      verdict. CI passes this; `mix precommit` does not, so a missing browser or
+      a missing network connection is a notice locally and a failure in CI.
 
   Set `CHROME_BIN` to point at a specific browser binary if the one you want is
   not in the search list.
@@ -50,7 +45,7 @@ defmodule Mix.Tasks.Docs.Mermaid do
     {opts, paths} = OptionParser.parse!(argv, strict: [strict: :boolean])
     strict? = Keyword.get(opts, :strict, false)
 
-    case paths |> markdown_files() |> Enum.flat_map(&extract/1) do
+    case paths |> source_files() |> Enum.flat_map(&extract/1) do
       [] -> Mix.shell().info("No Mermaid diagrams found.")
       blocks -> check(blocks, strict?)
     end
@@ -58,19 +53,9 @@ defmodule Mix.Tasks.Docs.Mermaid do
 
   defp check(blocks, strict?) do
     case Runner.run(blocks) do
-      {:ok, results} ->
-        report(blocks, results)
-
-      {:skip, reason} when strict? ->
-        Mix.raise("The Mermaid check could not run: #{reason}.")
-
-      {:skip, reason} ->
-        Mix.shell().info("Skipping the Mermaid check — #{reason}.")
-
-      # Unlike a skip, this means the browser ran and left the diagrams
-      # unchecked anyway — exactly what this task exists to catch.
-      {:error, reason} ->
-        Mix.raise("The Mermaid check could not be completed: #{reason}.")
+      {:ok, results} -> report(blocks, Mermaid.failures(blocks, results))
+      {:skip, reason} when strict? -> Mix.raise("The Mermaid check could not run: #{reason}.")
+      {:skip, reason} -> Mix.shell().info("Skipping the Mermaid check — #{reason}.")
     end
   end
 
@@ -80,22 +65,31 @@ defmodule Mix.Tasks.Docs.Mermaid do
   # and the Rust `target/` directories without maintaining an ignore list that
   # would drift from `.gitignore`. `CLAUDE.md` is a symlink to `AGENTS.md`, so
   # paths are deduped by their resolved target to avoid checking a file twice.
-  defp markdown_files([]) do
-    case tracked_markdown_files() do
+  defp source_files([]) do
+    case tracked_files() do
       {output, 0} -> output |> String.split(<<0>>, trim: true) |> dedupe_links()
-      _ -> markdown_files(["*.md", "docs/**/*.md"])
+      _ -> source_files(["*.md", "docs/**/*.md", "lib/**/*.ex"])
     end
   end
 
-  defp markdown_files(patterns) do
+  defp source_files(patterns) do
     patterns |> Enum.flat_map(&Path.wildcard/1) |> dedupe_links()
   end
 
+  # `lib/*.ex` is in scope alongside the Markdown because ExDoc injects its
+  # Mermaid script into *every* generated page, module pages included — a fence in
+  # a `@moduledoc` renders in the browser exactly like one in a guide. Test files
+  # are left out: they are never published, and a fixture is allowed to hold a
+  # deliberately broken diagram.
+  #
   # `System.cmd/3` raises rather than returning a status when the binary is
   # absent, so an un-installed git has to fall back the same way a non-git
   # checkout does.
-  defp tracked_markdown_files do
-    System.cmd("git", ["ls-files", "-z", "--", "*.md"], env: [], stderr_to_stdout: true)
+  defp tracked_files do
+    System.cmd("git", ["ls-files", "-z", "--", "*.md", "lib/*.ex"],
+      env: [],
+      stderr_to_stdout: true
+    )
   rescue
     ErlangError -> {"", 1}
   end
@@ -109,18 +103,7 @@ defmodule Mix.Tasks.Docs.Mermaid do
     end)
   end
 
-  defp report(blocks, results) do
-    failures =
-      blocks
-      |> Enum.with_index()
-      |> Enum.flat_map(fn {block, id} ->
-        case Map.fetch(results, id) do
-          {:ok, nil} -> []
-          {:ok, error} -> [Mermaid.format_failure(block, error)]
-          :error -> [Mermaid.format_failure(block, "the browser reported no result")]
-        end
-      end)
-
+  defp report(blocks, failures) do
     if failures == [] do
       Mix.shell().info("All #{length(blocks)} Mermaid diagram(s) parsed.")
     else

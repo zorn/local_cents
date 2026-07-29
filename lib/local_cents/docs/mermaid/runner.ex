@@ -6,9 +6,10 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   Everything the check needs from the outside world lives here, so
   `mix docs.mermaid` is left holding only the parts a reader of a Mix task expects
   — arguments, which files to read, and what to print. That separation also keeps
-  the *policy* out of the mechanism: `run/1` reports a missing browser or an
-  un-fetchable Mermaid as `{:skip, reason}` and leaves the caller to decide whether
-  that is a warning or a failure (see the task's `--strict` option).
+  policy out of the mechanism: `run/1` reports anything that stopped it from
+  reaching a verdict as `{:skip, reason}` and leaves the caller to decide whether
+  that is a notice or a failure (see the task's `--strict` option). What the check
+  is for: [Mermaid Diagrams](mermaid-diagrams.html).
 
   This is Mix-time tooling, not application code — it writes to `Mix.shell/0` and
   caches under `_build/`, and nothing in the running app calls it.
@@ -34,12 +35,13 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   ]
 
   @typedoc """
-  `:skip` means the check never got to run — no browser, or Mermaid could not be
-  fetched — and is recoverable. `:error` means it ran and produced nothing usable,
-  which leaves the diagrams unchecked and is not.
+  `{:skip, reason}` covers every way the check can fail to produce a verdict — no
+  browser, an un-fetchable Mermaid, a browser that will not start, a page that
+  crashed. They are one outcome on purpose: each leaves the diagrams unchecked,
+  and each is a local-environment problem the caller may reasonably tolerate but
+  CI must not.
   """
-  @type outcome() ::
-          {:ok, Mermaid.results()} | {:skip, String.t()} | {:error, String.t()}
+  @type outcome() :: {:ok, Mermaid.results()} | {:skip, String.t()}
 
   @doc """
   Parses every block in `blocks` and returns each one's verdict.
@@ -59,7 +61,7 @@ defmodule LocalCents.Docs.Mermaid.Runner do
     candidate =
       Enum.find_value([System.get_env("CHROME_BIN") | @browser_candidates], fn
         nil -> nil
-        candidate -> executable(candidate)
+        candidate -> resolve_executable(candidate)
       end)
 
     case candidate do
@@ -68,7 +70,7 @@ defmodule LocalCents.Docs.Mermaid.Runner do
     end
   end
 
-  defp executable(candidate) do
+  defp resolve_executable(candidate) do
     cond do
       File.regular?(candidate) -> candidate
       path = System.find_executable(candidate) -> path
@@ -115,8 +117,15 @@ defmodule LocalCents.Docs.Mermaid.Runner do
     Mix.shell().info("Parsing #{count} diagram(s) with Mermaid #{Mermaid.version()} ...")
 
     case System.cmd(browser, browser_args(harness), env: []) do
-      {dom, 0} -> Mermaid.decode_results(dom)
-      {_dom, status} -> {:error, "#{Path.basename(browser)} exited with status #{status}"}
+      {dom, 0} -> decode(dom)
+      {_dom, status} -> {:skip, "#{Path.basename(browser)} exited with status #{status}"}
+    end
+  end
+
+  defp decode(dom) do
+    case Mermaid.decode_results(dom) do
+      {:ok, results} -> {:ok, results}
+      {:error, reason} -> {:skip, reason}
     end
   end
 

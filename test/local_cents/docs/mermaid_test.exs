@@ -183,12 +183,45 @@ defmodule LocalCents.Docs.MermaidTest do
     end
   end
 
-  describe "format_failure/2" do
-    test "renders the pipe-delimited location and error" do
-      block = %Block{file: "docs/a.md", index: 2, line: 42, source: "graph TD"}
+  describe "failures/2" do
+    setup do
+      blocks = [
+        %Block{file: "docs/a.md", index: 1, line: 3, source: "graph TD"},
+        %Block{file: "docs/a.md", index: 2, line: 42, source: "graph TD"},
+        %Block{file: "docs/b.md", index: 1, line: 9, source: "graph TD"}
+      ]
 
-      assert Mermaid.format_failure(block, "Parse error on line 2") ==
-               "docs/a.md:42|block 2|Parse error on line 2"
+      %{blocks: blocks}
+    end
+
+    test "reports nothing when every block parsed", %{blocks: blocks} do
+      assert Mermaid.failures(blocks, %{0 => nil, 1 => nil, 2 => nil}) == []
+    end
+
+    test "renders the pipe-delimited location and error for each failure", %{blocks: blocks} do
+      results = %{0 => nil, 1 => "Parse error on line 2", 2 => "Expecting 'SPACE'"}
+
+      assert Mermaid.failures(blocks, results) == [
+               "docs/a.md:42|block 2|Parse error on line 2",
+               "docs/b.md:9|block 1|Expecting 'SPACE'"
+             ]
+    end
+
+    test "flattens a multi-line parser error onto one line", %{blocks: blocks} do
+      results = %{
+        0 => "Parse error on line 2:\n  ...A --> B\n  ---^\ngot 'DESCR'",
+        1 => nil,
+        2 => nil
+      }
+
+      assert [failure] = Mermaid.failures(blocks, results)
+      assert failure == "docs/a.md:3|block 1|Parse error on line 2: ...A --> B ---^ got 'DESCR'"
+    end
+
+    test "treats a block the browser never reported on as a failure", %{blocks: blocks} do
+      assert Mermaid.failures(blocks, %{0 => nil, 1 => nil}) == [
+               "docs/b.md:9|block 1|the browser reported no result"
+             ]
     end
   end
 end

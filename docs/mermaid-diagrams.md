@@ -10,14 +10,19 @@ This has happened more than once, so `mix docs.mermaid` now checks the diagrams.
 
 ## The check
 
-    $ mix docs.mermaid                 # every Markdown file git tracks
+    $ mix docs.mermaid                 # every tracked `.md` and `lib/*.ex`
     $ mix docs.mermaid docs/adr/*.md   # just these
 
 It extracts every Mermaid block, runs each through the real `mermaid.parse()`
 inside a headless Chrome, and exits non-zero listing `file:line|block N|error`
 for anything that fails. It runs as part of `mix precommit` and again in CI.
 
-Two details are load-bearing:
+The scope is not only the guides. ExDoc injects its Mermaid script into *every*
+page it generates, so a fence inside a `@moduledoc` renders in the reader's
+browser exactly like one here — `lib/*.ex` is checked for that reason. Test files
+are not, so a fixture is free to hold a deliberately broken diagram.
+
+Two more details are load-bearing:
 
 - **It parses at the pinned version, not the latest.** `LocalCents.Docs.Mermaid`
   owns that pin, and `mix.exs` builds the docs' `<script>` tag from the same
