@@ -44,8 +44,7 @@ defmodule LocalCentsWeb.BookReportLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{book: %Book{}}} = socket) do
-    # The range (and the async Report load) is driven from `handle_params/3`, so the
-    # mount itself only seeds the staleness flag.
+    # The range (and the async Report load) is driven from `handle_params/3`.
     socket
     |> assign(stale?: false)
     |> ok()

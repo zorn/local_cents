@@ -22,7 +22,7 @@ defmodule LocalCentsWeb.BookWindow do
   match the assign in the mount head (`%{assigns: %{book: %Book{}}} = socket`) so the
   contract is stated in the signature. Do **not** also attach it in the router: hooks
   from the `live_session` and the module are additive, and the second `register_viewer/1`
-  would fail as an already-tracked presence. `LocalCentsWeb.BookWindowAttachmentTest`
+  would fail as an already-tracked presence. `test/local_cents_web/book_window_attachment_test.exs`
   fails the build if a routed document-window view omits the hook.
   """
 

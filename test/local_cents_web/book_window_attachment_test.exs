@@ -7,7 +7,8 @@ defmodule LocalCentsWeb.BookWindowAttachmentTest do
   # `docs/research/book-window-on-mount-contract.md`).
   use ExUnit.Case, async: true
 
-  @hook_id {LocalCentsWeb.BookWindow, :default}
+  @hook_module LocalCentsWeb.BookWindow
+  @hook_id {@hook_module, :default}
   @path_prefix "/books/:book_id"
 
   test "every routed document-window view attaches the BookWindow on_mount hook" do
@@ -22,12 +23,12 @@ defmodule LocalCentsWeb.BookWindowAttachmentTest do
 
       assert @hook_id in hook_ids, """
       #{inspect(view)} is routed under #{@path_prefix} but does not attach the
-      #{inspect(elem(@hook_id, 0))} on_mount hook, so it will never register a viewer and
+      #{inspect(@hook_module)} on_mount hook, so it will never register a viewer and
       its Book's runtime can reap under an open window.
 
       Add this under the `use LocalCentsWeb, :live_view` line:
 
-          on_mount #{inspect(elem(@hook_id, 0))}
+          on_mount #{inspect(@hook_module)}
 
       attached hooks: #{inspect(hook_ids)}
       """
@@ -40,9 +41,12 @@ defmodule LocalCentsWeb.BookWindowAttachmentTest do
   # `Phoenix.LiveView.__live__/1` and it is what the framework itself loads the
   # lifecycle from on both render paths, so it is the more stable of the two.
   defp document_window_views do
+    # The `<-` over a one-element list is a filter, not a match: a non-LiveView route
+    # under this prefix (an export endpoint, say) has no `:phoenix_live_view` metadata
+    # and is skipped rather than raising.
     for route <- LocalCentsWeb.Router.__routes__(),
         String.starts_with?(route.path, @path_prefix),
-        {view, _action, _opts, _live_session} = route.metadata.phoenix_live_view,
+        {view, _action, _opts, _live_session} <- [route.metadata[:phoenix_live_view]],
         do: view
   end
 end

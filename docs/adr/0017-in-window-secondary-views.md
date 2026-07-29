@@ -56,7 +56,7 @@ window is a Book, not a view.
   view count grew. It did, and the hook is now `LocalCentsWeb.BookWindow`. Each view
   attaches it in its own module rather than through the router's `live_session`, so
   the dependency is visible from the module that relies on it, and
-  `LocalCentsWeb.BookWindowAttachmentTest` fails the build if a routed
+  `test/local_cents_web/book_window_attachment_test.exs` fails the build if a routed
   document-window view omits it (see
   [issue #181](https://github.com/zorn/local_cents/issues/181) and
   `docs/research/book-window-on-mount-contract.md`).
