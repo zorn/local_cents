@@ -26,6 +26,13 @@ gets its own guide or ADR.
   the source; future-work asides become GitHub issues. Comments on private functions
   are encouraged where they add non-obvious why, held to the same why-not-what bar.
 
+- **Mermaid diagrams are checked, and the parser is pickier than you expect** —
+  `mix docs.mermaid` parses every ```` ```mermaid ```` block at the version the
+  published docs load, and runs inside `mix precommit` and CI. The two syntax traps
+  that have bitten us (a second `:` in a state-transition label, a `;` in note
+  text) and how the check behaves without Chrome:
+  [`docs/mermaid-diagrams.md`](docs/mermaid-diagrams.md).
+
 - **`@impl` names the behaviour; never `@impl true`.** Annotate callbacks with the
   explicit behaviour module — `@impl Phoenix.LiveView`, `@impl Phoenix.Component`,
   `@impl GenServer`, and so on. `@impl true` is ambiguous about which contract the

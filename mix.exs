@@ -27,6 +27,11 @@ defmodule LocalCents.MixProject do
       # local eyeball tool, not a gate (see docs/testing-coverage.md).
       test_coverage: [tool: ExCoveralls],
 
+      # `:mix` is not an application dependency, so it is absent from the default
+      # PLT — without it every `Mix.shell/0` and `Mix.raise/1` call in our Mix
+      # tasks (`lib/mix/tasks/`) reports as an unknown function.
+      dialyzer: [plt_add_apps: [:mix]],
+
       # Docs
       name: "LocalCents",
       source_url: "https://github.com/zorn/local_cents",
@@ -51,9 +56,13 @@ defmodule LocalCents.MixProject do
     ]
   end
 
+  # The Mermaid URL comes from `LocalCents.Docs.Mermaid` rather than being written
+  # out here, so the version the published pages load and the version
+  # `mix docs.mermaid` validates against are one fact. ExDoc calls this after the
+  # app is compiled, so the module is loadable by then.
   defp before_closing_head_tag(:html) do
     """
-    <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.2.3/dist/mermaid.min.js"></script>
+    <script defer src="#{LocalCents.Docs.Mermaid.cdn_url()}"></script>
     <script>
       let initialized = false;
 
@@ -110,6 +119,7 @@ defmodule LocalCents.MixProject do
       "docs/module-boundaries.md",
       "docs/moduledoc-style.md",
       "docs/comment-style.md",
+      "docs/mermaid-diagrams.md",
       "docs/testing-coverage.md",
       "docs/book-runtime-architecture.md",
       "docs/book-runtime-lifecycle.md",
@@ -138,6 +148,7 @@ defmodule LocalCents.MixProject do
         "docs/module-boundaries.md",
         "docs/moduledoc-style.md",
         "docs/comment-style.md",
+        "docs/mermaid-diagrams.md",
         "docs/testing-coverage.md",
         "docs/book-runtime-architecture.md",
         "docs/book-runtime-lifecycle.md",
@@ -163,6 +174,7 @@ defmodule LocalCents.MixProject do
         LocalCents.Mailer
       ],
       Tracking: [~r/^LocalCents\.Tracking/],
+      "Docs Tooling": [~r/^LocalCents\.Docs\./, ~r/^Mix\.Tasks\./],
       "Bond Components": [~r/^LocalCentsWeb\.Bond/],
       Storybook: [~r/^Storybook/, ~r/^LocalCentsWeb\.Storybook/],
       Web: [~r/^LocalCentsWeb/]
@@ -175,6 +187,7 @@ defmodule LocalCents.MixProject do
   # the longest matching prefix for each module.
   defp nest_modules_by_prefix do
     [
+      LocalCents.Docs,
       LocalCents.Tracking,
       LocalCentsWeb.Bond.Composites,
       LocalCentsWeb.Bond.Elements,
@@ -393,6 +406,9 @@ defmodule LocalCents.MixProject do
         # lookup fails with "task could not be found".
         "cmd mix hex.audit",
         "cmd sh -c 'MIX_ENV=dev mix docs --warnings-as-errors'",
+        # Deliberately not `--strict`: a contributor without Chrome or without a
+        # network connection gets a skip here, and CI (which has both) enforces it.
+        "docs.mermaid",
         "test --warnings-as-errors"
       ]
     ]
