@@ -3,8 +3,11 @@ defmodule LocalCentsWeb.BookLive do
   A single open `Book`, mounted at `/books/:book_id` — the document view.
 
   On the desktop this LiveView is loaded into its own native window, one per `Book`
-  (see [ADR 0006](0006-multi-window-desktop-shell.html)). Its mount contract comes from
-  `LocalCentsWeb.BookWindow`, so the list stays live as the `Book` is edited elsewhere.
+  (see [ADR 0006](0006-multi-window-desktop-shell.html)); driven from a browser it is a
+  page, and the title bar gains a link back to the library since there is no window to
+  close (see [ADR 0023](0023-browser-as-a-second-client.html)). Its mount contract comes
+  from `LocalCentsWeb.BookWindow`, so the list stays live as the `Book` is edited
+  elsewhere.
 
   The window lists the Book's expenses (newest first) and offers two capture paths.
   A **quick-add** bar pinned at the top takes a single line — a trailing amount is
@@ -40,7 +43,7 @@ defmodule LocalCentsWeb.BookLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} window_title={@book.name}>
+    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
       <%!-- `relative` scopes the side-panel editor's `absolute inset-0` to this
       content area (below the native title bar), not the whole window; `h-full` pins
       the column so the list scrolls inside it and the action bar stays visible. --%>

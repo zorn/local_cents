@@ -5,6 +5,7 @@ defmodule LocalCentsWeb.Router do
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
+    plug LocalCentsWeb.Plugs.Client
     plug :fetch_live_flash
     plug :put_root_layout, html: {LocalCentsWeb.Layouts, :root}
     plug :protect_from_forgery
@@ -27,7 +28,7 @@ defmodule LocalCentsWeb.Router do
   scope "/", LocalCentsWeb do
     pipe_through :browser
 
-    live "/", HomeLive
+    get "/", PageController, :home
     live "/library", LibraryLive
 
     live_session :book_window do

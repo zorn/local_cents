@@ -36,9 +36,16 @@ defmodule LocalCentsWeb.Layouts do
   strip drag the native window. It is a fixed-height flex child, so the content
   below it is reserved clear of the traffic lights automatically.
 
+  The same shell serves both clients (see [ADR 0023](0023-browser-as-a-second-client.html)).
+  `client` is required rather than defaulted so a view that forgets to pass it fails the
+  build instead of quietly rendering the wrong chrome. In the `:browser` client the title
+  bar's drag region is dropped and `back_path` — passed by the document-window views, not
+  by the library itself — becomes the way back, and a floating debug bar appears when the
+  dev routes are on.
+
   ## Examples
 
-      <Layouts.app flash={@flash} window_title="Library">
+      <Layouts.app flash={@flash} client={@client} window_title="Library">
         <h1>Content</h1>
       </Layouts.app>
 
@@ -53,17 +60,28 @@ defmodule LocalCentsWeb.Layouts do
     default: nil,
     doc: "text shown centered in the title bar; the native title text is hidden"
 
+  attr :client, :atom,
+    required: true,
+    values: [:desktop, :browser],
+    doc: "which client the page is rendering into (see `LocalCentsWeb.Client`)"
+
+  attr :back_path, :string,
+    default: nil,
+    doc: "where the title bar's browser-only back link goes; omitted on the library itself"
+
   slot :inner_block, required: true
 
   @spec app(Socket.assigns()) :: Rendered.t()
   def app(assigns) do
+    assigns = assign(assigns, :debug_links, debug_links())
+
     ~H"""
     <main class="bond-window-paper flex h-screen flex-col overflow-hidden">
       <%!-- The paper texture on <main> paints up into the transparent native title
       bar; this strip drags the window and shows the centered title over the native
       traffic lights (ADR 0013). It is a fixed-height flex child, so the content
       below reserves clear of the traffic lights on its own. --%>
-      <Bond.window_bar title={@window_title} />
+      <Bond.window_bar title={@window_title} client={@client} back_path={@back_path} />
 
       <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
         {render_slot(@inner_block)}
@@ -71,7 +89,32 @@ defmodule LocalCentsWeb.Layouts do
     </main>
 
     <.flash_group flash={@flash} />
+
+    <%!-- Rendered outside <main> so the floating pill is never subject to the window
+    shell's `overflow-hidden`. --%>
+    <Bond.debug_bar :if={@client == :browser and @debug_links != []} links={@debug_links} />
     """
+  end
+
+  # The developer links the debug bar offers, or none when they would not work.
+  #
+  # Built at compile time rather than filtered at runtime because `~p"/dev/dashboard"`
+  # only *exists* when `:dev_routes` is on — under any other config a verified route to
+  # it would not compile. Gating the list on the same flag the router uses keeps the
+  # bar and its targets appearing and disappearing together, so it can never offer a
+  # dead link.
+  if Application.compile_env(:local_cents, :dev_routes, false) do
+    defp debug_links do
+      [
+        %{label: "Storybook", href: ~p"/storybook"},
+        # A plain string, not `~p`: ExDoc's output is served by a `Plug.Static` in the
+        # endpoint, so it is neither a route nor one of `static_paths/0`.
+        %{label: "Docs", href: "/doc/index.html"},
+        %{label: "LiveDashboard", href: ~p"/dev/dashboard"}
+      ]
+    end
+  else
+    defp debug_links, do: []
   end
 
   @doc """

@@ -36,7 +36,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} window_title={@book.name}>
+    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
       <div class="relative flex h-full flex-col overflow-hidden">
         <div class="flex items-center gap-3 border-b border-surface-200 px-4 py-3">
           <.link

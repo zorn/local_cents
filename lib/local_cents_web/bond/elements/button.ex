@@ -7,6 +7,11 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   beside a Save) — the same weight as `:primary` but colored to signal danger, per
   the house destructive-action rule in `docs/ui-language.md`. It is the app's single
   "danger" treatment; a lighter/subordinate variant may return in a later UI pass.
+
+  Pass `navigate` when the action is really navigation and the button look is what the
+  screen calls for — the library's **Open** in the browser client, say. It renders a
+  real link, so the browser's own affordances (cmd-click for a new tab, hover preview)
+  come along, and it keeps a `<button>` out of an `<a>`, which is invalid markup.
   """
 
   use Phoenix.Component
@@ -27,6 +32,13 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
     doc:
       ~s(The button's `type` attribute; defaults to "button" so it never accidentally submits a form)
 
+  attr :navigate, :string,
+    default: nil,
+    doc: """
+    When set, renders a `<.link navigate={...}>` styled identically instead of a
+    `<button>` — for an action that is really navigation
+    """
+
   attr :rest, :global, doc: "HTML attributes passed through to the button element"
 
   slot :inner_block, required: true, doc: "Button label or character"
@@ -34,7 +46,23 @@ defmodule LocalCentsWeb.Bond.Elements.Button do
   @spec button(Socket.assigns()) :: Rendered.t()
   def button(assigns) do
     ~H"""
-    <button type={@type} class={button_class(@variant)} style={button_style(@variant)} {@rest}>
+    <.link
+      :if={@navigate}
+      navigate={@navigate}
+      class={["inline-block", button_class(@variant)]}
+      style={button_style(@variant)}
+      {@rest}
+    >
+      {render_slot(@inner_block)}
+    </.link>
+
+    <button
+      :if={is_nil(@navigate)}
+      type={@type}
+      class={button_class(@variant)}
+      style={button_style(@variant)}
+      {@rest}
+    >
       {render_slot(@inner_block)}
     </button>
     """

@@ -65,6 +65,11 @@ defmodule LocalCentsWeb do
     quote do
       use Phoenix.LiveView
 
+      # Assigns `@client` (`:desktop` or `:browser`) on every mount. Attached here
+      # rather than per view because every view renders into a client and branches on
+      # it — see `LocalCentsWeb.Client` and ADR 0023.
+      on_mount LocalCentsWeb.Client
+
       import LocalCentsWeb.LiveViewPipes
 
       # Appends a catch-all `handle_info/2` after this view's own clauses so a view

@@ -10,6 +10,11 @@ defmodule LocalCentsWeb.LibraryLive do
   focus) a separate window at `/books/:book_id`, so several `Book`s can be open at once
   while the library window itself stays put.
 
+  Driven from a browser instead, the same view opens Books by *navigating* — **Open**
+  is a real link and creating a Book goes straight to it, because a tab cannot both
+  spawn a window and stay where it is (see
+  [ADR 0023](0023-browser-as-a-second-client.html)).
+
   New books are created from a bar pinned to the bottom of the window: a **New
   Book** button reveals an inline name field. Each row carries an overflow menu
   for the per-Book actions that need confirmation or input: **Rename** (a modal
@@ -91,7 +96,8 @@ defmodule LocalCentsWeb.LibraryLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} window_title="Library">
+    <%!-- No `back_path`: the library is where the browser's back link goes. --%>
+    <Layouts.app flash={@flash} client={@client} window_title="Library">
       <%!-- h-full (not min-h-screen) pins the column to the shell's content area so
       the list scrolls inside it and the bottom bar stays visible no matter how many
       books; the title bar above already claimed its slice of the viewport. --%>
@@ -154,7 +160,23 @@ defmodule LocalCentsWeb.LibraryLive do
                       Delete
                     </button>
                   </Bond.menu>
-                  <Bond.button variant={:outline} phx-click="open" phx-value-id={book.id}>
+                  <%!-- In the browser Open is navigation, so it is a real link: the
+                  browser's own affordances (cmd-click for a new tab) then stand in for
+                  the desktop's several-windows-at-once. On the desktop it stays a
+                  button that asks the native shell for a window. --%>
+                  <Bond.button
+                    :if={@client == :browser}
+                    variant={:outline}
+                    navigate={~p"/books/#{book.id}"}
+                  >
+                    Open
+                  </Bond.button>
+                  <Bond.button
+                    :if={@client == :desktop}
+                    variant={:outline}
+                    phx-click="open"
+                    phx-value-id={book.id}
+                  >
                     Open
                   </Bond.button>
                 </:actions>
@@ -272,6 +294,7 @@ defmodule LocalCentsWeb.LibraryLive do
     end
   end
 
+  # Desktop only: in the browser client Open is a link, so this never fires there.
   def handle_event("open", %{"id" => id}, socket) do
     with %Tracking.Book{} = book <- Tracking.get_book(id),
          :ok <- Tracking.open_book(book.id) do
@@ -386,18 +409,29 @@ defmodule LocalCentsWeb.LibraryLive do
   defp create_book(socket, name) do
     case Tracking.create_book(name) do
       {:ok, book} ->
-        # Creating a book opens its document window straight away (ADR 0006).
-        DesktopShell.open_book(book)
-        # Follow the new Book's changes so its subtitle stays live like the rest.
-        if connected?(socket), do: Tracking.subscribe(book.id)
-
         socket
         |> assign(books: Tracking.list_books(), creating: false, create_name: "")
+        |> show_new_book(book)
         |> noreply()
 
       {:error, _reason} ->
         socket |> put_flash(:error, "Could not create the book.") |> noreply()
     end
+  end
+
+  # Creating a Book opens it straight away (ADR 0006) — you just named it, so you are
+  # about to fill it. On the desktop that means a new native window and the library
+  # window stays put; a browser tab cannot have both halves, so it navigates and the
+  # library is a Back away (see ADR 0023).
+  defp show_new_book(%{assigns: %{client: :browser}} = socket, book) do
+    push_navigate(socket, to: ~p"/books/#{book.id}")
+  end
+
+  defp show_new_book(socket, book) do
+    DesktopShell.open_book(book)
+    # Follow the new Book's changes so its subtitle stays live like the rest.
+    if connected?(socket), do: Tracking.subscribe(book.id)
+    socket
   end
 
   # Opens a per-Book action dialog. Re-reads the Book so the modal shows a fresh

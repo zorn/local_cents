@@ -33,6 +33,22 @@ defmodule Storybook.Layouts.WindowBar do
         description: "No title — a bare draggable strip.",
         attributes: %{},
         template: paper("<.psb-variation/>")
+      },
+      %Variation{
+        id: :browser,
+        description:
+          "Driven from a browser instead of the native shell (ADR 0023): no drag region, " <>
+            "and the space the traffic lights would occupy carries the way back.",
+        attributes: %{title: "Family Expenses", client: :browser, back_path: "/library"},
+        template: paper("<.psb-variation/>")
+      },
+      %Variation{
+        id: :browser_at_the_library,
+        description:
+          "The browser client on the library itself — no back link, because this is where " <>
+            "the back link goes.",
+        attributes: %{title: "Library", client: :browser},
+        template: paper("<.psb-variation/>")
       }
     ]
   end

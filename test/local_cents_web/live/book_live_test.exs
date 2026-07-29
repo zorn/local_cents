@@ -24,6 +24,26 @@ defmodule LocalCentsWeb.BookLiveTest do
     |> assert_has("[data-tauri-drag-region]", text: "Family Expenses")
   end
 
+  # On the desktop this view is its own native window, so there is nothing to go back
+  # to; in a browser it is a page, and the title bar carries the way out (ADR 0023).
+  test "the desktop title bar offers no way back", ~M{conn} do
+    {:ok, book} = Tracking.create_book("Family Expenses")
+
+    conn
+    |> visit(~p"/books/#{book.id}")
+    |> refute_has("a", text: "Library")
+  end
+
+  test "the browser title bar links back to the library", ~M{conn} do
+    {:ok, book} = Tracking.create_book("Family Expenses")
+
+    conn
+    |> browser_conn()
+    |> visit(~p"/books/#{book.id}")
+    |> click_link("Library")
+    |> assert_path(~p"/library")
+  end
+
   test "a renamed book updates the heading live", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")
 
