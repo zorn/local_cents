@@ -16,7 +16,9 @@ gets its own guide or ADR.
   [`docs/moduledoc-style.md`](docs/moduledoc-style.md): summary-first line, explain
   the _why_, link ADRs by rendered page, backtick domain concepts (`` `Book` ``).
   Audit every moduledoc you touch against it as an end-of-feature step, not only in
-  review.
+  review. Its Mechanics section also covers backticking module names in prose docs:
+  every file under `docs/` is an ExDoc extra, so a backticked reference to a module
+  with `@moduledoc false` fails `mix precommit`.
 
 - **Code comments** — follow [`docs/comment-style.md`](docs/comment-style.md): inline
   comments carry durable _why_ and never restate the signature; single-use,

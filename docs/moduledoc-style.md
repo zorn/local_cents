@@ -130,6 +130,16 @@ the value _means_ or what constraints it carries. `LocalCents.Tracking.Book`'s `
 - Emphasize sparingly with `**bold**` for the one invariant a reader must not
   miss (see how `LocalCents.Tracking.BookServer` bolds "persists it through … first").
 - Prefer linking a concept to re-explaining it.
+- **Only backtick a module name ExDoc can link to.** ExDoc autolinks any
+  backticked module reference, and `mix docs` runs with `--warnings-as-errors`
+  under `mix precommit`, so a reference to a module carrying `@moduledoc false`
+  fails the build with "references module … but it is hidden". This bites hardest
+  in prose docs, because every file under `docs/` — including `docs/research/`
+  and `docs/adr/` — is an ExDoc extra (see `extras/0` in `mix.exs`), and research
+  notes routinely name private modules inside dependencies. Name such a module in
+  plain text and cite its file path instead of backticking it. Reserve
+  `skip_code_autolink_to` in `mix.exs` for names this repo owns and expects to
+  keep writing, such as the `Storybook` boundary shim.
 
 ## Exemplars
 
