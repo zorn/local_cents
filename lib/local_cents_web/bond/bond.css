@@ -186,3 +186,13 @@ dialog.bond-side-panel {
   transform: translate(var(--bond-stamp-x, 2px), var(--bond-stamp-y, 3px));
   box-shadow: none;
 }
+
+/* Debug bar: the collapsed pill is a <summary>, so the UA disclosure triangle has
+   to go — the wrench icon is the whole affordance. `list-style` covers Firefox and
+   modern WebKit; the ::-webkit-details-marker rule covers older Safari. */
+.bond-debug-bar > summary {
+  list-style: none;
+}
+.bond-debug-bar > summary::-webkit-details-marker {
+  display: none;
+}

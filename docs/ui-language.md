@@ -18,7 +18,12 @@ Use **"Delete"** for permanent removal of an entity. Use **"Remove"** only when 
 
 ## Acting on things
 
-Use **"Open"** when referencing the action of opening a Book in its document window.
+Use **"Open"** when referencing the action of opening a Book — the label is the same
+wherever it appears, even though what it does depends on the **client** (see
+[Software Terms](software-terms.md)). On the desktop it opens the Book in its own
+document window; driven from a browser it navigates to the Book, because a tab has no
+window to open (see [ADR 0023](adr/0023-browser-as-a-second-client.md)). Do not vary
+the wording per client — "Open" names the user's intent, not the mechanism.
 
 ## Viewing the Report
 

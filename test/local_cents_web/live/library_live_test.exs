@@ -142,6 +142,48 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     assert Tracking.list_books() == []
   end
 
+  describe "the browser client" do
+    # The desktop asks the native shell for a window and the library window stays put;
+    # a browser tab has neither, so both paths become navigation. See ADR 0023.
+
+    test "Open is a link to the book rather than a button", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      conn
+      |> browser_conn()
+      |> visit(~p"/library")
+      |> click_link("Open")
+      |> assert_path(~p"/books/#{book.id}")
+    end
+
+    test "creating a book navigates to it", ~M{conn} do
+      conn
+      |> browser_conn()
+      |> visit(~p"/library")
+      |> click_button("New Book")
+      |> fill_in("New book name", with: "Groceries")
+      |> click_button("Create")
+      |> assert_has("#quick-add-form")
+      |> assert_has("h1", text: "Groceries")
+
+      assert [%{name: "Groceries"}] = Tracking.list_books()
+    end
+
+    test "the title bar drops the native drag region", ~M{conn} do
+      conn
+      |> browser_conn()
+      |> visit(~p"/library")
+      |> refute_has("[data-tauri-drag-region]")
+    end
+
+    test "the library itself offers no way back", ~M{conn} do
+      conn
+      |> browser_conn()
+      |> visit(~p"/library")
+      |> refute_has("a", text: "Library")
+    end
+  end
+
   describe "first-run demo seeding" do
     # Seeding is disabled by default in the test env (config/test.exs); these tests
     # opt back in and restore the default afterwards.

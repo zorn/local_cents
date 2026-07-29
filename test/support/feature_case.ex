@@ -29,6 +29,7 @@ defmodule LocalCentsWeb.FeatureCase do
       # Shadow PhoenixTest's `assert_has`/`refute_has` with the default-timeout wrappers
       # below; everything else comes straight from PhoenixTest.
       import PhoenixTest, except: [assert_has: 2, assert_has: 3, refute_has: 2, refute_has: 3]
+      import LocalCentsWeb.ClientConn
       import LocalCentsWeb.FeatureCase
 
       # The `~M` sigil for map shorthand, e.g. `~M{conn}` for `%{conn: conn}`.
@@ -53,8 +54,15 @@ defmodule LocalCentsWeb.FeatureCase do
 
   defp with_default_timeout(opts), do: Keyword.put_new(opts, :timeout, @default_assertion_timeout)
 
+  # The conn is stamped as the desktop client: feature tests drive the app the way a
+  # user does, and the primary client is the native window. A browser-mode test opts in
+  # with `browser_conn/1` — see `LocalCentsWeb.ClientConn`.
   setup _tags do
-    conn = PhoenixTest.put_endpoint(Phoenix.ConnTest.build_conn(), LocalCentsWeb.Endpoint)
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> LocalCentsWeb.ClientConn.desktop_conn()
+      |> PhoenixTest.put_endpoint(LocalCentsWeb.Endpoint)
+
     {:ok, conn: conn}
   end
 end

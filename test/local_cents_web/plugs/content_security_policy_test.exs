@@ -56,8 +56,10 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
       assert get_resp_header(conn, "content-security-policy") != []
     end
 
+    # `/` only redirects to the library, so this asserts against a route that actually
+    # renders the root layout's inline theme script.
     test "nonce in CSP header matches the nonce attribute on the inline script tag", ~M{conn} do
-      conn = get(conn, ~p"/")
+      conn = get(conn, ~p"/library")
       [csp] = get_resp_header(conn, "content-security-policy")
       [_, nonce] = Regex.run(~r/'nonce-([A-Za-z0-9+\/=]+)'/, csp)
       assert conn.resp_body =~ ~s(nonce="#{nonce}")

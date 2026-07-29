@@ -86,3 +86,24 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
   Unrelated: the `bond-stamp` CSS class in the web layer is the rubber-stamp *press*
   interaction on a button (it shifts toward its shadow on hover) and has nothing to do
   with change times.
+
+## Client
+
+* **Client** -- which of the two places a page is being rendered into: the native
+  desktop window (`:desktop`) or an ordinary browser tab (`:browser`). Both are served
+  by the same Phoenix routes; they differ in what the surrounding shell can do for a
+  view, so several affordances change shape between them — **Open** is a native window
+  on the desktop and a link in a browser, and the title strip's drag region is
+  meaningless in a tab (see [ADR 0023](adr/0023-browser-as-a-second-client.md)). Views
+  read it as the `@client` assign, put there by `LocalCentsWeb.Client`.
+
+  Deliberately *not* called a **shell**, which in this repo already means both the
+  imperative shell around the functional core
+  ([ADR 0014](adr/0014-functional-core-process-shell.md)) and the Tauri container
+  (`LocalCentsWeb.DesktopShell`). Nor a **host**, which collides with `conn.host` and
+  `PHX_HOST`; nor a **runtime**, which is a Book's resident process
+  ([ADR 0007](adr/0007-book-runtime-and-persistence.md)); nor a **viewer**, which is a
+  window registered against a `BookServer`.
+
+  Unrelated: "client" in the LiveView sense — the JavaScript half of the socket — is a
+  different axis. Both clients here run a browser engine and both have a JS client.

@@ -3,8 +3,8 @@ defmodule LocalCentsWeb.BookReportLive do
   A single open `Book`'s **Report** — its Category × Month spending matrix — mounted
   at `/books/:book_id/report`.
 
-  A secondary page of the Book's one native document window, reached by navigating
-  from `LocalCentsWeb.BookLive` (see
+  A secondary page of the Book, reached by navigating from `LocalCentsWeb.BookLive` —
+  on the desktop that keeps it inside the Book's one native document window (see
   [ADR 0017](0017-in-window-secondary-views.html)). Its mount contract comes from
   `LocalCentsWeb.BookWindow`.
 
@@ -62,7 +62,7 @@ defmodule LocalCentsWeb.BookReportLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} window_title={@book.name}>
+    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
       <div class="relative flex h-full flex-col overflow-hidden">
         <div class="flex items-center gap-3 border-b border-surface-200 px-4 py-3">
           <.link

@@ -19,6 +19,15 @@ const DEFAULT_HEIGHT: f64 = 600.0;
 const MIN_WIDTH: f64 = 520.0;
 const MIN_HEIGHT: f64 = 400.0;
 
+// Marks every window's webview as the desktop client. Elixir matches the
+// `LocalCents/` prefix as a substring (`LocalCentsWeb.Client`) and treats anything
+// unstamped as a browser, which is how the same server serves both a native window
+// and an ordinary browser tab (see ADR 0023). Note that Tauri *replaces* the
+// webview's user agent rather than appending to it, so this is the whole string.
+fn desktop_user_agent() -> String {
+    format!("LocalCents/{} (desktop)", env!("CARGO_PKG_VERSION"))
+}
+
 // The persistent library window: opened at startup and never keyed to a Book.
 const LIBRARY_LABEL: &str = "library";
 const LIBRARY_PATH: &str = "/library";
@@ -118,6 +127,7 @@ fn open_or_focus_window(app_handle: &tauri::AppHandle, label: &str, path: &str, 
 
     let builder = tauri::WebviewWindowBuilder::new(app_handle, label, url)
         .title(title)
+        .user_agent(&desktop_user_agent())
         .inner_size(DEFAULT_WIDTH, DEFAULT_HEIGHT)
         .min_inner_size(MIN_WIDTH, MIN_HEIGHT)
         .position(offset, offset);
@@ -188,5 +198,24 @@ fn elixir_command(app_handle: &tauri::AppHandle) -> std::process::Command {
             "rZW+joOrOn4gtvRh9HaswYSxFcaIWVQJOGWjk/MATFUyzobypIGdXLn0x5bgZrUx",
         );
         command
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // The `LocalCents/` prefix is the cross-language contract: `LocalCentsWeb.Client`
+    // matches it as a substring to tell a native window from a browser tab. Changing
+    // this string without changing `@desktop_token` there silently turns every native
+    // window into a browser.
+    #[test]
+    fn desktop_user_agent_carries_the_token_elixir_matches() {
+        assert!(desktop_user_agent().starts_with("LocalCents/"));
+    }
+
+    #[test]
+    fn desktop_user_agent_carries_the_crate_version() {
+        assert!(desktop_user_agent().contains(env!("CARGO_PKG_VERSION")));
     }
 }

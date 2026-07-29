@@ -25,13 +25,23 @@ defmodule Storybook.Layouts.WindowBar do
       %Variation{
         id: :default,
         description: "The library window's title bar. #{@dots_note}",
-        attributes: %{title: "Library"},
+        attributes: %{title: "Library", drag_region: true},
         template: paper("<.psb-variation/>")
       },
       %Variation{
         id: :untitled,
         description: "No title — a bare draggable strip.",
-        attributes: %{},
+        attributes: %{drag_region: true},
+        template: paper("<.psb-variation/>")
+      },
+      %Variation{
+        id: :with_back_link,
+        description:
+          "Given a `back_path`, the space the traffic lights would occupy carries the way " <>
+            "out instead. `LocalCentsWeb.Layouts` passes one only in a browser tab, where " <>
+            "there are no traffic lights and no window to close (ADR 0023) — which is also " <>
+            "why it drops the drag region here.",
+        attributes: %{title: "Family Expenses", back_path: "/library"},
         template: paper("<.psb-variation/>")
       }
     ]

@@ -27,6 +27,7 @@ defmodule LocalCentsWeb.ConnCase do
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
+      import LocalCentsWeb.ClientConn
       import LocalCentsWeb.ConnCase
 
       # The `~M` sigil for map shorthand, e.g. `~M{conn}` for `%{conn: conn}`.
@@ -34,7 +35,10 @@ defmodule LocalCentsWeb.ConnCase do
     end
   end
 
+  # The conn is stamped as the desktop client: the suite's assertions are written for
+  # the primary client, and a bare conn would otherwise be classified a browser. See
+  # `LocalCentsWeb.ClientConn`.
   setup _tags do
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    {:ok, conn: LocalCentsWeb.ClientConn.desktop_conn(Phoenix.ConnTest.build_conn())}
   end
 end

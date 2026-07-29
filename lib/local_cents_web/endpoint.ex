@@ -34,6 +34,13 @@ defmodule LocalCentsWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
+
+    # Serves ExDoc's output straight out of the (gitignored) `doc/` build directory,
+    # so the debug bar's Docs link reaches the generated docs without a build step or
+    # a copy into `priv/static` — and cannot leak into a release. `mix precommit` runs
+    # `mix docs`, so the directory is normally present; a fresh clone gets a 404 until
+    # it does. See ADR 0023.
+    plug Plug.Static, at: "/doc", from: "doc"
   end
 
   plug Phoenix.LiveDashboard.RequestLogger,
