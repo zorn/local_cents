@@ -33,6 +33,8 @@ When a new decision narrows, extends, or overturns an older one, say so in the n
 
 The pointer is the one edit an existing decision may receive. It costs a line, keeps the original text honest about its own moment, and — most importantly — means a reader who lands on the old document learns immediately that it is not the end of the story, instead of having to reconstruct the chain from the newest document backwards.
 
+Non-semantic fixes (broken links, renamed paths, typos) are always allowed; they change nothing the decision asserts.
+
 ## Naming
 
 Decision files are named with a four-digit sequential prefix that increments by one in creation order, followed by a short kebab-case slug (e.g. `0001-which-automerge-rust-library.md`). To add a decision, take the next number after the highest existing one.
