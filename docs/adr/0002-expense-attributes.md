@@ -1,5 +1,9 @@
 # Expense Attributes
 
+> **Amended by [ADR 0005](0005-categories-not-tags.md), [ADR 0008](0008-mvp-expense-shape.md),
+> and [ADR 0010](0010-cost-as-decimal-string.md)** — this is the phase-one wishlist, not
+> the shipped shape. The inline notes below mark each change.
+
 ## Problem Statement
 
 What aspects of an expense do we want to track?

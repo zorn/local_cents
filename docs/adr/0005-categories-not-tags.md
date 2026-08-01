@@ -1,5 +1,9 @@
 # Categories Not Tags
 
+> **Refined by [ADR 0018](0018-category-assignment-through-the-editor.md)** — selecting a
+> Category is a field on the expense form, committed by the same Save, not a separate
+> command. The guarantees below are unchanged.
+
 ## Problem Statement
 
 A core MVP goal is to **group expenses and total each group** ("how much did we

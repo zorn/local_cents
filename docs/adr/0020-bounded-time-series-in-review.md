@@ -1,5 +1,9 @@
 # Bounded Time-Series in Review
 
+> **Amended by [ADR 0021](0021-bounded-report-range.md)** — the whole-Book span below
+> becomes the **All** preset rather than the only mode. The deferral of unbounded and
+> arbitrary custom ranges still stands.
+
 ## Problem Statement
 
 The MVP proposal's Review section deliberately keeps the review surface simple: a

@@ -1,5 +1,9 @@
 # Book Last-Updated Timestamp
 
+> **Refined by [ADR 0014](0014-functional-core-process-shell.md)** — the per-operation
+> mutation NIFs named below were replaced by a single `reconcile/3`. The clock-ownership
+> mechanism this decision records is unchanged; see the inline update note.
+
 ## Problem Statement
 
 The library's `book_cell` wants a *Last Updated* subtitle, so a `Book` needs a

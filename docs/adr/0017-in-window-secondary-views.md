@@ -1,5 +1,9 @@
 # In-Window Secondary Views
 
+> **Scoped by [ADR 0022](0022-report-refreshes-on-demand.md)** — "re-read on
+> `{:book_updated}`" governs the *editing* views. The read-only Report marks itself stale
+> and refreshes on demand instead.
+
 ## Problem Statement
 
 [ADR 0006](0006-multi-window-desktop-shell.md) established the app's window
