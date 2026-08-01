@@ -1,10 +1,17 @@
 # Coding standards
 
 How we write code in LocalCents. This file is an **index**: where a rule already
-has an authoritative home — a guide, an ADR, or `CLAUDE.md` — this file links
-there instead of restating it, matching the house rule of keeping each fact in
-one place (see [`docs/moduledoc-style.md`](docs/moduledoc-style.md)). Rules that
-had no home in the repo before are written out here in full.
+has an authoritative home — a guide, an ADR, or a path-scoped rule under
+[`.claude/rules/`](.claude/rules/) — this file links there instead of restating
+it, matching the house rule of keeping each fact in one place (see
+[`docs/moduledoc-style.md`](docs/moduledoc-style.md)). Rules that had no home in
+the repo before are written out here in full.
+
+Links run one way: `CLAUDE.md` points here, and this file points onward to
+guides, ADRs, and rule files. Nothing here sends you back to `CLAUDE.md` to look
+up a standard — that loop is what made the trail circular before. `CLAUDE.md` is
+named once below, noting where the always-loaded `Req` rule lives, not as a
+place to go next.
 
 `/code-review`'s Standards axis discovers this file automatically. Keep it current
 as conventions land, and add a link here rather than a second copy when a rule
@@ -120,9 +127,13 @@ gets its own guide or ADR.
   explicit rather than a bare dangling expression.
 
 - **Phoenix v1.8 conventions** — the `<Layouts.app flash={@flash} …>` wrapper on
-  every LiveView template, the imported `<.input>` / `<.icon>` components,
-  authenticated-route / `current_scope` rules, and `Req` as the HTTP client — are
-  documented in [`CLAUDE.md`](CLAUDE.md).
+  every LiveView template, the imported `<.input>` / `<.icon>` components, and the
+  authenticated-route / `current_scope` rules — are in
+  [`.claude/rules/phoenix-liveview.md`](.claude/rules/phoenix-liveview.md), which
+  loads automatically when Claude reads a file under `lib/local_cents_web/**` or
+  `test/local_cents_web/**`, or `lib/local_cents_web.ex` itself. `Req` as the HTTP
+  client stays in the always-loaded `CLAUDE.md`, since the choice is made before
+  any web file is opened.
 
 ## Testing
 
@@ -146,7 +157,9 @@ gets its own guide or ADR.
 
 - **Tailwind v4 and hand-authored components** — the `@import "tailwindcss"` /
   `@source` syntax, no `@apply` in raw CSS, and hand-writing components instead of
-  daisyUI — are documented in [`CLAUDE.md`](CLAUDE.md).
+  daisyUI — are in [`.claude/rules/js-css.md`](.claude/rules/js-css.md), which
+  loads automatically when Claude reads a file under `assets/**`, `storybook/**`,
+  or `lib/local_cents_web/**`.
 
 - **New or changed UI is a Bond component with a mirrored Storybook story.** Add
   components under `lib/local_cents_web/bond/{elements,composites,layouts}/` and
@@ -199,7 +212,11 @@ gets its own guide or ADR.
 - Keep Rust minimal — native window management and process lifecycle only.
   Business logic stays in Elixir; do not add a new IPC channel or a
   `#[tauri::command]` for data work. The `elixirkit` PubSub bridge is the intended
-  extension point. See [`CLAUDE.md`](CLAUDE.md) and
+  extension point. The shell's process lifecycle, dev-vs-release invocation, and
+  `cargo` bumpers are in
+  [`.claude/rules/rust-tauri.md`](.claude/rules/rust-tauri.md), which loads
+  automatically when Claude reads a file under `tauri/**` or `native/**`; the
+  decision behind the shell is
   [ADR 0006](docs/adr/0006-multi-window-desktop-shell.md).
 
 ## Commits & PRs
