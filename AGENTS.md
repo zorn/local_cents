@@ -1,4 +1,4 @@
-LocalCents is an open-source expense-tracking application built with Phoenix LiveView and Tauri.
+LocalCents is an open-source expense-tracking application built with Phoenix LiveView, Automerge and Tauri.
 
 ## Project guidelines
 
@@ -40,28 +40,9 @@ custom classes must fully style the input
   - You must import the vendor deps into app.js and app.css to use them
   - **Never write inline <script>custom js</script> tags within templates**
 
-### UI/UX & design guidelines
-
-- **Produce world-class UI designs** with a focus on usability, aesthetics, and modern design principles
-- Implement **subtle micro-interactions** (e.g., button hover effects, and smooth transitions)
-- Ensure **clean typography, spacing, and layout balance** for a refined, premium look
-- Focus on **delightful details** like hover effects, loading states, and smooth page transitions
-
-
 ## Tauri and Rust
 
 LocalCents uses [Tauri v2](https://tauri.app/) to package the Phoenix LiveView app as a cross-platform desktop application. Tauri acts as a thin native shell: it spawns the Elixir/Phoenix server as a child process and opens a WebView window pointed at `http://127.0.0.1:4000`.
-
-### Directory layout
-
-All Rust/Tauri code lives under `tauri/`:
-
-| Path | Purpose |
-|---|---|
-| `tauri/src/lib.rs` | Main Tauri setup — spawns Elixir, subscribes to PubSub, creates the window |
-| `tauri/src/main.rs` | Binary entry point — calls `local_cents_lib::run()` |
-| `tauri/Cargo.toml` | Rust crate manifest (`local-cents` package / `local_cents_lib` lib) |
-| `tauri/tauri.conf.json` | Tauri configuration (app identity, bundle targets, before-build command) |
 
 ### How it works
 
