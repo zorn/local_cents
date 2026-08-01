@@ -1,5 +1,9 @@
 # Category Assignment Through the Expense Editor
 
+> **Refined by [ADR 0019](0019-liveview-unhandled-info-fallback.md)** — "ignore
+> `:categories_updated` with a no-op clause" becomes *optional*, kept only to document
+> deliberate intent. An injected catch-all `handle_info/2` covers everything else.
+
 ## Problem Statement
 
 [ADR 0005](0005-categories-not-tags.md) established that the expense editor only

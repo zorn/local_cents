@@ -185,8 +185,14 @@ gets its own guide or ADR.
 
 - **PubSub topic naming** — `"<kind>:<id>"`, owned by the broadcasting module via a
   `topic/1` function so callers never hand-build the string:
-  [ADR 0011](docs/adr/0011-pubsub-topic-naming.md). All architecture decisions live
-  in [`docs/adr/`](docs/adr/).
+  [ADR 0011](docs/adr/0011-pubsub-topic-naming.md).
+
+- **Writing a decision** — all architecture decisions live in
+  [`docs/adr/`](docs/adr/). Write one only when the choice is hard to reverse,
+  surprising without context, *and* the result of a real trade-off; keep it to a
+  paragraph unless a section earns its place; never rewrite an existing decision —
+  add a pointer at its top instead. Full conventions:
+  [`docs/adr/about.md`](docs/adr/about.md).
 
 ## Rust & Tauri
 

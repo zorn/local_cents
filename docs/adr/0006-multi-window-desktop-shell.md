@@ -1,5 +1,12 @@
 # Multi-Window Desktop Shell
 
+> **Scoped by [ADR 0017](0017-in-window-secondary-views.md)** — "multi-window" governs
+> *Books*. A Book's secondary views are pages inside that Book's single window.
+>
+> **Refined by [ADR 0023](0023-browser-as-a-second-client.md)** — the same routes also
+> serve a plain browser client when no native shell is listening. The window model below
+> is unchanged.
+
 ## Problem Statement
 
 A user must be able to work with several Books at once — e.g. a personal *Family
