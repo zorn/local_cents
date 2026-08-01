@@ -12,7 +12,7 @@ are in [`CODING_STANDARDS.md`](../../CODING_STANDARDS.md); Bond's own CSS lives 
 `lib/local_cents_web/bond/bond.css`.
 
 - **Use Tailwind CSS classes and custom CSS rules** to create polished, responsive, and visually stunning interfaces.
-- Tailwindcss v4 **no longer needs a tailwind.config.js** and uses a new import syntax in `app.css`:
+- Tailwind CSS v4 **no longer needs a tailwind.config.js** and uses a new import syntax in `app.css`:
 
       @import "tailwindcss" source(none);
       @source "../css";

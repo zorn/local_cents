@@ -13,11 +13,11 @@ Conventions that only matter for one part of the tree live in `.claude/rules/`
 and load automatically when Claude reads a matching file, so they stay out of
 every unrelated session:
 
-| Rule file | Loads when working on |
+| Rule file | Loads when Claude reads |
 |---|---|
-| `.claude/rules/phoenix-liveview.md` | `lib/local_cents_web/`, `test/local_cents_web/` |
-| `.claude/rules/js-css.md` | `assets/`, `storybook/`, the web layer |
-| `.claude/rules/rust-tauri.md` | `tauri/`, `native/` |
+| `.claude/rules/phoenix-liveview.md` | `lib/local_cents_web/**`, `lib/local_cents_web.ex`, `test/local_cents_web/**` |
+| `.claude/rules/js-css.md` | `assets/**`, `lib/local_cents_web/**`, `storybook/**` |
+| `.claude/rules/rust-tauri.md` | `tauri/**`, `native/**` |
 
 Because they load on read, a session that creates a brand-new file may not have
 seen them yet — open the matching rule directly when starting greenfield work in
