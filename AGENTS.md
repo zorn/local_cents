@@ -2,86 +2,26 @@ LocalCents is an open-source expense-tracking application built with Phoenix Liv
 
 ## Project guidelines
 
-- See [`CODING_STANDARDS.md`](CODING_STANDARDS.md) for the index of how we write code here (moduledocs, `@impl`/`@spec` style, Bond components, boundaries, PubSub, commits); it links each rule's authoritative home
+- **Before writing or editing code, read [`CODING_STANDARDS.md`](CODING_STANDARDS.md).** It is the index of how we write code here — moduledocs, comments, `@impl`/`@spec` style, Bond components, testing, boundaries, PubSub, commits — and links each rule's authoritative home. Read it up front rather than discovering a convention at review time
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Branch each PR from an up-to-date `main`, not from whatever is currently checked out — `git switch main && git pull` then `git switch -c <name>`. Branching off another feature branch stacks them, so the new PR inherits the other's commits and its diff shows unrelated files. This bites especially when several agents share one working directory: confirm you are on `main` before creating a branch
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
-- When writing or editing a `@moduledoc`/`@typedoc`, follow the house standard in `docs/moduledoc-style.md` (summary-first line, explain the _why_, link ADRs rather than restate them, and calibrate length to the module's kind)
-- When writing code comments, follow `docs/comment-style.md`: inline comments carry durable _why_ and never restate the signature; post single-use, reviewer-facing rationale as a PR review comment before review rather than baking it into the source; future-work asides become GitHub issues
 
-### Phoenix v1.8 guidelines
+### Area-specific conventions
 
-- **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content
-- The `LocalCentsWeb.Layouts` module is aliased in the `local_cents_web.ex` file, so you can use it without needing to alias it again
-- Anytime you run into errors with no `current_scope` assign:
-  - You failed to follow the Authenticated Routes guidelines, or you failed to pass `current_scope` to `<Layouts.app>`
-  - **Always** fix the `current_scope` error by moving your routes to the proper `live_session` and ensure you pass `current_scope` as needed
-- Phoenix v1.8 moved the `<.flash_group>` component to the `Layouts` module. You are **forbidden** from calling `<.flash_group>` outside of the `layouts.ex` module
-- Out of the box, `core_components.ex` imports an `<.icon name="hero-x-mark" class="w-5 h-5"/>` component for hero icons. **Always** use the `<.icon>` component for icons, **never** use `Heroicons` modules or similar
-- **Always** use the imported `<.input>` component for form inputs from `core_components.ex` when available. `<.input>` is imported and using it will save steps and prevent errors
-- If you override the default input classes (`<.input class="myclass px-2 py-1 rounded-lg">)`) class with your own values, no default classes are inherited, so your
-custom classes must fully style the input
+Conventions that only matter for one part of the tree live in `.claude/rules/`
+and load automatically when Claude reads a matching file, so they stay out of
+every unrelated session:
 
-### JS and CSS guidelines
+| Rule file | Loads when working on |
+|---|---|
+| `.claude/rules/phoenix-liveview.md` | `lib/local_cents_web/`, `test/local_cents_web/` |
+| `.claude/rules/js-css.md` | `assets/`, `storybook/`, the web layer |
+| `.claude/rules/rust-tauri.md` | `tauri/`, `native/` |
 
-- **Use Tailwind CSS classes and custom CSS rules** to create polished, responsive, and visually stunning interfaces.
-- Tailwindcss v4 **no longer needs a tailwind.config.js** and uses a new import syntax in `app.css`:
-
-      @import "tailwindcss" source(none);
-      @source "../css";
-      @source "../js";
-      @source "../../lib/local_cents_web";
-
-- **Always use and maintain this import syntax** in the app.css file for projects generated with `phx.new`
-- **Never** use `@apply` when writing raw css
-- **Always** manually write your own tailwind-based components instead of using daisyUI for a unique, world-class design
-- Out of the box **only the app.js and app.css bundles are supported**
-  - You cannot reference an external vendor'd script `src` or link `href` in the layouts
-  - You must import the vendor deps into app.js and app.css to use them
-  - **Never write inline <script>custom js</script> tags within templates**
-
-## Tauri and Rust
-
-LocalCents uses [Tauri v2](https://tauri.app/) to package the Phoenix LiveView app as a cross-platform desktop application. Tauri acts as a thin native shell: it spawns the Elixir/Phoenix server as a child process and opens a WebView window pointed at `http://127.0.0.1:4000`.
-
-### How it works
-
-1. Rust creates an `elixirkit::PubSub` listener on a random TCP port.
-2. Rust spawns the Elixir process (see dev vs. release below), passing the PubSub URL via the `ELIXIRKIT_PUBSUB` environment variable.
-3. Once Phoenix is ready, Elixir sends `"ready"` on the `"messages"` PubSub channel.
-4. Rust responds by calling `create_window()`, which opens a `WebviewWindowBuilder` pointed at `http://127.0.0.1:4000`.
-
-The UI is entirely Phoenix LiveView — Tauri contributes no UI of its own beyond the native window chrome.
-
-### ElixirKit
-
-`elixirkit` is a local Rust library at `deps/elixirkit/elixirkit_rs`. It provides two things:
-
-- **`PubSub`** — a TCP-based pub/sub bridge. Rust listens; Elixir connects and sends messages. This is the only IPC channel between Rust and Elixir.
-- **Helper functions** — `elixirkit::mix(task, args)` builds a `mix` command, and `elixirkit::release(dir, name)` builds a command for running an Elixir release binary.
-
-Do **not** add a separate IPC mechanism (e.g., Tauri commands, custom TCP sockets) without a strong reason — the PubSub bridge is the intended extension point.
-
-### Dev vs. Release
-
-`elixir_command()` in `tauri/src/lib.rs` chooses the Elixir invocation based on build mode:
-
-- **Debug (`cargo tauri dev`)** — runs `mix phx.server` from the project root (one directory above `tauri/`). Phoenix hot-reloads normally.
-- **Release (`cargo tauri build`)** — runs the pre-built Elixir release from the app bundle's resource directory (`tauri/target/rel`). The before-build command in `tauri.conf.json` compiles assets and generates the release:
-  ```
-  MIX_ENV=prod mix do compile + assets.deploy + release --overwrite --path tauri/target/rel
-  ```
-  Environment variables injected for the release: `PHX_SERVER=true`, `PHX_HOST=127.0.0.1`, `PORT=4000`.
-
-### Rust guidelines
-
-- Run `cargo tauri dev` (not `cargo run`) to develop the desktop app — this also starts the Tauri dev server and asset watcher.
-- Run `cargo tauri build` to produce the release app bundle. Output lands in `tauri/target/release/bundle/`.
-- The Rust crate's lib name is `local_cents_lib` (note the `_lib` suffix — required to avoid a Windows linker conflict with the binary name).
-- Keep Rust logic minimal. Business logic belongs in Elixir; Rust is responsible only for native window management and process lifecycle.
-- Do **not** add Tauri commands (`#[tauri::command]`) for data work that can be done in Phoenix/LiveView.
-- The `SECRET_KEY_BASE` in `lib.rs` is a hardcoded placeholder suitable only for local desktop use — it is not a production web deployment.
-- CI enforces Rust bumpers via the `Rust Quality` workflow (`.github/workflows/rust-quality.yaml`): `cargo fmt` (formatting), `cargo clippy -D warnings` (lints as hard failures), and `cargo test`, run against both `native/ex_automerge` and `tauri/`. Run `cargo fmt` and `cargo clippy --all-targets -- -D warnings` locally before pushing to match it.
+Because they load on read, a session that creates a brand-new file may not have
+seen them yet — open the matching rule directly when starting greenfield work in
+an area.
 
 ## Agent skills
 
