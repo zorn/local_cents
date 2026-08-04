@@ -3,6 +3,6 @@
 # written here — but a test that abandons in-flight work loses its claim and the
 # writes land here instead. Clearing it up front keeps that a visible leak from
 # this run rather than sediment that quietly grows a library other tests read.
-:local_cents |> Application.get_env(:books_dir) |> File.rm_rf!()
+:local_cents |> Application.fetch_env!(:books_dir) |> File.rm_rf!()
 
 ExUnit.start()
