@@ -36,6 +36,13 @@ defmodule LocalCents.BooksDirHelper do
     # The claim itself needs no teardown — it lives in the test process's dictionary
     # and dies with it. Only the directory outlives the test, and `on_exit` runs in a
     # separate process, so this closes over the path rather than resolving it again.
+    #
+    # `rm_rf/1` rather than `rm_rf!/1` on purpose: a `BookServer` is supervised by the
+    # application, not the test, and reaps `viewer_grace_ms` (50ms here) after its last
+    # viewer goes, so a late persist can race this removal. A leftover temp directory
+    # is a far better outcome than an intermittently red suite. Leaks that matter are
+    # caught loudly elsewhere — `test/test_helper.exs` empties the shared fallback
+    # directory per run.
     ExUnit.Callbacks.on_exit(fn -> File.rm_rf(dir) end)
 
     {:ok, books_dir: dir}
