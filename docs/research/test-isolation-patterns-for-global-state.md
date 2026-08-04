@@ -2,7 +2,7 @@
 
 > Research note feeding [issue #147](https://github.com/zorn/local_cents/issues/147) — the companion to [`avoiding-async-false-tests.md`](avoiding-async-false-tests.md), which settled the *unit/context* half of [issue #78](https://github.com/zorn/local_cents/issues/78) by injecting the books directory as an argument. That note stopped where the LiveView feature tests begin. This one surveys how the Elixir ecosystem isolates genuinely process-wide state, reads the mechanisms in source rather than in summary, and lands the survey back on our shape.
 >
-> Primary sources: the Elixir standard library and ExUnit as installed here (`~/.asdf/installs/elixir/1.20.2-otp-29/lib/ex_unit/lib/ex_unit/`), OTP's [`proc_lib.erl`](https://github.com/erlang/otp/blob/master/lib/stdlib/src/proc_lib.erl) (`~/.asdf/installs/erlang/29.0.4/lib/stdlib-8.0.3/src/proc_lib.erl`), the vendored source of `phoenix_ecto`, `phoenix_live_view`, `phoenix_test`, and `req` in `deps/`, plus the GitHub source of `ecto_sql`, `db_connection`, `nimble_ownership`, `mox`, and `process_tree`. Elixir Forum threads and blog posts were used only to locate primary material and are marked where cited. Four experiments were run against this exact repo and toolchain (Elixir 1.20.2-otp-29 / Erlang 29.0.4) and are reported with their numbers.
+> Primary sources: the Elixir standard library and ExUnit as installed here (`~/.asdf/installs/elixir/1.20.2-otp-29/lib/ex_unit/lib/ex_unit/`), OTP's [`proc_lib.erl`](https://github.com/erlang/otp/blob/master/lib/stdlib/src/proc_lib.erl) (`~/.asdf/installs/erlang/29.0.4/lib/stdlib-8.0.3/src/proc_lib.erl`), the vendored source of `phoenix_ecto`, `phoenix_live_view`, `phoenix_test`, and `req` in `deps/`, plus the GitHub source of `ecto_sql`, `db_connection`, `nimble_ownership`, `mox`, `process_tree`, and oban-bg/oban at v2.23.0 (read as a checkout, not a summary). Elixir Forum threads and blog posts were used only to locate primary material and are marked where cited. Four experiments were run against this exact repo and toolchain (Elixir 1.20.2-otp-29 / Erlang 29.0.4) and are reported with their numbers.
 >
 > **Status:** research complete, nothing applied. Written against `main` at `c15aa26`.
 
@@ -15,6 +15,8 @@ Three findings change the shape of issue #147.
 3. **ExUnit has had a cheaper answer than `async: false` since v1.18: `group:`.** A module can be `async: true, group: :books_dir` — mutually exclusive with its group peers, fully concurrent with everything else. That is strictly better than `async: false`, needs no production change, and would move 16 seconds out of this suite's serial tail.
 
 Measured on this repo today: `mix test` is **20.2s total = 4.1s async + 16.1s sync**. Six modules run serially and they account for 80% of the wall clock. The recommendation at the end lands both a same-day fix and the real one.
+
+A fourth finding, added after the first pass: **Oban's own suite has no `async: false` in it at all** — 35 of 35 modules async, in a library with a database, supervised background processes, leader election, and pubsub. Its `test/support/case.ex` is the best worked example in the ecosystem of a suite that refused to go serial, and it solves the unreachable-process problem by inverting `$callers` rather than walking it. See the Oban section.
 
 ## 1. What ExUnit actually guarantees
 
@@ -284,6 +286,7 @@ The mode toggle is the honest fallback. `mode(repo, {:shared, pid})` "makes it s
 | Per-test supervised process | `start_supervised!/2`, `start_link_supervised!/2` | the returned pid | Yes — it *is* the process | Only for state you can move into a process |
 | `$callers` / `$ancestors` walk | [`ProcessTree`](https://github.com/jbsf2/process-tree) `get/2` | ancestry chain | **No** | Zero infrastructure; silent fallback on miss |
 | Ownership registry | [`NimbleOwnership`](https://github.com/dashbitco/nimble_ownership) v1.0.2 | owner pid + key | Only via explicit `allow/4` | ~370 LOC or one dep |
+| Telemetry ownership handoff | Oban's `attach_auto_allow/2` (see the Oban section below) | owner pid, granted at callee init | **Yes** — the callee announces itself | Callee must emit an init event |
 | Mock ownership | [Mox](https://github.com/dashbitco/mox) private mode | owner pid | Only via `allow/3` | Requires a behaviour seam |
 | Global-mode escape hatch | Mox `set_mox_global`, Ecto `{:shared, pid}` | none — one shared owner | Yes | Forces `async: false` |
 | Serialize a subset | ExUnit `group:` (v1.18) | the group name | Yes — sidesteps the question | Group members serialize against each other |
@@ -328,7 +331,53 @@ and `set_mox_from_context/1` is the two-line dispatcher worth stealing as a shap
 
 Also flagged honestly: **no statement by José Valim or another core team member endorsing `async: false` for integration tests could be found** on ElixirForum or the elixir-lang blog. The nearest official sanction is Ecto's sandbox doc calling it "a last resort" for deadlocks. The community-side corroboration ([ElixirForum: *How to test with application env in `async: true`*](https://elixirforum.com/t/how-to-async-tests-with-application-env/67222), [*Using `Application.get_env`/`put_env` in ExUnit tests*](https://elixirforum.com/t/using-application-get-env-application-put-env-in-exunit-tests/8019), and the [Bye Bye async: false](https://saltycrackers.dev/posts/bye-bye-async-false/) post) is *secondary* and adds no facts beyond the primary sources cited above.
 
-## 6. Keeping a suite fast when some of it must stay serial
+## 6. Oban: a real suite with no `async: false` in it at all
+
+The phoenix_ecto handshake in the Handshake section above is the canonical *library* mechanism. Oban is the canonical *worked example* of a whole suite that refuses to go serial, and it is the more useful model for us because Oban's problems are shaped like ours rather than like Ecto's.
+
+Measured against oban-bg/oban at v2.23.0: **35 test modules, 35 of them `async: true`, zero `async: false`.** That is a job-processing library with a database, background worker processes started under its own supervision tree, cross-node leader election, and pubsub notification — every category of global state this note has been cataloging — and none of it forced a serial module. Nearly all of the machinery lives in one file, `test/support/case.ex`, which is worth reading end to end.
+
+**One setup that is correct in both modes.** The `setup` block derives the sandbox's sharing mode from the test's own `:async` tag (`test/support/case.ex:33`, `:38`):
+
+```elixir
+pid = Sandbox.start_owner!(Repo, shared: not context[:async])
+on_exit(fn -> Sandbox.stop_owner(pid) end)
+```
+
+This is the same shape as Mox's `set_mox_from_context/1` noted in the catalog above, and it is the detail that makes flipping a module to async a one-line change: nothing in the case template needs to know which mode it is in.
+
+**A reference, not a registered name.** `start_supervised_oban!/1` defaults the instance name to `make_ref()` (`:49`), so each test gets its own Oban instance with no global atom to collide on. Naming is a category of shared global state that is easy to miss, and `make_ref/0` removes it outright.
+
+**The telemetry ownership handoff — the idea worth stealing.** Oban has our exact unreachable-process problem: its engine, peer, and plugin processes start under Oban's own supervision tree, not under the test, so no ancestry walk from the worker will find the test pid. Rather than propagate callers, Oban **inverts the direction** (`:133-152`):
+
+```elixir
+auto_allow = fn _event, _measure, %{conf: conf}, {name, repo, test_pid} ->
+  if conf.name == name, do: Sandbox.allow(repo, test_pid, self())
+end
+
+:telemetry.attach_many(
+  telemetry_name,
+  [
+    [:oban, :engine, :init, :start],
+    [:oban, :peer, :election, :start],
+    [:oban, :plugin, :init]
+  ],
+  auto_allow,
+  {name, repo, self()}
+)
+```
+
+The test pid is captured in the handler config; each internal process announces itself by emitting an init event; the handler runs *in that process* and grants it ownership via `self()`. The `if conf.name == name` guard, combined with the `make_ref()` instance name, scopes the handler to this test's instance only, and `on_exit` detaches it.
+
+This matters because it is a **general answer to "the process cannot be reached via `$callers`"** that does not depend on ancestry at all — which is notable given that, as the catalog above records, three separate Dashbit libraries disagree about how to walk that ancestry. Req's own docs point at the same technique for worker pools. The requirement it imposes is modest: the process must emit a telemetry event at init, carrying enough identity to tell whose it is.
+
+**Isolated implementations of globally-coordinating components.** For the two things that genuinely coordinate across the system, Oban does not isolate the state — it swaps the component. `start_supervised_oban!/1` defaults `notifier: Oban.Notifiers.Isolated` and `peer: Oban.Peers.Isolated` (`:50-51`). The isolated peer is the whole idea in miniature: an `Agent` that defaults `leader?: true` (`lib/oban/peers/isolated.ex:10`), so every test's instance believes it is the leader and no election ever crosses test boundaries. Replacing a globally-coordinating implementation with a test-local one is cheaper than making the global one concurrent-safe.
+
+**Retry-based assertions for genuinely async work.** `with_backoff/2` (`:66`) rescues `ExUnit.AssertionError` and retries on a sleep, defaulting to 100 attempts at 10ms. Worth knowing about as the honest alternative to sleeping a fixed interval, though it is orthogonal to isolation.
+
+**What transfers.** The telemetry handoff is a genuine alternative to the `$callers` walk in Option B below, and a more robust one. We do not strictly need it — `BookServer` already takes its directory as a `start_link` argument, so the one process an ancestry walk could not reach is also the one that does not need reaching — but it is the right fallback if a future process ends up ambient and unreachable. The isolated-component pattern is the more immediately useful one: it is a concrete answer to the `:demo_seeding` global flagged in the Options section below, which neither Option A nor Option B addresses.
+
+## 7. Keeping a suite fast when some of it must stay serial
 
 Four documented levers, in descending leverage for us.
 
@@ -351,9 +400,9 @@ Two parallel CI jobs at 4.2s and 16.5s instead of one at 20.2s. Cheap, but it op
 
 **Finding the bottleneck.** `--slowest-modules` (since v1.17) ranks modules by time including `setup`. The caveat to carry: it "Automatically sets `--trace` and `--preload-modules`," and `--trace` sets `max_cases: 1`, so the run is fully serial and the absolute numbers are not wall clock. Use it for ranking, not measurement.
 
-## 7. What this means for LocalCents
+## 8. What this means for LocalCents
 
-### 7.1 The actual shape
+### 8.1 The actual shape
 
 Six modules are serial today, for two different reasons.
 
@@ -380,19 +429,19 @@ defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
 
 Six `Tracking` entry points call it (`create_book`, `open_book`, `list_books`, `get_book`, `rename_book`, `delete_book`). Every one of them runs **in the caller's process** — the LiveView, or the test process during a dead render. `BookServer` never calls it: `ensure_started(id, dir)` receives the directory as an argument and holds it in state, so the one process `$callers` cannot reach is also the one process that does not need to be reached. That is the decisive fit finding.
 
-### 7.2 The options, honestly
+### 8.2 The options, honestly
 
 **Option A — `async: true, group: :books_dir` on the five modules.** Four one-line test-file edits, no production change, `BooksDirHelper` untouched. ExUnit guarantees the five never overlap, so the global mutation stays correct; they move out of the serial tail and overlap the 4.1s async phase. Estimated suite: **~16.4s, down from 20.2s** (19%). Two caveats, both real. First, `test/local_cents_web/plugs/content_security_policy_test.exs:62` is `async: true` and does a dead render of `/library`, which calls `Tracking.list_books()` and therefore reads `:books_dir` concurrently with the group — harmless for a CSP-header assertion (seeding is gated on `connected?/1`, `lib/local_cents_web/live/library_live.ex:53`), but it is a concurrent read of a mutating global and should either join the group or be noted. Second, this keeps a global mutation in the suite; it makes it *safe*, not *absent*.
 
 **Option B — per-test ownership of the books directory, resolved via `$callers`.** A small owner registry maps a pid to a directory; `opt_dir/1` consults it by walking `[self() | $callers ++ $ancestors]` before falling back to the platform default. Section 3 establishes that this reaches every process that reads it. The five modules become fully `async: true` with no group, so they parallelize with each other; the suite floor becomes the longest single module. Estimated suite: **~7.5s** (63%). Keep the test-only code out of production by resolving the lookup module through `Application.compile_env/3` — a boot-time constant set once in `config/test.exs`, which is what the application environment is actually for, rather than a value mutated per test. Registration goes in a `setup` in `FeatureCase`, keyed to `self()`, with `NimbleOwnership`-style monitor cleanup rather than `on_exit` (recall from the Options section that `on_exit` runs in a *different* process, so a `self()`-keyed cleanup there would miss).
 
-Two things Option B does not fix. `library_live_test.exs:191` also mutates `:demo_seeding`; under full async that becomes a second race, so that one module wants `group: :demo_seeding` (groups and ownership compose fine). And `BookServer` processes outlive the test that started them — they are app-supervised and keyed by UUID, so there is no cross-test collision, but a late `terminate/2` persist can write into a directory `on_exit` has already removed. That risk exists today; more concurrency makes it likelier. `Tracking.close_book/1` in the test teardown is the cheap mitigation.
+Two things Option B does not fix. `library_live_test.exs:191` also mutates `:demo_seeding`; under full async that becomes a second race, so that one module wants `group: :demo_seeding` (groups and ownership compose fine) — or, following Oban's isolated-component pattern from the Oban section above, a seeding implementation selected at compile time whose test version is inert, which removes the global rather than scheduling around it. And `BookServer` processes outlive the test that started them — they are app-supervised and keyed by UUID, so there is no cross-test collision, but a late `terminate/2` persist can write into a directory `on_exit` has already removed. That risk exists today; more concurrency makes it likelier. `Tracking.close_book/1` in the test teardown is the cheap mitigation.
 
 **Option C — build the Ecto-style metadata handshake #147 describes.** A plug, an `on_mount`, header-encoded metadata. Given section 3, this is machinery for a problem we do not have: the header exists only because a browser cannot pass a pid, and our "client" is a process in the same node. **Do not build this.**
 
 **Option D — accept `async: false` and write the decision note.** Defensible on the primary sources: ExUnit's rule is conditional, and Ecto treats sync mode as a legitimate configuration rather than a failure. But it is hard to justify *here*, because Option A costs four lines and is strictly better on every axis. Accepting serial is right when the state is truly node-wide (our Logger module); the books directory is not.
 
-### 7.3 Recommendation
+### 8.3 Recommendation
 
 **Take Option A now, then decide on Option B against a measured baseline — and do not build Option C.**
 
@@ -400,4 +449,16 @@ Option A is four lines, has no production surface, and cannot be wrong: `group:`
 
 Option B is the correct end state and is now known to be *reachable*, which it was not when #147 was written — the `$callers` chain does reach a LiveView under `Phoenix.LiveViewTest`, and `BookServer` already takes its directory as an argument. It buys roughly nine seconds beyond Option A. The trade-off is honest: a resolver seam in the production directory-resolution path, an ownership registry to maintain (or `Req.Test`'s 368 vendored lines to copy, with the precedent already in `deps/`), and a `$callers` walk whose exact shape three separate Dashbit libraries disagree about. Nine seconds may or may not be worth that today; it will be worth more as the feature suite grows, and Option A does not foreclose it.
 
-Either way, update `avoiding-async-false-tests.md`: its `$callers` claim about `GenServer`/`proc_lib` is wrong (section 2), and its Option B was ruled out partly on a premise that does not hold for LiveViews (section 3).
+Either way, update `avoiding-async-false-tests.md`: its `$callers` claim about `GenServer`/`proc_lib` is wrong (section 2), and its Option B was ruled out partly on a premise that does not hold for LiveViews (section 3). *(Done — both are annotated inline in that note as of the PR carrying this one.)*
+
+## 9. Further reading and viewing
+
+Video on this topic is thin, and what exists is worth calibrating before spending an evening on it. Neither of these was watched in preparing this note; they are listed from their published descriptions.
+
+[**$callers and $ancestors and Tasks oh my!**](https://www.youtube.com/watch?v=31W6OOVUGVs) — Isaac Yonemoto, published on his own channel around May 2022, not a conference recording. The closest thing to a talk about this note: the `$callers`/`$ancestors` mechanism, how it interacts with tasks, and using it to run async tests against the Ecto sandbox without race conditions. Described as code-heavy. Background on why the mechanism exists at all is in [elixir-lang/elixir#7995](https://github.com/elixir-lang/elixir/issues/7995), the proposal that added `$callers` in Elixir 1.8 explicitly so that "testing tools that rely on ownership mechanisms" could propagate without forcing tests to run synchronously — which is the whole subject of this note, stated by the feature's author before the feature existed.
+
+[**Sustainable Testing**](https://www.youtube.com/watch?v=9XRe1ce5eak) — Andrew Bennett, ElixirConf 2018. Adjacent rather than on point: what makes a long-lived test suite effective at revealing bugs. Slides and sources at [potatosalad/elixirconf2018](https://github.com/potatosalad/elixirconf2018).
+
+The better material is written. [Andrea Leopardi, *How to Async Tests in Elixir*](https://andrealeopardi.com/posts/async-tests-in-elixir/) and [DockYard, *Understanding Test Concurrency in Elixir*](https://dockyard.com/blog/2019/02/13/understanding-test-concurrency-in-elixir) cover the model; [AppSignal, *8 Common Causes of Flaky Tests in Elixir*](https://blog.appsignal.com/2021/12/21/eight-common-causes-of-flaky-tests-in-elixir.html) is the failure-mode catalog. All three are secondary sources and none of this note's factual claims rest on them.
+
+But the single most useful thing to read is not prose at all: [`test/support/case.ex`](https://github.com/oban-bg/oban/blob/main/test/support/case.ex) in oban-bg/oban, about 160 lines, covered in the Oban section above.
