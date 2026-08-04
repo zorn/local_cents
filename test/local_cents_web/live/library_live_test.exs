@@ -1,9 +1,9 @@
 defmodule LocalCentsWeb.LibraryLiveTest do
-  # Not async: creating Books uses the global :books_dir env.
-  use LocalCentsWeb.FeatureCase, async: false
+  use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
 
+  alias LocalCents.ProcessConfig
   alias LocalCents.Tracking
 
   setup :with_temp_books_dir
@@ -186,10 +186,12 @@ defmodule LocalCentsWeb.LibraryLiveTest do
 
   describe "first-run demo seeding" do
     # Seeding is disabled by default in the test env (config/test.exs); these tests
-    # opt back in and restore the default afterwards.
+    # claim it back on for their own process tree, so no concurrent test starts
+    # seeding a library out from under itself. The claim needs no teardown — it lives
+    # in the test process and dies with it.
     setup do
-      Application.put_env(:local_cents, :demo_seeding, true)
-      on_exit(fn -> Application.put_env(:local_cents, :demo_seeding, false) end)
+      ProcessConfig.put(:demo_seeding, true)
+      :ok
     end
 
     test "seeds the demo library on first launch into an empty library", ~M{conn} do
@@ -205,6 +207,12 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       conn
       |> visit(~p"/library")
       |> assert_has("[role='status']", text: "Setting up your demo library")
+      # Then wait for the seed to settle rather than returning mid-flight. Seeding runs
+      # in a task the LiveView spawns, and a test that ends while that task is still
+      # writing leaves it resolving the books directory from a process tree whose test
+      # process has already exited — so the writes land in the shared fallback
+      # directory instead of this test's. See [Async testing](async-testing.html).
+      |> refute_has("[role='status']", timeout: 10_000)
     end
 
     test "does not seed when the library already has a Book", ~M{conn} do

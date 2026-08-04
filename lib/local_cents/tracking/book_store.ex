@@ -20,11 +20,13 @@ defmodule LocalCents.Tracking.BookStore do
   first argument rather than reading it from a global. This is what lets the
   unit and context tests run with `async: true`: each test passes its own
   temporary directory (see `docs/research/avoiding-async-false-tests.md`) instead
-  of mutating a shared `:books_dir` application env. `default_dir/0` resolves the
-  ambient default for callers that don't inject one (the production app and the
-  LiveView feature tests).
+  of sharing one. `default_dir/0` resolves the ambient default for callers that
+  don't inject one (the production app, and the LiveView feature tests, which
+  claim a directory per test through `LocalCents.ProcessConfig` — see
+  [Async testing](async-testing.html)).
   """
 
+  alias LocalCents.ProcessConfig
   alias LocalCents.Tracking.Book
 
   @extension ".lcbook"
@@ -32,11 +34,13 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Returns the default books directory, creating it if needed.
 
-  Resolves the `:books_dir` application env when set — the LiveView feature tests
-  still redirect writes this way — and otherwise the platform's per-user
-  application-support location (`~/Library/Application Support/LocalCents/books`
-  on macOS). Callers that already hold a directory pass it to the functions below
-  instead; `LocalCents.Tracking` resolves this once and threads it down.
+  Resolves the `:books_dir` setting when set — through
+  `LocalCents.ProcessConfig`, so a test resolves the directory it claimed rather
+  than one shared with every concurrent test — and otherwise the platform's
+  per-user application-support location (`~/Library/Application
+  Support/LocalCents/books` on macOS). Callers that already hold a directory pass
+  it to the functions below instead; `LocalCents.Tracking` resolves this once and
+  threads it down.
   """
   @spec default_dir() :: String.t()
   # sobelow_skip ["Traversal.FileModule"]
@@ -44,7 +48,7 @@ defmodule LocalCents.Tracking.BookStore do
   # user input, so this File call cannot be steered to traverse.
   def default_dir do
     dir =
-      Application.get_env(:local_cents, :books_dir) ||
+      ProcessConfig.get(:books_dir) ||
         Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
 
     File.mkdir_p!(dir)

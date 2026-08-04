@@ -1,6 +1,5 @@
 defmodule LocalCentsWeb.BookCategoriesLiveTest do
-  # Not async: opening Books uses the global :books_dir env.
-  use LocalCentsWeb.FeatureCase, async: false
+  use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
 

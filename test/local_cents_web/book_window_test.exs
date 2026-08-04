@@ -7,8 +7,7 @@ defmodule LocalCentsWeb.BookWindowTest do
   web-side seam the fake-viewer tests can't reach.
   """
 
-  # Not async: opening Books uses the global `:books_dir` env.
-  use LocalCentsWeb.ConnCase, async: false
+  use LocalCentsWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import LocalCents.BooksDirHelper

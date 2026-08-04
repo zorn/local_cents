@@ -26,6 +26,7 @@ defmodule LocalCentsWeb.LibraryLive do
   use LocalCentsWeb, :live_view
 
   alias LocalCents.DemoSeeding
+  alias LocalCents.ProcessConfig
   alias LocalCents.Tracking
 
   alias LocalCentsWeb.DesktopShell
@@ -354,10 +355,13 @@ defmodule LocalCentsWeb.LibraryLive do
   # A Book's category set does not affect the library row, so ignore it.
   def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
 
-  # Seeding is disabled via the `:demo_seeding` app env in the test env (it writes a
+  # Seeding is disabled by the `:demo_seeding` setting in the test env (it writes a
   # document per expense, so it would slow and pollute unrelated tests); it defaults
-  # on, so a real first launch is seeded.
-  defp seeding_enabled?, do: Application.get_env(:local_cents, :demo_seeding, true)
+  # on, so a real first launch is seeded. Read through `LocalCents.ProcessConfig` so
+  # the tests that do cover seeding can claim it back on for themselves alone — this
+  # runs in the LiveView process, which the claim reaches (see
+  # [Async testing](async-testing.html)).
+  defp seeding_enabled?, do: ProcessConfig.get(:demo_seeding, true)
 
   # Runs in the async task started by mount/3: seed the demo Books, then return the
   # freshly-seeded library. A raise here surfaces as an `{:exit, reason}` delivered to

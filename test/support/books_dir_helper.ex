@@ -1,33 +1,42 @@
 defmodule LocalCents.BooksDirHelper do
   @moduledoc """
-  Points `LocalCents.Tracking.BookStore.default_dir/0` at a fresh temporary books
-  directory for the duration of a test and cleans it up afterwards, by overriding
-  the `:books_dir` application env.
+  Claims a fresh temporary books directory for the running test, so
+  `LocalCents.Tracking.BookStore.default_dir/0` resolves to it everywhere that
+  test reaches — including the LiveView process `Phoenix.LiveViewTest` mounts on
+  its behalf.
 
-  This is for the **LiveView feature tests only**, where the directory can't be
-  injected as an argument (the LiveView calls the dir-free `LocalCents.Tracking`
-  API in its own process). Because it mutates a global env, those modules run with
-  `async: false`.
+  This is for the **LiveView feature tests**, where the directory can't be
+  injected as an argument: the LiveView calls the dir-free `LocalCents.Tracking`
+  API in its own process. The claim is scoped to the test's process tree via
+  `LocalCents.ProcessConfig` rather than written to a shared application env,
+  which is what lets those modules run `async: true` alongside each other. See
+  [Async testing](async-testing.html).
 
   Unit and context tests do *not* use this: they tag `@moduletag :tmp_dir` and pass
   the directory explicitly to the `LocalCents.Tracking`/`BookStore` functions, which
-  keeps them `async: true` (see `docs/research/avoiding-async-false-tests.md`).
+  is cheaper still (see `docs/research/avoiding-async-false-tests.md`).
 
   Use it as a setup callback:
 
       setup :with_temp_books_dir
   """
 
+  # Its own top-level boundary rather than a member of the `LocalCents` core: this is
+  # test-support scaffolding that happens to sit in the domain namespace, and the core
+  # has no business gaining a dependency on `ProcessConfig` on its behalf.
+  use Boundary, top_level?: true, deps: [LocalCents.ProcessConfig]
+
+  alias LocalCents.ProcessConfig
+
   @spec with_temp_books_dir(map()) :: {:ok, keyword()}
   def with_temp_books_dir(_context) do
     dir = Path.join(System.tmp_dir!(), "lc_books_#{System.unique_integer([:positive])}")
-    previous = Application.get_env(:local_cents, :books_dir)
-    Application.put_env(:local_cents, :books_dir, dir)
+    ProcessConfig.put(:books_dir, dir)
 
-    ExUnit.Callbacks.on_exit(fn ->
-      File.rm_rf(dir)
-      Application.put_env(:local_cents, :books_dir, previous)
-    end)
+    # The claim itself needs no teardown — it lives in the test process's dictionary
+    # and dies with it. Only the directory outlives the test, and `on_exit` runs in a
+    # separate process, so this closes over the path rather than resolving it again.
+    ExUnit.Callbacks.on_exit(fn -> File.rm_rf(dir) end)
 
     {:ok, books_dir: dir}
   end
