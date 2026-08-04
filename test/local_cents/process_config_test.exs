@@ -30,7 +30,10 @@ defmodule LocalCents.ProcessConfigTest do
     end
 
     test "returns nil when there is neither a value nor a default" do
-      refute ProcessConfig.get(@unset_key)
+      # `assert … == nil`, not `refute`: the test below turns on `false` being a
+      # value rather than an absence, so a falsy-only assertion would pass on the
+      # exact confusion this module has to avoid.
+      assert ProcessConfig.get(@unset_key) == nil
     end
   end
 

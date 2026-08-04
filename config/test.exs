@@ -43,11 +43,8 @@ config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 config :swoosh, :api_client, false
 
 # Let every level through the primary logger, but print only warnings and errors.
-# The split matters: `ExUnit.CaptureLog` cannot see a message the *primary* level
-# already filtered, so a test asserting on a debug log would otherwise have to lift
-# the level at runtime — a node-wide mutation that forces `async: false` on its whole
-# module, and whose behavior ExUnit documents as undetermined under async. Keeping
-# the default handler at :warning holds the suite's output to what it was.
+# The split is what lets a test assert on a debug log without lifting the level at
+# runtime; see docs/async-testing.md for why that matters.
 config :logger, level: :debug
 config :logger, :default_handler, level: :warning
 

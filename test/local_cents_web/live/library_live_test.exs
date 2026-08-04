@@ -207,11 +207,9 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       conn
       |> visit(~p"/library")
       |> assert_has("[role='status']", text: "Setting up your demo library")
-      # Then wait for the seed to settle rather than returning mid-flight. Seeding runs
-      # in a task the LiveView spawns, and a test that ends while that task is still
-      # writing leaves it resolving the books directory from a process tree whose test
-      # process has already exited — so the writes land in the shared fallback
-      # directory instead of this test's. See [Async testing](async-testing.html).
+      # Then wait for the seed to settle rather than returning while its task is still
+      # writing — see "Don't abandon work you started" in
+      # [Async testing](async-testing.html).
       |> refute_has("[role='status']", timeout: 10_000)
     end
 

@@ -43,11 +43,19 @@ call).
 | Boundary | Declared in | Exports | May depend on |
 |---|---|---|---|
 | `LocalCents` | `lib/local_cents.ex` | — | — |
-| `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Category`, `Expense`, `Month`, `Report` (with its `Cell` and `Row`), `Supervisor` | — |
+| `LocalCents.ProcessConfig` | `lib/local_cents/process_config.ex` | — | — |
+| `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Category`, `Expense`, `Month`, `Report` (with its `Cell` and `Row`), `Supervisor` | `LocalCents.ProcessConfig` |
 | `LocalCents.DemoSeeding` | `lib/local_cents/demo_seeding.ex` | — | `LocalCents.Tracking` |
-| `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding` |
+| `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding`, `LocalCents.ProcessConfig` |
 | `LocalCents.Application` | `lib/local_cents/application.ex` | — | `LocalCents`, `LocalCentsWeb` |
 | `Storybook` | `lib/storybook.ex` | (checks disabled) | (checks disabled) |
+
+One boundary is declared outside `lib/`: `LocalCents.BooksDirHelper`
+(`test/support/books_dir_helper.ex`) is top-level with
+`deps: [LocalCents.ProcessConfig]`. It is test-support scaffolding that happens to
+sit in the domain namespace, and declaring it a boundary of its own is what keeps
+the `LocalCents` core from gaining a dependency on its behalf. It exists only in
+the `:test` build, so `mix boundary.spec` in `:dev` will not show it.
 
 `LocalCents.DemoSeeding` is a top-level boundary of a different shape from the
 others: it is a *consumer/orchestrator*, not a domain context. It exports nothing
@@ -55,6 +63,13 @@ others: it is a *consumer/orchestrator*, not a domain context. It exports nothin
 driving its public API to generate the first-run demo Books. It is promoted to
 top-level for the same reason the contexts are — so `LocalCentsWeb` can list it in
 `deps` and call it from `LibraryLive`.
+
+`LocalCents.ProcessConfig` is a third shape: a *leaf utility*. It depends on
+nothing and exports nothing beyond its own root module, and both the tracking
+context and the web layer list it in `deps` because both read a setting through
+it (see [Async testing](async-testing.html)). It is top-level rather than a member
+of the `LocalCents` core precisely so that `LocalCents.Tracking` can name it
+directly instead of taking a dependency on the whole core to reach one function.
 
 A boundary's root module (e.g. `LocalCents.Tracking`) is **always** callable from
 a boundary that depends on it — that is the public API. `exports` only adds
@@ -74,20 +89,25 @@ graph TD
     Core["LocalCents<br/><small>core</small>"]
     Tracking["LocalCents.Tracking<br/><small>domain context (exports data-type structs)</small>"]
     DemoSeeding["LocalCents.DemoSeeding<br/><small>consumer (no exports)</small>"]
+    ProcessConfig["LocalCents.ProcessConfig<br/><small>leaf utility (no deps)</small>"]
 
     App --> Web
     App --> Core
     Web --> Core
     Web --> Tracking
     Web --> DemoSeeding
+    Web --> ProcessConfig
     DemoSeeding --> Tracking
+    Tracking --> ProcessConfig
 
     classDef context fill:#e8f5e9,stroke:#43a047;
     classDef web fill:#e3f2fd,stroke:#1e88e5;
     classDef consumer fill:#fff3e0,stroke:#fb8c00;
+    classDef utility fill:#f3e5f5,stroke:#8e24aa;
     class Tracking,Core context;
     class Web web;
     class DemoSeeding consumer;
+    class ProcessConfig utility;
 ```
 
 An arrow means "is allowed to call". Note the arrows only point *toward* contexts
