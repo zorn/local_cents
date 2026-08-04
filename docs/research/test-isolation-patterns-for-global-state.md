@@ -10,7 +10,7 @@
 
 Three findings change the shape of issue #147.
 
-1. **The premise of #147 is wrong.** `$callers` *does* reach a LiveView process in a `Phoenix.LiveViewTest` session — `Phoenix.LiveViewTest` passes the test pid as a `"caller"` join param and `Phoenix.LiveView.Channel` writes it into the LiveView's process dictionary. Verified in this repo: the LiveView's `$callers` is `[test_pid]`. The Ecto-sandbox-style handshake #147 contemplates building is therefore *not* needed; the plain `$callers` lookup the companion note ruled out (as its "Option B") is available.
+1. **The premise of #147 is wrong.** `$callers` *does* reach a LiveView process in a `Phoenix.LiveViewTest` session — `Phoenix.LiveViewTest` passes the test pid as a `"caller"` join param and Phoenix.LiveView.Channel (`deps/phoenix_live_view/lib/phoenix_live_view/channel.ex`) writes it into the LiveView's process dictionary. Verified in this repo: the LiveView's `$callers` is `[test_pid]`. The Ecto-sandbox-style handshake #147 contemplates building is therefore *not* needed; the plain `$callers` lookup the companion note ruled out (as its "Option B") is available.
 2. **The companion note overstates `$callers` in the other direction.** It says `$callers` is populated "for `Task`s and for `GenServer`/`proc_lib` children started directly by the caller." Only the `Task` half is true. `proc_lib` sets `$ancestors`, never `$callers`; a plain `GenServer.start_link/3` propagates nothing. Verified below.
 3. **ExUnit has had a cheaper answer than `async: false` since v1.18: `group:`.** A module can be `async: true, group: :books_dir` — mutually exclusive with its group peers, fully concurrent with everything else. That is strictly better than `async: false`, needs no production change, and would move 16 seconds out of this suite's serial tail.
 
@@ -56,7 +56,7 @@ true ->
   end
 ```
 
-`ExUnit.Server` enforces the same ordering on its side (`server.ex:79`): `handle_call(:take_sync_modules, ...)` pattern-matches `%{waiting: nil, loaded: :done, async_groups: []}` and asserts `:queue.is_empty(state.async_modules)`. So N sync modules cost the *sum* of their runtimes, with zero overlap and no benefit from `max_cases`.
+ExUnit.Server enforces the same ordering on its side (`server.ex:79`): `handle_call(:take_sync_modules, ...)` pattern-matches `%{waiting: nil, loaded: :done, async_groups: []}` and asserts `:queue.is_empty(state.async_modules)`. So N sync modules cost the *sum* of their runtimes, with zero overlap and no benefit from `max_cases`.
 
 `:max_cases` only ever governs the async phase ([`ExUnit.configure/1`](https://hexdocs.pm/ex_unit/ExUnit.html#configure/1), `ex_unit.ex:363`):
 
@@ -139,7 +139,7 @@ LocalCents already uses this for the unit and context tests, which is what #78 d
 
 > The list of callers of the current process can be retrieved from the Process dictionary with `Process.get(:"$callers")`. This will return either `nil` or a list `[pid_n, ..., pid2, pid1]` with at least one entry where `pid_n` is the PID that called the current process…
 
-**Only `Task` writes it.** Grepping the entire Elixir standard library for `:"$callers"` returns five hits, all in `task.ex`, `task/supervisor.ex`, and `task/supervised.ex`. `Task.Supervised.noreply/3` (`task/supervised.ex:88`) does the write; `Task.get_callers/1` (`task.ex:764`) does the accumulation, prepending the owner so chains compose:
+**Only `Task` writes it.** Grepping the entire Elixir standard library for `:"$callers"` returns five hits, all in `task.ex`, `task/supervisor.ex`, and `task/supervised.ex`. Task.Supervised.noreply/3 (`task/supervised.ex:88`) does the write; Task.get_callers/1 (`task.ex:764`) does the accumulation, prepending the owner so chains compose:
 
 ```elixir
 defp get_callers(owner) do
@@ -189,7 +189,7 @@ Three libraries, overlapping authors, one shared registry design, three differen
 
 ## 3. `$callers` *does* reach a LiveView under test
 
-This is the load-bearing correction. `Phoenix.LiveView.Channel` writes `$callers` on join (`deps/phoenix_live_view/lib/phoenix_live_view/channel.ex:1225`):
+This is the load-bearing correction. Phoenix.LiveView.Channel writes `$callers` on join (`deps/phoenix_live_view/lib/phoenix_live_view/channel.ex:1225`):
 
 ```elixir
 case params do
@@ -198,7 +198,7 @@ case params do
 end
 ```
 
-That `"caller"` param is supplied by the test client, not by a browser. `Phoenix.LiveViewTest.start_proxy/2` stamps `caller: {self(), ref}` (`deps/phoenix_live_view/lib/phoenix_live_view/test/live_view_test.ex:445`) and `ClientProxy` forwards it into the join payload (`deps/phoenix_live_view/lib/phoenix_live_view/test/client_proxy.ex:277`):
+That `"caller"` param is supplied by the test client, not by a browser. Phoenix.LiveViewTest.start_proxy/2 stamps `caller: {self(), ref}` (`deps/phoenix_live_view/lib/phoenix_live_view/test/live_view_test.ex:445`) and `ClientProxy` forwards it into the join payload (`deps/phoenix_live_view/lib/phoenix_live_view/test/client_proxy.ex:277`):
 
 ```elixir
 params = %{
@@ -209,7 +209,7 @@ params = %{
 }
 ```
 
-`Phoenix.Channel.Server` does the same for classic channels (`deps/phoenix/lib/phoenix/channel/server.ex:303`).
+Phoenix.Channel.Server does the same for classic channels (`deps/phoenix/lib/phoenix/channel/server.ex:303`).
 
 **Verified in this repo.** A throwaway `ConnCase` test that mounts `/library` via `Phoenix.LiveViewTest.live/2` and reads the view's process dictionary with `:erlang.process_info(pid, :dictionary)`:
 
@@ -220,7 +220,7 @@ $callers:   [#PID<0.564.0>]
 $ancestors: [#PID<0.565.0>, #PID<0.564.0>]
 ```
 
-Both chains terminate at the test process — `$callers` directly, `$ancestors` because `ClientProxy` starts the channel under ExUnit's per-test supervisor (`test_supervisor: fetch_test_supervisor!()`, `live_view_test.ex:452`). `PhoenixTest` drives `Phoenix.LiveViewTest` (`deps/phoenix_test/lib/phoenix_test/live.ex:3`, `:35`), so our `FeatureCase` sessions inherit this unchanged. And because `Task.get_callers/1` prepends, a `start_async`/`assign_async` task spawned by that LiveView carries `[view_pid, test_pid]`.
+Both chains terminate at the test process — `$callers` directly, `$ancestors` because `ClientProxy` starts the channel under ExUnit's per-test supervisor (`test_supervisor: fetch_test_supervisor!()`, `live_view_test.ex:452`). `PhoenixTest` drives `Phoenix.LiveViewTest` (`deps/phoenix_test/lib/phoenix_test/live.ex:3`, `:35`), so our `FeatureCase` sessions inherit this unchanged. And because Task.get_callers/1 prepends, a `start_async`/`assign_async` task spawned by that LiveView carries `[view_pid, test_pid]`.
 
 In production the same line assigns `[transport_pid]`, a process that owns nothing — so a `$callers`-keyed lookup degrades cleanly to its default outside tests.
 

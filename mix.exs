@@ -43,23 +43,11 @@ defmodule LocalCents.MixProject do
         groups_for_extras: groups_for_extras(),
         groups_for_modules: groups_for_modules(),
         nest_modules_by_prefix: nest_modules_by_prefix(),
-        # Names ExDoc must not try to autolink, because they resolve to nothing
-        # it can link to and `--warnings-as-errors` would fail the build.
-        #
-        # `Storybook` is our own boundary shim, named in the module-boundaries
-        # guide and hidden (`@moduledoc false`). The rest are internals of our
-        # dependencies — hidden modules and private functions — that the research
-        # notes under `docs/research/` cite when they trace a mechanism back to
-        # its source. Citing them is the point of those notes, so suppress the
-        # link rather than soften the prose.
+        # The module-boundaries guide names the `Storybook` boundary shim, which
+        # is a hidden (`@moduledoc false`) no-op module. Tell ExDoc not to try to
+        # autolink it (which would warn).
         skip_code_autolink_to: [
-          "Storybook",
-          "ExUnit.Server",
-          "Phoenix.Channel.Server",
-          "Phoenix.LiveView.Channel",
-          "Phoenix.LiveViewTest.start_proxy/2",
-          "Task.Supervised",
-          "Task.get_callers/1"
+          "Storybook"
         ],
         assets: %{"docs/images" => "images"},
         before_closing_head_tag: &before_closing_head_tag/1,
