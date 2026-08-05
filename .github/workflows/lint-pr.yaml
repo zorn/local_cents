@@ -1,7 +1,14 @@
 name: "Lint PR"
 
 "on":
-  pull_request_target:
+  # Deliberately `pull_request`, not `pull_request_target`. The action reads the
+  # PR title from the event payload and needs only `pull-requests: read`, which a
+  # fork PR's token already grants on a public repo — so the privileged trigger
+  # buys nothing here, while leaving a footgun for whoever edits this file next
+  # (`pull_request_target` plus a checkout of fork code runs untrusted code with
+  # our secrets). The cost is that a fork can relax this check for its own PR,
+  # which we catch by reading the title at merge.
+  pull_request:
     types:
       - opened
       - edited
