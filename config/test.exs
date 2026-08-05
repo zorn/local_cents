@@ -23,7 +23,14 @@ config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
 # reaches the books directory without claiming one — a dead render of /library, say
 # — would enumerate and create the developer's actual library. This is the backstop
 # for that, not a directory tests are expected to use.
-config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_books")
+#
+# Keyed by OS pid so two runs never share it. The path is otherwise identical for
+# every checkout on the machine, and this repo's workflow routinely has more than
+# one worktree running `mix test` at once — mix's build lock keeps one checkout
+# from racing itself, and does nothing across checkouts.
+config :local_cents,
+       :books_dir,
+       Path.join(System.tmp_dir!(), "local_cents_test_books_#{System.pid()}")
 
 # Don't seed the demo library on an empty library during tests — seeding is
 # side-effecting and slow (it writes the whole document per expense), and only the

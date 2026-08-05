@@ -1,8 +1,34 @@
-# Start each run from an empty fallback books directory. Feature tests claim their
-# own directory per test (see docs/async-testing.md), so nothing should ever be
-# written here — but a test that abandons in-flight work loses its claim and the
-# writes land here instead. Clearing it up front keeps that a visible leak from
-# this run rather than sediment that quietly grows a library other tests read.
-:local_cents |> Application.fetch_env!(:books_dir) |> File.rm_rf!()
-
 ExUnit.start()
+
+# The fallback books directory is unique per run (config/test.exs), so it begins
+# empty by construction and anything in it at the end was written by a test that
+# reached the books directory without claiming one — or by work that outlived the
+# test that started it and so lost the claim. Report that rather than deleting the
+# evidence; remove the directory only when it is clean, so runs do not leave a trail
+# of empty directories behind. See docs/async-testing.md.
+books_dir = Application.fetch_env!(:local_cents, :books_dir)
+
+ExUnit.after_suite(fn _results ->
+  case File.ls(books_dir) do
+    {:ok, []} ->
+      File.rm_rf(books_dir)
+
+    {:ok, files} ->
+      # `IO.warn/2` with an empty stacktrace: stderr, no misleading call site.
+      IO.warn(
+        """
+        #{length(files)} file(s) reached the fallback books directory.
+          #{books_dir}
+        Some test read or wrote the books directory without claiming one, or started \
+        work that outlived it. See "Two sharp edges" in docs/async-testing.md.\
+        """,
+        []
+      )
+
+    {:error, :enoent} ->
+      :ok
+
+    {:error, reason} ->
+      IO.warn("could not check #{books_dir}: #{inspect(reason)}", [])
+  end
+end)

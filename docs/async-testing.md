@@ -165,11 +165,22 @@ as undetermined under async, and which `Jump.CredoChecks.AvoidLoggerConfigureInT
 already flags. Splitting the two lets the capture see everything while the console
 prints what it always did.
 
-**`:books_dir` still has an application-env value.** It is the fallback for tests
-that never write a Book, and a backstop so a run can never touch the real
-application-support location. A feature test's own claim takes precedence over it.
-`test/test_helper.exs` empties it before each run, so anything that lands there is
-a leak from that run and not sediment from an older one.
+There is a consequence to know about. `ExUnit.CaptureLog` is **global**, not
+scoped to the capturing process: every active capture receives every event that
+clears the primary level, whatever process emitted it. Raising that level to
+`:debug` therefore widens what a concurrent capture sees, so an assertion of the
+form `refute log =~ …`, or an exact match on the whole captured string, can go red
+at some seeds when an unrelated module logs at the same moment. Assert that the
+message you expect is *present* and the problem does not arise.
+
+**`:books_dir` still has an application-env value.** It is a backstop, not a
+directory tests are expected to use: without it `BookStore.default_dir/0` falls
+through to the real per-user application-support location, so a test that reached
+the books directory without claiming one would enumerate and create the
+developer's actual library. The path is keyed by OS pid, so two runs — two
+worktrees, say — never share it. Nothing should ever land in it; if something
+does, `test/test_helper.exs` says so on stderr when the suite finishes rather than
+quietly deleting the evidence.
 
 ## Checklist for a new test module
 

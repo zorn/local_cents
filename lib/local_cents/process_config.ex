@@ -75,6 +75,12 @@ defmodule LocalCents.ProcessConfig do
     @doc """
     Claims `value` for `key` in the calling process and everything it spawns.
 
+    A `nil` value is **not** a claim. The tree walk returns the first *non-nil*
+    value it finds, so `put(key, nil)` is indistinguishable from never having
+    called this and `get/2` falls through to the application env. `false` is a
+    real value and does round-trip. There is no way to claim "no value at all";
+    claim a sentinel instead if a test needs one.
+
     Defined in the test build only — production has no reason to rebind a setting,
     and the compile-time switch means a call to it outside the suite fails to
     compile rather than silently doing nothing.

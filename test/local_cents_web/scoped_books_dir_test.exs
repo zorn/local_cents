@@ -37,13 +37,24 @@ defmodule LocalCentsWeb.ScopedBooksDirTest do
   test "a LiveView mounted by the test resolves the same directory", ~M{conn, tmp_dir} do
     {:ok, _} = Tracking.create_book("Family Expenses")
 
-    conn
-    |> visit(~p"/library")
-    |> assert_has("#books", text: "Family Expenses")
+    # The read direction: this render runs in the LiveView process, so a Book the
+    # test process wrote is listed only if the view resolved the claim as well.
+    session =
+      conn
+      |> visit(~p"/library")
+      |> assert_has("#books", text: "Family Expenses")
 
-    # A Book created *through* the connected window lands in the claimed directory
-    # too, which is the direction that only works if the LiveView process — not just
-    # the test process — resolves it.
-    assert length(Path.wildcard(Path.join(tmp_dir, "*.lcbook"))) == 1
+    # The write direction, which the read does not prove on its own: `handle_event/3`
+    # runs in the LiveView process, so creating a Book through the window is a write
+    # issued from there rather than from the test.
+    session
+    |> click_button("New Book")
+    |> fill_in("New book name", with: "Groceries")
+    |> click_button("Create")
+    |> assert_has("#books", text: "Groceries")
+
+    # Both Books are on disk in the claimed directory — the second one could only
+    # have landed here if the LiveView resolved it.
+    assert length(Path.wildcard(Path.join(tmp_dir, "*.lcbook"))) == 2
   end
 end
