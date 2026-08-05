@@ -1,6 +1,33 @@
 defmodule LocalCents.ProcessConfig do
   @moduledoc """
-  Reads an application setting that a test may rebind for its own process tree.
+  Provides get and put logic across a `ProcessTree` allowing for ownership of resources
+  by test process that normally in production would be global.
+
+  ## Problem Statement
+
+  We value a fast test suite. All test modules of the project need to prioritize the `async: true` option however this is not always easy thing to reach for depending on what part of the system is under test.
+
+  For simple pure functions, we get this mostly for free.
+
+      def valid_base64?(string) do
+        match?({:ok, _}, Base.decode64(string))
+      end
+
+  For functions that will rely on a dynamic value that could be considered global state we can provide options (via `opts` keyword lists) or other arguments to allow a call site to override. This can be helpful to override the concept of `now` in a test or provide a test-unique directory to make sure this test module does not interfere with the work going on in another test module.
+
+       def quick_add_expense(description, cost, opts \\ []) do
+          now = Keyword.get(opts, :now, DateTime.utc_now())
+          dir = Keyword.get(opts, :dir, BookStore.default_dir())
+          ...
+       end
+
+  For databases that want isolated state during async test runs we lean on the [database sandboxing provided by Ecto](https://ecto-sql.hexdocs.pm/Ecto.Adapters.SQL.Sandbox.html).
+
+  If you need to override an external dependency you can lean on [Mox](https://hex.pm/packages/mox), and if you are looking to override an internal dependency you can lean on [Mimic](https://hex.pm/packages/mimic).
+
+  For LocalCents we are building up a [rich OTP GenServer hierarchy](file:///Users/zorn/ProjectRepos/local_cents/doc/book-runtime-architecture.html#supervision-tree), and when we start building test modules to validate LiveViews experiences we don't want to be required to mock out a bunch of static expectations, we want each LiveView test module to have it's own copy of the
+
+
 
   Some settings have no caller in a position to inject them: `default_dir/0` runs
   deep inside `LocalCents.Tracking` with no directory in hand, and a LiveView asks
@@ -41,11 +68,8 @@ defmodule LocalCents.ProcessConfig do
 
   use Boundary, top_level?: true, deps: []
 
-  # Whether `get/2` consults the process tree before the application env. True only
-  # in `config/test.exs`, so the tree walk — and the `:process_tree` dependency it
-  # needs — is compiled out of every other build. Deliberately `compile_env` and not
-  # `get_env`: this is a property of the build, not a value any test should be
-  # flipping at runtime.
+  # This boolean informs the function logic below if it should look to the process tree for a value.
+  # Only the `:test` environment should configure this to to `true`.
   @scoped_to_process_tree Application.compile_env(
                             :local_cents,
                             [LocalCents.ProcessConfig, :scoped_to_process_tree],
