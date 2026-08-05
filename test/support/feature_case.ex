@@ -1,3 +1,4 @@
+# TODO: I question the need for these timeout customizations and may consider trashing this in favor of ConnCase.
 defmodule LocalCentsWeb.FeatureCase do
   @moduledoc """
   This module defines the test case to be used by feature tests that drive the
