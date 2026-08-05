@@ -588,8 +588,8 @@ defmodule LocalCents.Tracking do
 
   # The books directory an entry point operates in: the caller's injected `:books_dir`
   # option, or the ambient default. This runs in the *caller's* process — the LiveView,
-  # or the test process on a dead render — which is what lets a feature test with no
-  # directory to inject claim one for its tree instead (see
+  # or the test process on a dead render — which is what lets a feature test claim a
+  # directory for its own process tree when it has no way to inject one (see
   # [Async testing](async-testing.html)).
   defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
 

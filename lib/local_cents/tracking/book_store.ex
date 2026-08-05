@@ -20,10 +20,10 @@ defmodule LocalCents.Tracking.BookStore do
   first argument rather than reading it from a global. This is what lets the
   unit and context tests run with `async: true`: each test passes its own
   temporary directory (see `docs/research/avoiding-async-false-tests.md`) instead
-  of sharing one. `default_dir/0` resolves the ambient default for callers that
-  don't inject one (the production app, and the LiveView feature tests, which
-  claim a directory per test through `LocalCents.ProcessConfig` — see
-  [Async testing](async-testing.html)).
+  of sharing one. `default_dir/0` resolves the ambient default for the callers
+  that don't inject a directory: the production app, and the LiveView feature
+  tests, which have no way to inject one and instead claim a directory for their
+  own process tree (see [Async testing](async-testing.html)).
   """
 
   alias LocalCents.ProcessConfig
@@ -34,13 +34,14 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Returns the default books directory, creating it if needed.
 
-  Resolves the `:books_dir` setting when set — through
-  `LocalCents.ProcessConfig`, so a test resolves the directory it claimed rather
-  than one shared with every concurrent test — and otherwise the platform's
-  per-user application-support location (`~/Library/Application
-  Support/LocalCents/books` on macOS). Callers that already hold a directory pass
-  it to the functions below instead; `LocalCents.Tracking` resolves this once and
-  threads it down.
+  Returns the `:books_dir` setting when one is configured, and otherwise the
+  platform's per-user application-support location (`~/Library/Application
+  Support/LocalCents/books` on macOS). The setting is read through
+  `LocalCents.ProcessConfig`, so a test resolves the directory it claimed for
+  itself rather than one shared with every concurrent test.
+
+  Callers that already hold a directory pass it to the functions below instead;
+  `LocalCents.Tracking` resolves this once and threads it down.
   """
   @spec default_dir() :: String.t()
   # sobelow_skip ["Traversal.FileModule"]

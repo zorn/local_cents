@@ -107,3 +107,24 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
 
   Unrelated: "client" in the LiveView sense — the JavaScript half of the socket — is a
   different axis. Both clients here run a browser engine and both have a JS client.
+
+## Asynchronous and synchronous test modules
+
+* **Asynchronous test module** -- a test module declared `async: true`. ExUnit may
+  run it concurrently with other asynchronous modules, up to `:max_cases`. Every
+  test module in LocalCents is one; see
+  [Async testing](async-testing.md) for the standard and how to keep it that way.
+* **Synchronous test module** -- a test module declared `async: false`. ExUnit runs
+  every synchronous module **after** all asynchronous ones have finished, and runs
+  them one at a time, so their cost is the sum of their runtimes rather than the
+  longest of them. A module has to be synchronous only when it mutates state
+  another concurrently-running test could observe.
+* **Claim** (verb) -- to make a setting resolve to your own value for the calling
+  process and everything it spawns, via `LocalCents.ProcessConfig`, instead of
+  mutating the application env that every concurrent test shares. A test *claims* a
+  books directory; it does not "set" or "override" one, because nothing outside its
+  own process tree sees the value.
+
+  Prefer these over "serial" and "parallel", which describe the scheduling rather
+  than the declaration a module actually makes, and over "async test" for a module —
+  a *test* is asynchronous only in the sense that its module is.

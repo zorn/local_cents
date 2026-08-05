@@ -186,9 +186,9 @@ defmodule LocalCentsWeb.LibraryLiveTest do
 
   describe "first-run demo seeding" do
     # Seeding is disabled by default in the test env (config/test.exs); these tests
-    # claim it back on for their own process tree, so no concurrent test starts
-    # seeding a library out from under itself. The claim needs no teardown — it lives
-    # in the test process and dies with it.
+    # turn it back on for their own process tree, so no concurrent test starts seeding
+    # a library out from under itself. The claim needs no teardown — it lives in the
+    # test process and dies with it.
     setup do
       ProcessConfig.put(:demo_seeding, true)
       :ok

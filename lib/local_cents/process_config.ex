@@ -2,12 +2,12 @@ defmodule LocalCents.ProcessConfig do
   @moduledoc """
   Reads an application setting that a test may rebind for its own process tree.
 
-  A handful of settings have no caller to inject them: `default_dir/0` runs deep
-  inside `LocalCents.Tracking` with no directory in hand, and a LiveView asks
-  whether demo seeding is on before any test can reach it. Read straight from the
-  application env, those settings are a single global cell — so a test that wants
-  its own value has to mutate the cell, and every module that does so must run
-  `async: false`.
+  Some settings have no caller in a position to inject them: `default_dir/0` runs
+  deep inside `LocalCents.Tracking` with no directory in hand, and a LiveView asks
+  whether demo seeding is on from a process the test never touches. Read straight
+  from the application env, each of those settings is one global cell — so a test
+  that wants its own value has to mutate that cell, and every module that does so
+  must run `async: false`.
 
   This module is the seam that removes that constraint. In production `get/2` is
   `Application.get_env/3` and nothing more. In the test build it first looks the
@@ -18,10 +18,10 @@ defmodule LocalCents.ProcessConfig do
   `Phoenix.LiveViewTest` joins on its behalf) resolves to that value while a
   concurrent test's tree resolves to its own.
 
-  The result is that the setting is still global in production and no longer
-  global in the suite, which is what lets every feature test module run
-  `async: true`. See [Async testing](async-testing.html) for the full strategy and
-  for what to do when you add a setting that needs this treatment.
+  The result is that the setting stays global in production and stops being global
+  in the suite, which is what lets every test module run `async: true`. See
+  [Async testing](async-testing.html) for the full strategy, and for what to do
+  when you add a setting that needs this treatment.
 
       # In a test's setup:
       ProcessConfig.put(:books_dir, dir)
@@ -35,7 +35,7 @@ defmodule LocalCents.ProcessConfig do
   This is the fallback, not the goal. Where a caller can pass the value down —
   the way `LocalCents.Tracking` accepts `:books_dir` and threads it into
   `LocalCents.Tracking.BookServer` — do that instead: an argument is visible in
-  the signature, needs no lookup, and cannot be resolved wrong. Reach for
+  the signature, needs no lookup, and cannot resolve to the wrong value. Reach for
   `ProcessConfig` only for the ambient reads that have no such path.
   """
 
@@ -43,9 +43,9 @@ defmodule LocalCents.ProcessConfig do
 
   # Whether `get/2` consults the process tree before the application env. True only
   # in `config/test.exs`, so the tree walk — and the `:process_tree` dependency it
-  # needs — is compiled out of every other build. `compile_env` rather than
-  # `get_env` deliberately: this is a property of the build, not a value any test
-  # should be flipping at runtime.
+  # needs — is compiled out of every other build. Deliberately `compile_env` and not
+  # `get_env`: this is a property of the build, not a value any test should be
+  # flipping at runtime.
   @scoped_to_process_tree Application.compile_env(
                             :local_cents,
                             [LocalCents.ProcessConfig, :scoped_to_process_tree],
@@ -76,7 +76,7 @@ defmodule LocalCents.ProcessConfig do
     Claims `value` for `key` in the calling process and everything it spawns.
 
     Defined in the test build only — production has no reason to rebind a setting,
-    and the compile-time switch means a call to this outside the suite does not
+    and the compile-time switch means a call to it outside the suite fails to
     compile rather than silently doing nothing.
     """
     @spec put(key :: atom(), value :: term()) :: :ok

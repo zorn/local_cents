@@ -12,7 +12,7 @@ defmodule LocalCents.BooksDirHelper do
   which is what lets those modules run `async: true` alongside each other. See
   [Async testing](async-testing.html).
 
-  Unit and context tests do *not* use this: they tag `@moduletag :tmp_dir` and pass
+  Unit and context tests do *not* use this. They tag `@moduletag :tmp_dir` and pass
   the directory explicitly to the `LocalCents.Tracking`/`BookStore` functions, which
   is cheaper still (see `docs/research/avoiding-async-false-tests.md`).
 

@@ -17,15 +17,17 @@ config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
 
 # Persist Books to a temporary directory during tests so runs never touch the
-# real application-support location. This is the fallback for tests that never
-# write a Book; the LiveView feature tests claim their own directory per-test via
-# `LocalCents.BooksDirHelper`, while unit and context tests bypass it entirely by
-# injecting their own `@tag :tmp_dir` directory.
+# real application-support location. Still load-bearing even though every test now
+# claims or injects its own directory: without it `BookStore.default_dir/0` falls
+# through to `~/Library/Application Support/LocalCents/books`, so any test that
+# reaches the books directory without claiming one — a dead render of /library, say
+# — would enumerate and create the developer's actual library. This is the backstop
+# for that, not a directory tests are expected to use.
 config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_books")
 
 # Don't seed the demo library on an empty library during tests — seeding is
 # side-effecting and slow (it writes the whole document per expense), and only the
-# tests that specifically cover it claim it back on for their own process tree. It
+# tests that specifically cover it turn it back on for their own process tree. It
 # defaults on (dev, prod), so a developer's empty library still gets the demos.
 config :local_cents, :demo_seeding, false
 
@@ -42,9 +44,14 @@ config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
-# Let every level through the primary logger, but print only warnings and errors.
-# The split is what lets a test assert on a debug log without lifting the level at
-# runtime; see docs/async-testing.md for why that matters.
+# Two `config :logger` lines because these are two different knobs, not a repeat.
+# The first is the *primary* level, the gate every message passes before any handler
+# sees it. The second is the level of the *default handler*, the one that prints to
+# the console. Letting everything past the gate while the console still prints only
+# warnings and errors is what lets a test assert on a debug message via
+# `ExUnit.CaptureLog` — which adds a handler of its own, and so can only ever see
+# what the primary level already let through — without lifting the level at runtime.
+# See docs/async-testing.md for why lifting it at runtime is the thing to avoid.
 config :logger, level: :debug
 config :logger, :default_handler, level: :warning
 

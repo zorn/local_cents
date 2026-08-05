@@ -137,13 +137,16 @@ gets its own guide or ADR.
 
 ## Testing
 
-- **Every test module runs `async: true`** — a serial module costs the whole suite,
-  because ExUnit runs sync modules one at a time after every async one has drained.
-  Before dropping `async`, name the shared cell you are mutating and work through the
-  three ways not to: take the value as an argument, claim it for your process tree
-  with `LocalCents.ProcessConfig`, or swap the component. The standard, the one sharp
-  edge (work that outlives the test process loses its claim), and the checklist for a
-  new module: [`docs/async-testing.md`](docs/async-testing.md).
+- **Every test module runs `async: true`** — a synchronous test module holds up the
+  whole suite, because ExUnit runs those one at a time after every asynchronous one
+  has finished. Before dropping `async`, name the shared cell you are mutating and
+  work through the three ways to avoid mutating it: take the value as an argument,
+  claim it for your process tree with `LocalCents.ProcessConfig`, or swap the
+  component. The vocabulary — *asynchronous* / *synchronous test module*, and
+  *claim* — is in [`docs/software-terms.md`](docs/software-terms.md).
+  The standard, the two sharp edges (a claim is invisible from `setup_all`, and work
+  that outlives the test process loses it), and the checklist for a new module:
+  [`docs/async-testing.md`](docs/async-testing.md).
 
 - **Test observable behavior through the narrowest public surface** — default to a
   context's boundary API (`LocalCents.Tracking`) over its internals, reaching into

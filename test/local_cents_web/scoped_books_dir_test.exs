@@ -4,10 +4,11 @@ defmodule LocalCentsWeb.ScopedBooksDirTest do
   directory claimed by a test process is the directory a LiveView mounted *by that
   test* writes to and reads from.
 
-  The feature test modules all depend on this working, but none of them says so —
-  they would each still pass if the directory resolved to the shared application-env
-  default, right up until two of them ran at once. This module makes the claim
-  explicit and fails loudly if the seam in `LocalCents.ProcessConfig` is removed.
+  Every feature test module depends on this working, but none of them says so: each
+  would still pass if the directory resolved to the shared application-env default,
+  right up until two of them ran at once. This module states the claim outright, so
+  removing the seam in `LocalCents.ProcessConfig` fails here rather than showing up
+  later as an unexplained cross-test collision.
   """
 
   use LocalCentsWeb.FeatureCase, async: true

@@ -1,48 +1,52 @@
 # Async Testing
 
-Every test module in LocalCents runs `async: true`. This guide is the standard
-that keeps it that way: what makes a module serial, the one mechanism we use to
-avoid it, and what to do when you write code that seems to need a global.
+Every test module in LocalCents now runs `async: true`. This guide is the standard
+that keeps it that way: what forces a module to be synchronous, the one mechanism
+we use to avoid that, and what to do when you write code that seems to need a
+global.
+
+"Asynchronous test module" and "synchronous test module" are the terms this repo
+uses, and they are defined in [Software Terms](software-terms.html) along with
+**claim**, the verb for scoping a setting to your own process tree.
 
 It is a working guide, not the evidence. The survey behind it — how ExUnit
-schedules async and sync modules, how `$callers` propagates, what Ecto's sandbox
+schedules the two kinds of module, how `$callers` propagates, what Ecto's sandbox
 and Oban's suite do about the same problem — is [Test Isolation Patterns for
 Process-Wide State](test-isolation-patterns-for-global-state.html). Read that when
 you want to know *why* one of the rules below is the rule.
 
-## Why every module is async
+## Why every module is asynchronous
 
-`async: false` does not cost you one module's worth of wall clock. ExUnit drains
-every async module first, then runs the sync ones **one at a time** — so serial
-modules cost the sum of their runtimes, with no overlap and no benefit from
-`max_cases`. Before this standard existed, six serial modules held most of the
-suite's wall clock; removing them took it from 20.7s to 7.6s with an empty serial
-tail.
+We hold concurrency to be worth real effort, because a synchronous module costs
+more than the wall clock it appears to. ExUnit finishes every asynchronous module
+first, then runs the synchronous ones **one at a time** — so their cost is the sum
+of their runtimes, with no overlap and no benefit from `:max_cases`.
 
-That ratio is why "just mark it `async: false`" is not a neutral choice. A single
-serial module is cheap; the habit of reaching for it is not, because the tail
-grows by addition and never by overlap.
+That is why "just mark it `async: false`" is not a neutral choice. One synchronous
+module is cheap; the habit of reaching for one is not, because that phase of the
+run grows by addition and never by overlap. The rest of this guide is how we avoid
+needing it.
 
-## What actually forces a module serial
+## What actually forces a module to be synchronous
 
 Only one thing: **the test changes state that another concurrently-running test
 can observe.** Slow tests, side-effecting tests, and tests that spawn processes
-are all fine async. A test that writes to a shared cell is not.
+are all fine asynchronous. A test that writes to a shared cell is not.
 
-In practice that means a process-wide singleton — the application env, the Logger
-level, a named process, an ETS table, the current working directory. If you are
-reaching for `async: false`, name the specific cell you are mutating first.
-Usually there is a way to stop mutating it.
+In practice that means a process-wide singleton, such as the application env, the
+Logger level, a named process, an ETS table, or the current working directory. If
+you are reaching for `async: false`, name the specific cell you are mutating
+first. Usually there is a way to stop mutating it.
 
-Three ways, in the order to try them.
+Three ways, in the order you should try them.
 
 ### 1. Take the value as an argument
 
 The best fix, and the one that needs no machinery. `LocalCents.Tracking` accepts a
 `:books_dir` option and threads it down into `LocalCents.Tracking.BookServer`, so
 the unit and context tests pass their own `@tag :tmp_dir` directory and never
-touch a global at all. An argument is visible in the signature, cannot resolve
-wrong, and costs nothing at runtime.
+touch a global at all. An argument is visible in the signature, cannot resolve to
+the wrong value, and costs nothing at runtime.
 
 Reach for this first every time. The reasoning in full: [Avoiding `async: false`
 Tests](avoiding-async-false-tests.html).
@@ -68,9 +72,10 @@ ProcessConfig.get(:books_dir)
 
 The claim reaches further than it looks. `Phoenix.LiveViewTest` passes the test
 pid as a `"caller"` join param and LiveView writes it into the view's process
-dictionary, so a LiveView driven by `PhoenixTest` resolves the claim of the test
-driving it — and so does a `Task` that LiveView spawns, because `Task` prepends to
-`$callers` as it goes. Two tests running at once resolve their own values.
+dictionary, so a LiveView under `PhoenixTest` resolves the claim made by the test
+that drives it — and so does a `Task` that LiveView spawns, because `Task`
+prepends to `$callers` as it goes. Two tests running at once each resolve their
+own value.
 
 `LocalCents.BooksDirHelper` is the worked example; `setup :with_temp_books_dir` is
 all a feature test needs.
@@ -87,8 +92,8 @@ whether the subsystem should be swappable instead.
 
 There is no rule against `async: false`; there is a rule against reaching for it
 before the three above. A genuinely node-wide mutation with no seam — the ExUnit
-docs' own example is `File.cd/1` — is a legitimate serial module. Say why in a
-comment on the `use` line, naming the cell, so the next reader can tell a
+docs' own example is `File.cd/1` — is a legitimate synchronous module. Say why in
+a comment on the `use` line, naming the cell, so the next reader can tell a
 considered decision from an unexamined one.
 
 ## Two sharp edges
@@ -125,10 +130,10 @@ A claim dies with the test process. **A process still working after the test
 returns can no longer resolve it** and falls back to the application env.
 
 This is not hypothetical. The Library window seeds a demo library in a task
-spawned by `start_async`. A test that asserted the loading state and returned left
-that task writing Books into the shared fallback directory a beat later, because
-by then the test process it would have resolved through was gone. The fix is to
-wait for the work to settle before the test ends:
+spawned by `start_async`. One test asserted the loading state and then returned
+while that task was still running, so the task wrote its Books into the shared
+fallback directory a beat later — by then the test process it would have resolved
+through was gone. The fix is to wait for the work to settle before the test ends:
 
 ```elixir
 conn
@@ -162,9 +167,9 @@ prints what it always did.
 
 **`:books_dir` still has an application-env value.** It is the fallback for tests
 that never write a Book, and a backstop so a run can never touch the real
-application-support location. Feature tests claim their own directory over the top
-of it. `test/test_helper.exs` empties it before each run, so anything that lands
-there is a leak from that run and not sediment from an older one.
+application-support location. A feature test's own claim takes precedence over it.
+`test/test_helper.exs` empties it before each run, so anything that lands there is
+a leak from that run and not sediment from an older one.
 
 ## Checklist for a new test module
 

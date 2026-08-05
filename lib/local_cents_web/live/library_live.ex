@@ -357,10 +357,10 @@ defmodule LocalCentsWeb.LibraryLive do
 
   # Seeding is disabled by the `:demo_seeding` setting in the test env (it writes a
   # document per expense, so it would slow and pollute unrelated tests); it defaults
-  # on, so a real first launch is seeded. Read through `LocalCents.ProcessConfig` so
-  # the tests that do cover seeding can claim it back on for themselves alone — this
-  # runs in the LiveView process, which the claim reaches (see
-  # [Async testing](async-testing.html)).
+  # on, so a real first launch is seeded. The setting is read through
+  # `LocalCents.ProcessConfig` so that the tests which do cover seeding can turn it
+  # back on for themselves alone. This runs in the LiveView process, and a claim made
+  # by the test driving that view reaches it (see [Async testing](async-testing.html)).
   defp seeding_enabled?, do: ProcessConfig.get(:demo_seeding, true)
 
   # Runs in the async task started by mount/3: seed the demo Books, then return the
