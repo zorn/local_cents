@@ -74,6 +74,19 @@ defmodule LocalCents.ProcessConfig do
   This solution is heavily inspired by Andrea Leopardi's blog post on [Async
   tests in Elixir](https://andrealeopardi.com/posts/async-tests-in-elixir/) and
   I thank him for writing it up.
+
+  ## Gotchas
+
+  You do not want to attempt to `put/2` a value inside of `setup_all` because that code [runs in it's own process](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#setup_all/1). Same [is true](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#on_exit/2) for `on_exit`.
+
+  If you need to access resources after the test process is complete (all
+  `ProcessConfig` things die when the test process is dead) you may need to
+  refactor this to use
+  [`nimble_ownership`](https://nimble-ownership.hexdocs.pm). See [this blog
+  post](https://andrealeopardi.com/posts/async-tests-in-elixir/) for more
+  details.
+
+  `BookServer` processes are supervised by the application rather than by the test, so they outlive the test that opened the Book. That is safe because each server is handed its directory as a `start_link` argument and holds it in state — it never tries to resolves the setting, so it has nothing to lose when the test process dies. This does mean memory can climb a bit over time during a large test suite run but we shall leave that future concern to a future day.
   """
 
   use Boundary, top_level?: true, deps: []
