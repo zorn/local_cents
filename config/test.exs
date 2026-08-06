@@ -21,9 +21,7 @@ config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
 config :local_cents, LocalCents.Tracking.BookStore, raise_on_process_tree_dir_not_set: true
 
 # Don't seed the demo library on an empty library during tests — seeding is
-# side-effecting and slow (it writes the whole document per expense), and only the
-# tests that specifically cover it turn it back on for their own process tree. It
-# defaults on (dev, prod), so a developer's empty library still gets the demos.
+# side-effecting and slow. Only the tests that specifically cover it turn it back on.
 config :local_cents, :demo_seeding, false
 
 # Shrink the BookServer viewer-disconnect grace period (default 60s — see
