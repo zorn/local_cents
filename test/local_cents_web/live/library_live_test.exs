@@ -80,7 +80,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> assert_has("#books", text: "Groceries")
   end
 
-  test "Create stays disabled until a non-blank name is entered", ~M{conn} do
+  test "`Create` stays disabled until a non-blank name is entered", ~M{conn} do
     conn
     |> visit(~p"/library")
     |> click_button("New Book")
