@@ -31,17 +31,19 @@ defmodule LocalCents.Tracking.BookStore do
 
   @extension ".lcbook"
 
+  @raise_on_process_tree_dir_not_set Application.compile_env(
+                                       :local_cents,
+                                       [__MODULE__, :raise_on_process_tree_dir_not_set],
+                                       false
+                                     )
+
   @doc """
   Returns the default books directory, creating it if needed.
 
-  Returns the `:books_dir` setting when one is configured, and otherwise the
-  platform's per-user application-support location (`~/Library/Application
-  Support/LocalCents/books` on macOS). The setting is read through
-  `LocalCents.ProcessConfig`, so a test resolves the directory it claimed for
-  itself rather than one shared with every concurrent test.
+  During a non-test run this is the platform's per-user application-support location
+  (`~/Library/Application Support/LocalCents/books` on macOS).
 
-  Callers that already hold a directory pass it to the functions below instead;
-  `LocalCents.Tracking` resolves this once and threads it down.
+  During a test run this is the `:books_dir` set inside of ProcessConfig. If a test process has not set that value this function will raise, because we never want a test to touch user space.
   """
   @spec default_dir() :: String.t()
   # sobelow_skip ["Traversal.FileModule"]
@@ -49,11 +51,26 @@ defmodule LocalCents.Tracking.BookStore do
   # user input, so this File call cannot be steered to traverse.
   def default_dir do
     dir =
-      ProcessConfig.get(:books_dir) ||
-        Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+      case ProcessConfig.get(:books_dir, :not_set) do
+        :not_set -> default_user_space_dir()
+        process_tree_dir -> process_tree_dir
+      end
 
     File.mkdir_p!(dir)
     dir
+  end
+
+  # Needed to be more explicit here to resolve Elixir compile type checking.
+  if @raise_on_process_tree_dir_not_set do
+    @spec default_user_space_dir() :: no_return()
+    defp default_user_space_dir do
+      raise "During a test run we never want to return the user space directory. A test module should pass in a preferred `books_dir` or set the `ProcessConfig` for its process tree."
+    end
+  else
+    @spec default_user_space_dir() :: String.t()
+    defp default_user_space_dir do
+      Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+    end
   end
 
   @doc """

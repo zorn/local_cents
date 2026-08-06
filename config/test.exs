@@ -13,21 +13,12 @@ config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 # Allows for `async: true` on LiveView tests.
 config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
 
-# Persist Books to a temporary directory during tests so runs never touch the
-# real application-support location. Still load-bearing even though every test now
-# claims or injects its own directory: without it `BookStore.default_dir/0` falls
-# through to `~/Library/Application Support/LocalCents/books`, so any test that
-# reaches the books directory without claiming one — a dead render of /library, say
-# — would enumerate and create the developer's actual library. This is the backstop
-# for that, not a directory tests are expected to use.
-#
-# Keyed by OS pid so two runs never share it. The path is otherwise identical for
-# every checkout on the machine, and this repo's workflow routinely has more than
-# one worktree running `mix test` at once — mix's build lock keeps one checkout
-# from racing itself, and does nothing across checkouts.
-config :local_cents,
-       :books_dir,
-       Path.join(System.tmp_dir!(), "local_cents_test_books_#{System.pid()}")
+# During a test run, if we get to the point where `BookStore.default_dir/0` is
+# called and the process tree has no `:books_dir` set, then the offending test
+# module either needs to pass in a preferred `books_dir` into the function
+# options or set the `ProcessConfig`. We never want to allow test logic to
+# fallback to the default directory which is the user space.
+config :local_cents, LocalCents.Tracking.BookStore, raise_on_process_tree_dir_not_set: true
 
 # Don't seed the demo library on an empty library during tests — seeding is
 # side-effecting and slow (it writes the whole document per expense), and only the
