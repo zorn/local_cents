@@ -37,17 +37,8 @@ config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
-# Two `config :logger` lines because these are two different knobs, not a repeat.
-# The first is the *primary* level, the gate every message passes before any handler
-# sees it. The second is the level of the *default handler*, the one that prints to
-# the console. Letting everything past the gate while the console still prints only
-# warnings and errors is what lets a test assert on a debug message via
-# `ExUnit.CaptureLog` — which adds a handler of its own, and so can only ever see
-# what the primary level already let through — without lifting the level at runtime.
-# Lifting it at runtime is the thing to avoid: it is a node-wide mutation, so the
-# module doing it would have to drop `async: true`.
-config :logger, level: :debug
-config :logger, :default_handler, level: :warning
+# Suppress `:debug` and `:info` logs during test runs.
+config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime

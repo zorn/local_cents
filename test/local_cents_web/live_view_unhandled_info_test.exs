@@ -26,15 +26,14 @@ defmodule LocalCentsWeb.LiveViewUnhandledInfoTest do
     assert_received :handled_by_specific_clause
   end
 
+  # Swallow the known warning for this test to keep test output clean.
+  @tag :capture_log
   test "an unmatched message is ignored instead of raising" do
     assert {:noreply, %Socket{}} = ExampleLive.handle_info(:surprise, %Socket{})
     refute_received :handled_by_specific_clause
   end
 
-  test "the ignored message is logged at debug for visibility in development" do
-    # No `Logger.configure/1` here, deliberately: the test env's primary level is
-    # already `:debug` so `capture_log` can see this message. Lifting it at runtime
-    # instead is a node-wide mutation, and is what kept this module `async: false`.
+  test "the ignored message is logged at warning so a forgotten handler surfaces" do
     log =
       capture_log(fn ->
         ExampleLive.handle_info({:some_future_signal, "abc"}, %Socket{})
