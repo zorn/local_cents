@@ -5,7 +5,10 @@ defmodule LocalCents.ProcessConfig do
 
   ## Problem Statement
 
-  We value a fast test suite. All test modules of the project need to prioritize the `async: true` option however this is not always easy thing to reach for depending on what part of the system is under test.
+  We value a through and fast test suite as it helps us work efficiently. All
+  test modules of the project need to prioritize the `async: true` option
+  however this is not always an easy thing to enable depending on what part of
+  the system is under test.
 
   For simple pure functions, we get this mostly for free.
 
@@ -13,7 +16,12 @@ defmodule LocalCents.ProcessConfig do
         match?({:ok, _}, Base.decode64(string))
       end
 
-  For functions that will rely on a dynamic value that could be considered global state we can provide options (via `opts` keyword lists) or other arguments to allow a call site to override. This can be helpful to override the concept of `now` in a test or provide a test-unique directory to make sure this test module does not interfere with the work going on in another test module.
+  For functions that will rely on a dynamic value that could be considered
+  global state we can provide options (via `opts` keyword lists) or other
+  arguments to allow a call site to override. This can be helpful to override
+  the concept of `now` in a test or provide a test-unique directory to make sure
+  this test module does not interfere with the work going on in another test
+  module (while a production configuration would likely used a shared space).
 
        def quick_add_expense(description, cost, opts \\ []) do
           now = Keyword.get(opts, :now, DateTime.utc_now())
@@ -25,7 +33,7 @@ defmodule LocalCents.ProcessConfig do
 
   If you need to override an external dependency you can lean on [Mox](https://hex.pm/packages/mox), and if you are looking to override an internal dependency you can lean on [Mimic](https://hex.pm/packages/mimic).
 
-  For LocalCents we are building up a [rich OTP GenServer hierarchy](file:///Users/zorn/ProjectRepos/local_cents/doc/book-runtime-architecture.html#supervision-tree), and when we start building test modules to validate LiveViews experiences we don't want to be required to mock out a bunch of static expectations, we want each LiveView test module to have it's own copy of the
+  For LocalCents we are building up a [rich OTP GenServer hierarchy](file:///Users/zorn/ProjectRepos/local_cents/doc/book-runtime-architecture.html#supervision-tree) and that tree has singleton-like assumptions about where books are stored on disk, the `:books_dir`. Normally inside of a LiveView test module you would have no obvious way to configure the `:books_dir` so what we do is
 
 
 
