@@ -1,7 +1,7 @@
 defmodule LocalCents.ProcessConfig do
   @moduledoc """
   Provides get and put logic across a `ProcessTree` allowing for ownership of resources
-  by test process that normally in production would be global.
+  and configurations by test process that normally in production would be global.
 
   ## Problem Statement
 
@@ -29,49 +29,51 @@ defmodule LocalCents.ProcessConfig do
           ...
        end
 
-  For databases that want isolated state during async test runs we lean on the [database sandboxing provided by Ecto](https://ecto-sql.hexdocs.pm/Ecto.Adapters.SQL.Sandbox.html).
+  For databases that want isolated state during async test runs we lean on the
+  [database sandboxing provided by Ecto](https://ecto-sql.hexdocs.pm/Ecto.Adapters.SQL.Sandbox.html).
 
-  If you need to override an external dependency you can lean on [Mox](https://hex.pm/packages/mox), and if you are looking to override an internal dependency you can lean on [Mimic](https://hex.pm/packages/mimic).
+  If you need to override an external dependency you can lean on
+  [Mox](https://hex.pm/packages/mox), and if you are looking to override an
+  internal dependency you can lean on [Mimic](https://hex.pm/packages/mimic).
 
-  For LocalCents we are building up a [rich OTP GenServer hierarchy](file:///Users/zorn/ProjectRepos/local_cents/doc/book-runtime-architecture.html#supervision-tree) and that tree has singleton-like assumptions about where books are stored on disk, the `:books_dir`. Normally inside of a LiveView test module you would have no obvious way to configure the `:books_dir` so what we do is
+  For LocalCents we are building up a [rich OTP GenServer
+  hierarchy](file:///Users/zorn/ProjectRepos/local_cents/doc/book-runtime-architecture.html#supervision-tree)
+  and that tree has a global assumption about where books are stored on disk.
+  The knowledge for where the books are stored comes from
+  `BookStore.default_dir/0`. Normally inside of a LiveView test module you would
+  have no obvious way to override this value, let alone override for an
+  asynchronous running test module.
 
+  To solve this we use the [`process_tree`
+  library](https://process-tree.hexdocs.pm) which allows us to create a space of
+  ownership per process. That could be ownership of a GenServer (we don't do
+  this currently but might in the future) or ownership of a configuration value.
+  We then update the logic to, inside of a test build, check the process tree
+  for the value before falling back to the application env. This allows us to
+  have a global value in production but a test-process-unique value in the test
+  build.
 
+  For a LiveView test module that wants to be `async: true` it looks like:
 
-  Some settings have no caller in a position to inject them: `default_dir/0` runs
-  deep inside `LocalCents.Tracking` with no directory in hand, and a LiveView asks
-  whether demo seeding is on from a process the test never touches. Read straight
-  from the application env, each of those settings is one global cell — so a test
-  that wants its own value has to mutate that cell, and every module that does so
-  must run `async: false`.
+      @moduletag :tmp_dir
+      setup :with_async_books_dir
 
-  This module is the seam that removes that constraint. In production `get/2` is
-  `Application.get_env/3` and nothing more. In the test build it first looks the
-  key up in the calling process's tree — the process dictionaries of the caller,
-  its `$callers`, and its ancestors — and only falls back to the application env
-  when no process in that tree has claimed a value. A test claims one with
-  `put/2`, and every process it goes on to spawn (a `Task`, the LiveView that
-  `Phoenix.LiveViewTest` joins on its behalf) resolves to that value while a
-  concurrent test's tree resolves to its own.
+  And the helper looks like:
 
-  The result is that the setting stays global in production and stops being global
-  in the suite, which is what lets every test module run `async: true`. See
-  [Async testing](async-testing.html) for the full strategy, and for what to do
-  when you add a setting that needs this treatment.
+      def with_async_books_dir(%{tmp_dir: tmp_dir}) do
+        ProcessConfig.put(:books_dir, tmp_dir)
+      end
 
-      # In a test's setup:
-      ProcessConfig.put(:books_dir, dir)
+  [ExUnit's `tmp_dir`](https://ex-unit.hexdocs.pm/1.20.3/ExUnit.Case.html#module-tmp-dir)
+  is per test module name and automatically cleaned up after the test module
+  finishes.
 
-      # Anywhere the test reaches, directly or through a LiveView:
-      ProcessConfig.get(:books_dir)
-      #=> the dir this test claimed, not the one a concurrent test claimed
+  Inside of `BookStore.default_dir/0` we use `ProcessConfig.get(:books_dir)` or
+  fallback to the standard production value.
 
-  ## Prefer an argument when there is one
-
-  This is the fallback, not the goal. Where a caller can pass the value down —
-  the way `LocalCents.Tracking` accepts `:books_dir` and threads it into
-  `LocalCents.Tracking.BookServer` — do that instead: an argument is visible in
-  the signature, needs no lookup, and cannot resolve to the wrong value. Reach for
-  `ProcessConfig` only for the ambient reads that have no such path.
+  This solution is heavily inspired by Andrea Leopardi's blog post on [Async
+  tests in Elixir](https://andrealeopardi.com/posts/async-tests-in-elixir/) and
+  I thank him for writing it up.
   """
 
   use Boundary, top_level?: true, deps: []
@@ -85,10 +87,9 @@ defmodule LocalCents.ProcessConfig do
                           )
 
   @doc """
-  Returns the value of the `:local_cents` setting `key`.
+  Returns the value of `key` inside the `:local_cents` application settings, or `default` if none is set.
 
-  Resolves the calling process's tree first in the test build (see the moduledoc),
-  then the application env, then `default`.
+  Resolves via calling process's tree first in the test build, then the application env, then `default`.
   """
   @spec get(key :: atom(), default :: term()) :: term()
   def get(key, default \\ nil) when is_atom(key) do
@@ -105,16 +106,16 @@ defmodule LocalCents.ProcessConfig do
     end
 
     @doc """
-    Claims `value` for `key` in the calling process and everything it spawns.
+    Records `value` for `key` in the calling process and everything it spawns.
 
-    A `nil` value is **not** a claim. The tree walk returns the first *non-nil*
-    value it finds, so `put(key, nil)` is indistinguishable from never having
-    called this and `get/2` falls through to the application env. `false` is a
-    real value and does round-trip. There is no way to claim "no value at all";
-    claim a sentinel instead if a test needs one.
+    A `nil` value is **not** a valid value. The tree walk during `get/2` returns
+    the first *non-nil* value it finds, so `put(key, nil)` is indistinguishable
+    from never having called this and `get/2` falls through to the application
+    env. `false` is a real value and does round-trip. There is no way to define
+    "no value at all"; use a sentinel instead if a test needs one.
 
-    Defined in the test build only — production has no reason to rebind a setting,
-    and the compile-time switch means a call to it outside the suite fails to
+    Defined in the test build only — production has no reason to put a setting,
+    and the compile-time switch means a call to it outside the test suite fails to
     compile rather than silently doing nothing.
     """
     @spec put(key :: atom(), value :: term()) :: :ok
