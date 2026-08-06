@@ -10,10 +10,7 @@ config :local_cents, LocalCentsWeb.Endpoint,
 # In test we don't send emails
 config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 
-# Resolve the settings below through the calling process's tree before the
-# application env, so a test can claim its own value instead of mutating a global
-# that every concurrent test shares. This is what lets the whole suite run
-# `async: true`; see `LocalCents.ProcessConfig`.
+# Allows for `async: true` on LiveView tests.
 config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
 
 # Persist Books to a temporary directory during tests so runs never touch the
