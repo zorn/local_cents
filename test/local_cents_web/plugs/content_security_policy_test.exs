@@ -54,7 +54,7 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
     # These render /library, which reads the books directory. The assertions are all
     # about headers, so the contents do not matter — but claiming a directory keeps
     # the application-env fallback a pure backstop rather than something a passing
-    # test routinely reads (see docs/async-testing.md).
+    # test routinely reads.
     setup ~M{tmp_dir} do
       LocalCents.ProcessConfig.put(:books_dir, tmp_dir)
       :ok

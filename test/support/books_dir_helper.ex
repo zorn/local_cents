@@ -9,8 +9,7 @@ defmodule LocalCents.BooksDirHelper do
   injected as an argument: the LiveView calls the dir-free `LocalCents.Tracking`
   API in its own process. The claim is scoped to the test's process tree via
   `LocalCents.ProcessConfig` rather than written to a shared application env,
-  which is what lets those modules run `async: true` alongside each other. See
-  [Async testing](async-testing.html).
+  which is what lets those modules run `async: true` alongside each other.
 
   Unit and context tests use the same `:tmp_dir`, but pass it explicitly to the
   `LocalCents.Tracking`/`BookStore` functions instead of claiming it, which is

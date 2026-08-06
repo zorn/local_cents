@@ -67,7 +67,7 @@ top-level for the same reason the contexts are — so `LocalCentsWeb` can list i
 `LocalCents.ProcessConfig` is a third shape: a *leaf utility*. It depends on
 nothing and exports nothing beyond its own root module, and both the tracking
 context and the web layer list it in `deps` because both read a setting through
-it (see [Async testing](async-testing.html)). It is top-level rather than a member
+it. It is top-level rather than a member
 of the `LocalCents` core precisely so that `LocalCents.Tracking` can name it
 directly instead of taking a dependency on the whole core to reach one function.
 

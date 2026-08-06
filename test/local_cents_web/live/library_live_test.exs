@@ -210,8 +210,8 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       |> visit(~p"/library")
       |> assert_has("[role='status']", text: "Setting up your demo library")
       # Then wait for the seed to settle rather than returning while its task is still
-      # writing — see "Don't abandon work you started" in
-      # [Async testing](async-testing.html).
+      # writing: a task still running after the test process is gone can no longer
+      # resolve the claim, and writes into the shared fallback directory instead.
       |> refute_has("[role='status']", timeout: 10_000)
     end
 

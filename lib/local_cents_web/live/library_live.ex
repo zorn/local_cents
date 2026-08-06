@@ -360,7 +360,7 @@ defmodule LocalCentsWeb.LibraryLive do
   # on, so a real first launch is seeded. The setting is read through
   # `LocalCents.ProcessConfig` so that the tests which do cover seeding can turn it
   # back on for themselves alone. This runs in the LiveView process, and a claim made
-  # by the test driving that view reaches it (see [Async testing](async-testing.html)).
+  # by the test driving that view reaches it through `$callers`.
   defp seeding_enabled?, do: ProcessConfig.get(:demo_seeding, true)
 
   # Runs in the async task started by mount/3: seed the demo Books, then return the

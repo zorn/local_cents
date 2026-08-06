@@ -143,10 +143,10 @@ gets its own guide or ADR.
   work through the three ways to avoid mutating it: take the value as an argument,
   claim it for your process tree with `LocalCents.ProcessConfig`, or swap the
   component. The vocabulary — *asynchronous* / *synchronous test module*, and
-  *claim* — is in [`docs/software-terms.md`](docs/software-terms.md).
-  The standard, the two sharp edges (a claim is invisible from `setup_all`, and work
-  that outlives the test process loses it), and the checklist for a new module:
-  [`docs/async-testing.md`](docs/async-testing.md).
+  *claim* — is in [`docs/software-terms.md`](docs/software-terms.md). Two sharp edges
+  to know: a claim made in `setup_all` runs in a different process and so is invisible
+  to the tests, and work that outlives the test process loses the claim and falls back
+  to the application env. The seam itself is documented in `LocalCents.ProcessConfig`.
 
 - **Test observable behavior through the narrowest public surface** — default to a
   context's boundary API (`LocalCents.Tracking`) over its internals, reaching into

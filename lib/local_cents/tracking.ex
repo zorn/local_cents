@@ -42,9 +42,9 @@ defmodule LocalCents.Tracking do
 
   Injecting these keeps the functional core clock-free (see
   [ADR 0014](0014-functional-core-process-shell.html)) and lets the suite run with
-  per-test directories concurrently — the first and cheapest of the options in
-  [Async testing](async-testing.html). Their defaults are dynamic, so they are
-  applied after validation rather than declared in the schema.
+  per-test directories concurrently — the cheapest way to keep a setting out of a
+  shared global, because it needs no machinery at all. Their defaults are dynamic,
+  so they are applied after validation rather than declared in the schema.
   """
 
   # As the context's public facade, this module coordinates every internal piece by
@@ -590,7 +590,7 @@ defmodule LocalCents.Tracking do
   # option, or the ambient default. This runs in the *caller's* process — the LiveView,
   # or the test process on a dead render — which is what lets a feature test claim a
   # directory for its own process tree when it has no way to inject one (see
-  # [Async testing](async-testing.html)).
+  # `LocalCents.ProcessConfig`).
   defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
 
   @doc false

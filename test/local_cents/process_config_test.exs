@@ -2,7 +2,7 @@ defmodule LocalCents.ProcessConfigTest do
   @moduledoc """
   Covers the resolver that lets a test scope a setting to its own process tree
   instead of mutating the application env — the mechanism the whole suite's
-  `async: true` rests on (see [Async testing](async-testing.html)).
+  `async: true` rests on.
   """
 
   use ExUnit.Case, async: true

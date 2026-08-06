@@ -23,7 +23,7 @@ defmodule LocalCents.Tracking.BookStore do
   of sharing one. `default_dir/0` resolves the ambient default for the callers
   that don't inject a directory: the production app, and the LiveView feature
   tests, which have no way to inject one and instead claim a directory for their
-  own process tree (see [Async testing](async-testing.html)).
+  own process tree (see `LocalCents.ProcessConfig`).
   """
 
   alias LocalCents.ProcessConfig

@@ -112,8 +112,8 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
 
 * **Asynchronous test module** -- a test module declared `async: true`. ExUnit may
   run it concurrently with other asynchronous modules, up to `:max_cases`. Every
-  test module in LocalCents is one; see
-  [Async testing](async-testing.md) for the standard and how to keep it that way.
+  test module in LocalCents is one; the Testing section of `CODING_STANDARDS.md`
+  at the repo root is the standard for keeping it that way.
 * **Synchronous test module** -- a test module declared `async: false`. ExUnit runs
   every synchronous module **after** all asynchronous ones have finished, and runs
   them one at a time, so their cost is the sum of their runtimes rather than the

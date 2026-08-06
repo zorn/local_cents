@@ -13,7 +13,7 @@ config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 # Resolve the settings below through the calling process's tree before the
 # application env, so a test can claim its own value instead of mutating a global
 # that every concurrent test shares. This is what lets the whole suite run
-# `async: true`; see `LocalCents.ProcessConfig` and docs/async-testing.md.
+# `async: true`; see `LocalCents.ProcessConfig`.
 config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
 
 # Persist Books to a temporary directory during tests so runs never touch the
@@ -58,7 +58,8 @@ config :swoosh, :api_client, false
 # warnings and errors is what lets a test assert on a debug message via
 # `ExUnit.CaptureLog` — which adds a handler of its own, and so can only ever see
 # what the primary level already let through — without lifting the level at runtime.
-# See docs/async-testing.md for why lifting it at runtime is the thing to avoid.
+# Lifting it at runtime is the thing to avoid: it is a node-wide mutation, so the
+# module doing it would have to drop `async: true`.
 config :logger, level: :debug
 config :logger, :default_handler, level: :warning
 

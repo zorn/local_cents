@@ -34,8 +34,7 @@ defmodule LocalCentsWeb.LiveViewUnhandledInfoTest do
   test "the ignored message is logged at debug for visibility in development" do
     # No `Logger.configure/1` here, deliberately: the test env's primary level is
     # already `:debug` so `capture_log` can see this message. Lifting it at runtime
-    # instead is what kept this module `async: false` (see
-    # [Async testing](async-testing.html)).
+    # instead is a node-wide mutation, and is what kept this module `async: false`.
     log =
       capture_log(fn ->
         ExampleLive.handle_info({:some_future_signal, "abc"}, %Socket{})

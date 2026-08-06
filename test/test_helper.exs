@@ -5,7 +5,8 @@ ExUnit.start()
 # reached the books directory without claiming one — or by work that outlived the
 # test that started it and so lost the claim. Report that rather than deleting the
 # evidence; remove the directory only when it is clean, so runs do not leave a trail
-# of empty directories behind. See docs/async-testing.md.
+# of empty directories behind. See `LocalCents.ProcessConfig` for the seam that lets
+# a test claim its own directory.
 books_dir = Application.fetch_env!(:local_cents, :books_dir)
 
 ExUnit.after_suite(fn _results ->
@@ -20,7 +21,8 @@ ExUnit.after_suite(fn _results ->
         #{length(files)} file(s) reached the fallback books directory.
           #{books_dir}
         Some test read or wrote the books directory without claiming one, or started \
-        work that outlived it. See "Two sharp edges" in docs/async-testing.md.\
+        work that outlived it — a process still running after the test returns can no \
+        longer resolve the claim.\
         """,
         []
       )

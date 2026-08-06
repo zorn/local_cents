@@ -118,7 +118,6 @@ defmodule LocalCents.MixProject do
       "docs/moduledoc-style.md",
       "docs/comment-style.md",
       "docs/mermaid-diagrams.md",
-      "docs/async-testing.md",
       "docs/testing-coverage.md",
       "docs/book-runtime-architecture.md",
       "docs/book-runtime-lifecycle.md",
@@ -148,7 +147,6 @@ defmodule LocalCents.MixProject do
         "docs/moduledoc-style.md",
         "docs/comment-style.md",
         "docs/mermaid-diagrams.md",
-        "docs/async-testing.md",
         "docs/testing-coverage.md",
         "docs/book-runtime-architecture.md",
         "docs/book-runtime-lifecycle.md",
@@ -258,9 +256,9 @@ defmodule LocalCents.MixProject do
 
       # Resolves a value through the calling process's tree (`$callers`,
       # `$ancestors`, `:parent`), which is what lets a test scope a setting to
-      # itself instead of mutating a global — see lib/local_cents/process_config.ex
-      # and docs/async-testing.md. `only: :test` because `ProcessConfig` compiles
-      # the lookup away outside the test build.
+      # itself instead of mutating a global — see lib/local_cents/process_config.ex.
+      # `only: :test` because `ProcessConfig` compiles the lookup away outside the
+      # test build.
       {:process_tree, "~> 0.3", only: :test},
 
       # For high-level, browser-like feature tests that read as user flows
