@@ -6,7 +6,9 @@ defmodule LocalCentsWeb.LibraryLiveTest do
   alias LocalCents.ProcessConfig
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   test "shows the window title in a draggable title bar", ~M{conn} do
     conn

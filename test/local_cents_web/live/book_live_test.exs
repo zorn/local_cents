@@ -5,7 +5,9 @@ defmodule LocalCentsWeb.BookLiveTest do
 
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   test "shows the book's name", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")

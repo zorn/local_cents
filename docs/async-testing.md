@@ -77,8 +77,10 @@ that drives it — and so does a `Task` that LiveView spawns, because `Task`
 prepends to `$callers` as it goes. Two tests running at once each resolve their
 own value.
 
-`LocalCents.BooksDirHelper` is the worked example; `setup :with_temp_books_dir` is
-all a feature test needs.
+`LocalCents.BooksDirHelper` is the worked example: a feature test tags
+`@moduletag :tmp_dir` and adds `setup :with_async_books_dir`, which claims that
+directory for the test's process tree. Same directory the unit tests get — only
+the way it reaches the code differs.
 
 ### 3. Swap the component, don't isolate the state
 
@@ -121,8 +123,8 @@ end
 
 The same reasoning rules out `on_exit`, which also runs in a separate process:
 anything keyed to `self()` resolves differently there. Close over the value
-instead, the way `LocalCents.BooksDirHelper` closes over the directory path it is
-about to remove.
+instead — bind it in the setup body and let the callback capture it, rather than
+calling `ProcessConfig.get/2` inside the callback and getting the fallback.
 
 ### Don't abandon work you started
 
@@ -186,8 +188,9 @@ quietly deleting the evidence.
 
 - Start at `async: true`. Only drop it after you have named the shared cell and
   ruled out all three options above.
-- Need a books directory? `@moduletag :tmp_dir` and pass it explicitly for unit
-  and context tests; `setup :with_temp_books_dir` for feature tests.
+- Need a books directory? `@moduletag :tmp_dir` either way — pass it explicitly
+  in unit and context tests, or add `setup :with_async_books_dir` to claim it in
+  feature tests.
 - Claim settings in `setup`, not `setup_all`.
 - Do not call `Application.put_env/3` in a test. It is the mutation this whole
   guide exists to avoid, and it is the one thing that will make a passing suite

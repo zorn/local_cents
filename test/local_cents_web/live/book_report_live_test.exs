@@ -5,7 +5,9 @@ defmodule LocalCentsWeb.BookReportLiveTest do
 
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   # Fixed dates keep the fixtures deterministic; tests visit with `?range=all` so the
   # whole-Book span is used regardless of the wall clock.

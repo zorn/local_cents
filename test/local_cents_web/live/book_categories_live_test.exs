@@ -5,7 +5,9 @@ defmodule LocalCentsWeb.BookCategoriesLiveTest do
 
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   describe "navigation" do
     test "reaches the categories page from the document window and back", ~M{conn} do
