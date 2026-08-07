@@ -20,9 +20,12 @@ defmodule LocalCents.ProcessConfigTest do
   @unset_key :process_config_test_unset
 
   describe "get/2 without a scoped value" do
-    test "falls back to the application env" do
-      assert ProcessConfig.get(:books_dir) ==
-               Application.get_env(:local_cents, :books_dir)
+    test "resolves the application env value" do
+      key = :"process_config_test_app_env_#{System.unique_integer([:positive])}"
+      Application.put_env(:local_cents, key, "/app/env/books")
+      on_exit(fn -> Application.delete_env(:local_cents, key) end)
+
+      assert ProcessConfig.get(key) == "/app/env/books"
     end
 
     test "returns the given default when the application env has no value" do
@@ -45,9 +48,13 @@ defmodule LocalCents.ProcessConfigTest do
     end
 
     test "takes precedence over the application env" do
-      ProcessConfig.put(:books_dir, "/scoped/books")
+      key = :"process_config_test_app_env_#{System.unique_integer([:positive])}"
+      Application.put_env(:local_cents, key, "/app/env/books")
+      on_exit(fn -> Application.delete_env(:local_cents, key) end)
 
-      assert ProcessConfig.get(:books_dir) == "/scoped/books"
+      ProcessConfig.put(key, "/scoped/books")
+
+      assert ProcessConfig.get(key) == "/scoped/books"
     end
 
     test "scopes a false value, which must not read as unset" do
