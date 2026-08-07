@@ -65,8 +65,9 @@ defmodule LocalCents.ProcessConfig do
       end
 
   [ExUnit's `tmp_dir`](https://ex-unit.hexdocs.pm/1.20.3/ExUnit.Case.html#module-tmp-dir)
-  is per test module name and automatically cleaned up after the test module
-  finishes.
+  gives each test its own directory (the path carries the test name) and empties
+  it *before* the test runs rather than removing it after, so a failing test's
+  files are left on disk to read.
 
   Inside of `BookStore.default_dir/0` we use `ProcessConfig.get(:books_dir)` or
   fall back to the standard production value.
