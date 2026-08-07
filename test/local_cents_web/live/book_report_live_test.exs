@@ -1,12 +1,13 @@
 defmodule LocalCentsWeb.BookReportLiveTest do
-  # Not async: opening Books uses the global :books_dir env.
-  use LocalCentsWeb.FeatureCase, async: false
+  use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
 
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   # Fixed dates keep the fixtures deterministic; tests visit with `?range=all` so the
   # whole-Book span is used regardless of the wall clock.

@@ -137,6 +137,17 @@ gets its own guide or ADR.
 
 ## Testing
 
+- **Every test module runs `async: true`** — a synchronous test module holds up the
+  whole suite, because ExUnit runs those one at a time after every asynchronous one
+  has finished. Before dropping `async`, name the shared cell you are mutating and
+  work through the three ways to avoid mutating it: take the value as an argument,
+  claim it for your process tree with `LocalCents.ProcessConfig`, or swap the
+  component. The vocabulary — *asynchronous* / *synchronous test module*, and
+  *claim* — is in [`docs/software-terms.md`](docs/software-terms.md). Two sharp edges
+  to know: a claim made in `setup_all` runs in a different process and so is invisible
+  to the tests, and work that outlives the test process loses the claim and falls back
+  to the application env. The seam itself is documented in `LocalCents.ProcessConfig`.
+
 - **Test observable behavior through the narrowest public surface** — default to a
   context's boundary API (`LocalCents.Tracking`) over its internals, reaching into
   an internal module only for a guarantee the API can't express (a NIF/CRDT

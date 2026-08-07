@@ -1,12 +1,13 @@
 defmodule LocalCentsWeb.BookLiveTest do
-  # Not async: opening Books uses the global :books_dir env.
-  use LocalCentsWeb.FeatureCase, async: false
+  use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
 
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   test "shows the book's name", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")

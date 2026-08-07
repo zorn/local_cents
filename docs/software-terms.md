@@ -107,3 +107,19 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
 
   Unrelated: "client" in the LiveView sense — the JavaScript half of the socket — is a
   different axis. Both clients here run a browser engine and both have a JS client.
+
+## Asynchronous and synchronous test modules
+
+* **Asynchronous test module** — a test module declared `async: true`. ExUnit may
+  run it concurrently with other asynchronous modules, up to `:max_cases`. Every
+  test module in LocalCents strives to be one; the Testing section of
+  `CODING_STANDARDS.md` at the repo root is the standard for keeping it that
+  way.
+* **Synchronous test module** — a test module declared `async: false`. ExUnit runs
+  every synchronous module **after** all asynchronous ones have finished, and runs
+  them one at a time, so their cost is the sum of their runtimes rather than the
+  longest of them. A module has to be synchronous only when it mutates state
+  another concurrently-running test could observe.
+
+Prefer these over "serial" and "parallel", which describe the scheduling rather
+than the declaration a module actually makes.

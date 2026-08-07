@@ -20,23 +20,33 @@ defmodule LocalCents.Tracking.BookStore do
   first argument rather than reading it from a global. This is what lets the
   unit and context tests run with `async: true`: each test passes its own
   temporary directory (see `docs/research/avoiding-async-false-tests.md`) instead
-  of mutating a shared `:books_dir` application env. `default_dir/0` resolves the
-  ambient default for callers that don't inject one (the production app and the
-  LiveView feature tests).
+  of sharing one.
+
+  Test modules that do not call the context directly but still need isolation
+  should look toward `LocalCents.ProcessConfig` to set a `:books_dir` for their
+  process tree. Once set, the `default_dir/0` function returns that directory for
+  any process in that tree, allowing `async: true` tests to run without stepping
+  on each other.
   """
 
+  alias LocalCents.ProcessConfig
   alias LocalCents.Tracking.Book
 
   @extension ".lcbook"
 
+  @raise_on_process_tree_dir_not_set Application.compile_env(
+                                       :local_cents,
+                                       [__MODULE__, :raise_on_process_tree_dir_not_set],
+                                       false
+                                     )
+
   @doc """
   Returns the default books directory, creating it if needed.
 
-  Resolves the `:books_dir` application env when set — the LiveView feature tests
-  still redirect writes this way — and otherwise the platform's per-user
-  application-support location (`~/Library/Application Support/LocalCents/books`
-  on macOS). Callers that already hold a directory pass it to the functions below
-  instead; `LocalCents.Tracking` resolves this once and threads it down.
+  During a non-test run this is the platform's per-user application-support location
+  (`~/Library/Application Support/LocalCents/books` on macOS).
+
+  During a test run this is the `:books_dir` set inside `ProcessConfig`. If a test process has not set that value this function will raise, because we never want a test to touch user space.
   """
   @spec default_dir() :: String.t()
   # sobelow_skip ["Traversal.FileModule"]
@@ -44,11 +54,28 @@ defmodule LocalCents.Tracking.BookStore do
   # user input, so this File call cannot be steered to traverse.
   def default_dir do
     dir =
-      Application.get_env(:local_cents, :books_dir) ||
-        Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+      case ProcessConfig.get(:books_dir, :not_set) do
+        :not_set -> default_user_space_dir()
+        process_tree_dir -> process_tree_dir
+      end
 
     File.mkdir_p!(dir)
     dir
+  end
+
+  # Split by the compile-time flag so each branch's `@spec` matches its body: the
+  # raising clause is `no_return()`, the real one `String.t()`. A single spec
+  # covering both would fail the compiler's type checking.
+  if @raise_on_process_tree_dir_not_set do
+    @spec default_user_space_dir() :: no_return()
+    defp default_user_space_dir do
+      raise "During a test run we never want to return the user space directory. A test module should pass in a preferred `books_dir` or set the `ProcessConfig` for its process tree."
+    end
+  else
+    @spec default_user_space_dir() :: String.t()
+    defp default_user_space_dir do
+      Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+    end
   end
 
   @doc """

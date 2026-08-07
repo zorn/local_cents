@@ -1,5 +1,8 @@
 # A Global Fallback for Unhandled LiveView Messages
 
+> **Amended by [ADR 0024](0024-unhandled-messages-warning.md)** — the injected fallback
+> logs at `:warning`, not `:debug`. Everything else below stands.
+
 ## Problem Statement
 
 Every LiveView that subscribes to a Book's PubSub topic receives **every** signal

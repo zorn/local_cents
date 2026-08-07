@@ -7,8 +7,7 @@ defmodule LocalCentsWeb.BookWindowTest do
   web-side seam the fake-viewer tests can't reach.
   """
 
-  # Not async: opening Books uses the global `:books_dir` env.
-  use LocalCentsWeb.ConnCase, async: false
+  use LocalCentsWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
   import LocalCents.BooksDirHelper
@@ -18,7 +17,9 @@ defmodule LocalCentsWeb.BookWindowTest do
   alias LocalCents.Tracking.BookServer
   alias LocalCents.Tracking.Presence
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   test "a connected document window registers a viewer and reaps on disconnect", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")

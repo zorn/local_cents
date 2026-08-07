@@ -1,12 +1,13 @@
 defmodule LocalCentsWeb.BookCategoriesLiveTest do
-  # Not async: opening Books uses the global :books_dir env.
-  use LocalCentsWeb.FeatureCase, async: false
+  use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
 
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   describe "navigation" do
     test "reaches the categories page from the document window and back", ~M{conn} do

@@ -1,12 +1,14 @@
 defmodule LocalCentsWeb.LibraryLiveTest do
-  # Not async: creating Books uses the global :books_dir env.
-  use LocalCentsWeb.FeatureCase, async: false
+  use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
 
+  alias LocalCents.ProcessConfig
   alias LocalCents.Tracking
 
-  setup :with_temp_books_dir
+  @moduletag :tmp_dir
+
+  setup :with_async_books_dir
 
   test "shows the window title in a draggable title bar", ~M{conn} do
     conn
@@ -78,7 +80,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> assert_has("#books", text: "Groceries")
   end
 
-  test "Create stays disabled until a non-blank name is entered", ~M{conn} do
+  test "`Create` stays disabled until a non-blank name is entered", ~M{conn} do
     conn
     |> visit(~p"/library")
     |> click_button("New Book")
@@ -186,10 +188,11 @@ defmodule LocalCentsWeb.LibraryLiveTest do
 
   describe "first-run demo seeding" do
     # Seeding is disabled by default in the test env (config/test.exs); these tests
-    # opt back in and restore the default afterwards.
+    # turn it back on for their own process tree, so no concurrent test starts seeding
+    # a library out from under itself.
     setup do
-      Application.put_env(:local_cents, :demo_seeding, true)
-      on_exit(fn -> Application.put_env(:local_cents, :demo_seeding, false) end)
+      ProcessConfig.put(:demo_seeding, true)
+      :ok
     end
 
     test "seeds the demo library on first launch into an empty library", ~M{conn} do
@@ -205,6 +208,8 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       conn
       |> visit(~p"/library")
       |> assert_has("[role='status']", text: "Setting up your demo library")
+      # Wait for the seed to settle and verify it is removed.
+      |> refute_has("[role='status']", timeout: 10_000)
     end
 
     test "does not seed when the library already has a Book", ~M{conn} do

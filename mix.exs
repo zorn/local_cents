@@ -254,6 +254,13 @@ defmodule LocalCents.MixProject do
       # which cuts down on repetition in test setups.
       {:tiny_maps, "~> 3.0", only: :test, runtime: false},
 
+      # Resolves a value through the calling process's tree (`$callers`,
+      # `$ancestors`, `:parent`), which is what lets a test scope a setting to
+      # itself instead of mutating a global — see lib/local_cents/process_config.ex.
+      # `only: :test` because `ProcessConfig` compiles the lookup away outside the
+      # test build.
+      {:process_tree, "~> 0.3", only: :test},
+
       # For high-level, browser-like feature tests that read as user flows
       # (`visit/2`, `click_button/2`, `fill_in/3`, `assert_has/3`).
       {:phoenix_test, "~> 0.11.1", only: :test, runtime: false},

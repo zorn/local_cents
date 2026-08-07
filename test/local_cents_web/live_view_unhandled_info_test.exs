@@ -2,10 +2,7 @@ defmodule LocalCentsWeb.LiveViewUnhandledInfoTest do
   # Guards the catch-all `handle_info/2` that `LocalCentsWeb.live_view/0` injects
   # into every LiveView: an unmatched message must be ignored (not crash), and a
   # view's own clauses must still win over the fallback.
-  #
-  # Not async: the debug-log test toggles the global Logger level, which would race
-  # with other processes' log capturing under async.
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   import ExUnit.CaptureLog
 
@@ -29,17 +26,14 @@ defmodule LocalCentsWeb.LiveViewUnhandledInfoTest do
     assert_received :handled_by_specific_clause
   end
 
+  # Swallow the known warning for this test to keep test output clean.
+  @tag :capture_log
   test "an unmatched message is ignored instead of raising" do
     assert {:noreply, %Socket{}} = ExampleLive.handle_info(:surprise, %Socket{})
     refute_received :handled_by_specific_clause
   end
 
-  test "the ignored message is logged at debug for visibility in development" do
-    # The test env's primary Logger level is :warning, which filters debug before
-    # capture_log can see it; lift it for the duration and restore it after.
-    Logger.configure(level: :debug)
-    on_exit(fn -> Logger.configure(level: :warning) end)
-
+  test "the ignored message is logged at warning so a forgotten handler surfaces" do
     log =
       capture_log(fn ->
         ExampleLive.handle_info({:some_future_signal, "abc"}, %Socket{})

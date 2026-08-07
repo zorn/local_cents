@@ -10,17 +10,18 @@ config :local_cents, LocalCentsWeb.Endpoint,
 # In test we don't send emails
 config :local_cents, LocalCents.Mailer, adapter: Swoosh.Adapters.Test
 
-# Persist Books to a temporary directory during tests so runs never touch the
-# real application-support location. This is the default `BookStore.default_dir/0`
-# resolves to; the LiveView feature tests override it per-test via
-# `LocalCents.BooksDirHelper` (they run `async: false`), while unit and context
-# tests bypass it entirely by injecting their own `@tag :tmp_dir` directory.
-config :local_cents, :books_dir, Path.join(System.tmp_dir!(), "local_cents_test_books")
+# Allows for `async: true` on LiveView tests.
+config :local_cents, LocalCents.ProcessConfig, scoped_to_process_tree: true
+
+# During a test run, if we get to the point where `BookStore.default_dir/0` is
+# called and the process tree has no `:books_dir` set, then the offending test
+# module either needs to pass a preferred `books_dir` into the function
+# options or set the `ProcessConfig`. We never want to allow test logic to
+# fall back to the default directory, which is the user space.
+config :local_cents, LocalCents.Tracking.BookStore, raise_on_process_tree_dir_not_set: true
 
 # Don't seed the demo library on an empty library during tests — seeding is
-# side-effecting and slow (it writes the whole document per expense), and only the
-# tests that specifically cover it opt back in via `Application.put_env/3`. It
-# defaults on (dev, prod), so a developer's empty library still gets the demos.
+# side-effecting and slow. Only the tests that specifically cover it turn it back on.
 config :local_cents, :demo_seeding, false
 
 # Shrink the BookServer viewer-disconnect grace period (default 60s — see
@@ -36,7 +37,7 @@ config :phoenix_test, :endpoint, LocalCentsWeb.Endpoint
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
-# Print only warnings and errors during test
+# Suppress `:debug` and `:info` logs during test runs.
 config :logger, level: :warning
 
 # Initialize plugs at runtime for faster test compilation

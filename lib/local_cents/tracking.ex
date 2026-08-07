@@ -42,9 +42,7 @@ defmodule LocalCents.Tracking do
 
   Injecting these keeps the functional core clock-free (see
   [ADR 0014](0014-functional-core-process-shell.html)) and lets the suite run with
-  per-test directories concurrently (see
-  `docs/research/avoiding-async-false-tests.md`). Their defaults are dynamic, so
-  they are applied after validation rather than declared in the schema.
+  per-test directories concurrently.
   """
 
   # As the context's public facade, this module coordinates every internal piece by
@@ -66,7 +64,7 @@ defmodule LocalCents.Tracking do
   # `ExAutomerge`) stay private.
   use Boundary,
     top_level?: true,
-    deps: [],
+    deps: [LocalCents.ProcessConfig],
     exports: [Book, Category, Expense, Month, Report, Report.Cell, Report.Row, Supervisor]
 
   alias LocalCents.Tracking.Book
@@ -586,9 +584,8 @@ defmodule LocalCents.Tracking do
     end
   end
 
-  # The books directory an entry point operates in: the caller's injected `:books_dir`
-  # option, or the platform/app-env default. Injecting a directory is what lets the
-  # tracking tests run concurrently (see `docs/research/avoiding-async-false-tests.md`).
+  # Falls back to `BookStore.default_dir/0`, whose implementation documents the
+  # `ProcessConfig` seam and its async testing implications.
   defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
 
   @doc false
