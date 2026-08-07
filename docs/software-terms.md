@@ -112,19 +112,14 @@ depends entirely on its usage. An example from [Domain-Driven Design]:
 
 * **Asynchronous test module** -- a test module declared `async: true`. ExUnit may
   run it concurrently with other asynchronous modules, up to `:max_cases`. Every
-  test module in LocalCents is one; the Testing section of `CODING_STANDARDS.md`
-  at the repo root is the standard for keeping it that way.
+  test module in LocalCents strives to be one; the Testing section of
+  `CODING_STANDARDS.md` at the repo root is the standard for keeping it that
+  way.
 * **Synchronous test module** -- a test module declared `async: false`. ExUnit runs
   every synchronous module **after** all asynchronous ones have finished, and runs
   them one at a time, so their cost is the sum of their runtimes rather than the
   longest of them. A module has to be synchronous only when it mutates state
   another concurrently-running test could observe.
-* **Claim** (verb) -- to make a setting resolve to your own value for the calling
-  process and everything it spawns, via `LocalCents.ProcessConfig`, instead of
-  mutating the application env that every concurrent test shares. A test *claims* a
-  books directory; it does not "set" or "override" one, because nothing outside its
-  own process tree sees the value.
 
-  Prefer these over "serial" and "parallel", which describe the scheduling rather
-  than the declaration a module actually makes, and over "async test" for a module —
-  a *test* is asynchronous only in the sense that its module is.
+Prefer these over "serial" and "parallel", which describe the scheduling rather
+than the declaration a module actually makes.
