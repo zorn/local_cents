@@ -19,13 +19,15 @@ defmodule LocalCents.ProcessConfigTest do
   # config/test.exs happens to say today".
   @unset_key :process_config_test_unset
 
+  # A key for proving application-env fallback; only this module writes it.
+  @app_env_key :process_config_test_app_env
+
   describe "get/2 without a scoped value" do
     test "resolves the application env value" do
-      key = :"process_config_test_app_env_#{System.unique_integer([:positive])}"
-      Application.put_env(:local_cents, key, "/app/env/books")
-      on_exit(fn -> Application.delete_env(:local_cents, key) end)
+      Application.put_env(:local_cents, @app_env_key, "/app/env/books")
+      on_exit(fn -> Application.delete_env(:local_cents, @app_env_key) end)
 
-      assert ProcessConfig.get(key) == "/app/env/books"
+      assert ProcessConfig.get(@app_env_key) == "/app/env/books"
     end
 
     test "returns the given default when the application env has no value" do
@@ -48,13 +50,12 @@ defmodule LocalCents.ProcessConfigTest do
     end
 
     test "takes precedence over the application env" do
-      key = :"process_config_test_app_env_#{System.unique_integer([:positive])}"
-      Application.put_env(:local_cents, key, "/app/env/books")
-      on_exit(fn -> Application.delete_env(:local_cents, key) end)
+      Application.put_env(:local_cents, @app_env_key, "/app/env/books")
+      on_exit(fn -> Application.delete_env(:local_cents, @app_env_key) end)
 
-      ProcessConfig.put(key, "/scoped/books")
+      ProcessConfig.put(@app_env_key, "/scoped/books")
 
-      assert ProcessConfig.get(key) == "/scoped/books"
+      assert ProcessConfig.get(@app_env_key) == "/scoped/books"
     end
 
     test "scopes a false value, which must not read as unset" do
