@@ -355,8 +355,8 @@ defmodule LocalCentsWeb.LibraryLive do
   # A Book's category set does not affect the library row, so ignore it.
   def handle_info({:categories_updated, _id}, socket), do: noreply(socket)
 
-  # Seeding is disabled by the `:demo_seeding` setting in the test env but the
-  # default value passed into `ProcessConfig` as the second argument is `true` otherwise.
+  # The test env disables seeding through the `:demo_seeding` setting; everywhere
+  # else it is unset, so the `true` default passed to `ProcessConfig.get/2` applies.
   defp seeding_enabled?, do: ProcessConfig.get(:demo_seeding, true)
 
   # Runs in the async task started by mount/3: seed the demo Books, then return the

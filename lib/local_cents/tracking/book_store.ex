@@ -22,11 +22,11 @@ defmodule LocalCents.Tracking.BookStore do
   temporary directory (see `docs/research/avoiding-async-false-tests.md`) instead
   of sharing one.
 
-  To accommodate test modules that do not call the context directly, but still
-  need isolation they should look toward `LocalCents.ProcessConfig` to set a
-  `:books_dir` for their process tree. Once set the `default_dir/0` function
-  will return that directory for any process in that tree allowing `async: true`
-  tests to run without stepping on each other.
+  Test modules that do not call the context directly but still need isolation
+  should look toward `LocalCents.ProcessConfig` to set a `:books_dir` for their
+  process tree. Once set, the `default_dir/0` function returns that directory for
+  any process in that tree, allowing `async: true` tests to run without stepping
+  on each other.
   """
 
   alias LocalCents.ProcessConfig
@@ -46,7 +46,7 @@ defmodule LocalCents.Tracking.BookStore do
   During a non-test run this is the platform's per-user application-support location
   (`~/Library/Application Support/LocalCents/books` on macOS).
 
-  During a test run this is the `:books_dir` set inside of ProcessConfig. If a test process has not set that value this function will raise, because we never want a test to touch user space.
+  During a test run this is the `:books_dir` set inside `ProcessConfig`. If a test process has not set that value this function will raise, because we never want a test to touch user space.
   """
   @spec default_dir() :: String.t()
   # sobelow_skip ["Traversal.FileModule"]
@@ -63,7 +63,9 @@ defmodule LocalCents.Tracking.BookStore do
     dir
   end
 
-  # Needed to be more explicit here to resolve Elixir compile type checking.
+  # Split by the compile-time flag so each branch's `@spec` matches its body: the
+  # raising clause is `no_return()`, the real one `String.t()`. A single spec
+  # covering both would fail the compiler's type checking.
   if @raise_on_process_tree_dir_not_set do
     @spec default_user_space_dir() :: no_return()
     defp default_user_space_dir do

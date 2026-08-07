@@ -1,13 +1,13 @@
 defmodule LocalCents.ProcessConfig do
   @moduledoc """
   Provides get and put logic across a ProcessTree allowing for ownership of resources
-  and configurations by test process that normally in production would be global.
+  and configurations by test processes that normally in production would be global.
 
   ## Problem statement
 
   We value a thorough and fast test suite as it helps us work efficiently. All
-  test modules of the project need to prioritize the `async: true` option
-  however this is not always an easy thing to enable depending on what part of
+  test modules of the project need to prioritize the `async: true` option;
+  however, this is not always an easy thing to enable depending on what part of
   the system is under test.
 
   For simple pure functions, we get this mostly for free.
@@ -21,7 +21,7 @@ defmodule LocalCents.ProcessConfig do
   arguments to allow a call site to override. This can be helpful to override
   the concept of `now` in a test or provide a test-unique directory to make sure
   this test module does not interfere with the work going on in another test
-  module (while a production configuration would likely used a shared space).
+  module (while a production configuration would likely use a shared space).
 
        def quick_add_expense(description, cost, opts \\ []) do
           now = Keyword.get(opts, :now, DateTime.utc_now())
@@ -39,10 +39,10 @@ defmodule LocalCents.ProcessConfig do
   For LocalCents we are building up a [rich OTP GenServer
   hierarchy](book-runtime-architecture.html#supervision-tree)
   and that tree has a global assumption about where books are stored on disk.
-  The knowledge for where the books are stored comes from
+  The knowledge of where the books are stored comes from
   `BookStore.default_dir/0`. Normally inside of a LiveView test module you would
-  have no obvious way to override this value, let alone override for an
-  asynchronous running test module.
+  have no obvious way to override this value, let alone override it for an
+  asynchronously running test module.
 
   To solve this we use the [`process_tree`
   library](https://process-tree.hexdocs.pm) which allows us to create a space of
@@ -69,7 +69,7 @@ defmodule LocalCents.ProcessConfig do
   finishes.
 
   Inside of `BookStore.default_dir/0` we use `ProcessConfig.get(:books_dir)` or
-  fallback to the standard production value.
+  fall back to the standard production value.
 
   This solution is heavily inspired by Andrea Leopardi's blog post on [Async
   tests in Elixir](https://andrealeopardi.com/posts/async-tests-in-elixir/) and
@@ -101,7 +101,7 @@ defmodule LocalCents.ProcessConfig do
 
   use Boundary, top_level?: true, deps: []
 
-  # This boolean informs the function logic below if it should look to the process tree for a value.
+  # This boolean informs the function logic below whether it should look to the process tree for a value.
   # Only the `:test` environment should configure this to `true`.
   @scoped_to_process_tree Application.compile_env(
                             :local_cents,
@@ -112,7 +112,7 @@ defmodule LocalCents.ProcessConfig do
   @doc """
   Returns the value of `key` inside the `:local_cents` application settings, or `default` if none is set.
 
-  Resolves via calling process's tree first in the test build, then the application env, then `default`.
+  Resolves via the calling process's tree first in the test build, then the application env, then `default`.
   """
   @spec get(key :: atom(), default :: term()) :: term()
   def get(key, default \\ nil) when is_atom(key) do
