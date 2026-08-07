@@ -40,7 +40,7 @@ defmodule LocalCents.Tracking.BookStore do
                                        false
                                      )
 
-  @doc \"""
+  @doc """
   Returns the default books directory, creating it if needed.
 
   During a non-test run this is the platform's per-user application-support location
