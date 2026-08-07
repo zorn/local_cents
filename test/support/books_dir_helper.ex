@@ -34,8 +34,9 @@ defmodule LocalCents.BooksDirHelper do
   # than after, so no removal can race the late persist of a `BookServer` that is
   # supervised by the application and reaps `viewer_grace_ms` after its last viewer
   # goes. The directory is left behind on purpose — it is there to read when a test
-  # fails. Leaks that matter are caught loudly elsewhere: `test/test_helper.exs`
-  # empties the shared fallback directory per run.
+  # fails. A leak that matters is caught loudly elsewhere: under
+  # `raise_on_process_tree_dir_not_set`, a process that reaches `default_dir/0`
+  # without a claim raises rather than writing to a shared location.
   #
   # Matching on `:tmp_dir` means a module that forgets `@moduletag :tmp_dir` fails
   # here rather than quietly claiming a directory nobody prepared. The second clause
