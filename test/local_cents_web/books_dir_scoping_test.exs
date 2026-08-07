@@ -1,13 +1,13 @@
-defmodule LocalCentsWeb.ScopedBooksDirTest do
+defmodule LocalCentsWeb.BooksDirScopingTest do
   @moduledoc """
-  Guards the one claim the whole suite's `async: true` rests on: that a books
-  directory claimed by a test process is the directory a LiveView mounted *by that
+  Guards the one guarantee the whole suite's `async: true` rests on: that a books
+  directory scoped to a test process is the directory a LiveView mounted *by that
   test* writes to and reads from.
 
   Every feature test module depends on this working, but none of them says so: each
   would still pass if the directory resolved to the shared application-env default,
-  right up until two of them ran at once. This module states the claim outright, so
-  removing the seam in `LocalCents.ProcessConfig` fails here rather than showing up
+  right up until two of them ran at once. This module states the guarantee outright,
+  so removing the seam in `LocalCents.ProcessConfig` fails here rather than showing up
   later as an unexplained cross-test collision.
   """
 
@@ -23,8 +23,8 @@ defmodule LocalCentsWeb.ScopedBooksDirTest do
     :ok
   end
 
-  test "an ambient read in the test process resolves the claimed directory", ~M{tmp_dir} do
-    # Guards against passing vacuously: the claimed directory has to be somewhere the
+  test "an ambient read in the test process resolves the scoped directory", ~M{tmp_dir} do
+    # Guards against passing vacuously: the scoped directory has to be somewhere the
     # application env is *not* pointing, or this proves nothing.
     refute tmp_dir == Application.get_env(:local_cents, :books_dir)
 
@@ -38,7 +38,7 @@ defmodule LocalCentsWeb.ScopedBooksDirTest do
     {:ok, _} = Tracking.create_book("Family Expenses")
 
     # The read direction: this render runs in the LiveView process, so a Book the
-    # test process wrote is listed only if the view resolved the claim as well.
+    # test process wrote is listed only if the view resolved the scope as well.
     session =
       conn
       |> visit(~p"/library")
@@ -53,7 +53,7 @@ defmodule LocalCentsWeb.ScopedBooksDirTest do
     |> click_button("Create")
     |> assert_has("#books", text: "Groceries")
 
-    # Both Books are on disk in the claimed directory — the second one could only
+    # Both Books are on disk in the scoped directory — the second one could only
     # have landed here if the LiveView resolved it.
     assert length(Path.wildcard(Path.join(tmp_dir, "*.lcbook"))) == 2
   end
