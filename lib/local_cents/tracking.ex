@@ -584,8 +584,8 @@ defmodule LocalCents.Tracking do
     end
   end
 
-  # When `:books_dir` is not supplied, the `BooksStore.default_dir/0` is used.
-  # See that implementation for awareness of `ProcessConfig` and async testing implications.
+  # Falls back to `BookStore.default_dir/0`, whose implementation documents the
+  # `ProcessConfig` seam and its async testing implications.
   defp opt_dir(opts), do: opts[:books_dir] || BookStore.default_dir()
 
   @doc false

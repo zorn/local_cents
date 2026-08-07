@@ -1,11 +1,11 @@
 defmodule LocalCents.ProcessConfig do
   @moduledoc """
-  Provides get and put logic across a `ProcessTree` allowing for ownership of resources
+  Provides get and put logic across a ProcessTree allowing for ownership of resources
   and configurations by test process that normally in production would be global.
 
-  ## Problem Statement
+  ## Problem statement
 
-  We value a through and fast test suite as it helps us work efficiently. All
+  We value a thorough and fast test suite as it helps us work efficiently. All
   test modules of the project need to prioritize the `async: true` option
   however this is not always an easy thing to enable depending on what part of
   the system is under test.
@@ -37,7 +37,7 @@ defmodule LocalCents.ProcessConfig do
   internal dependency you can lean on [Mimic](https://hex.pm/packages/mimic).
 
   For LocalCents we are building up a [rich OTP GenServer
-  hierarchy](file:///Users/zorn/ProjectRepos/local_cents/doc/book-runtime-architecture.html#supervision-tree)
+  hierarchy](book-runtime-architecture.html#supervision-tree)
   and that tree has a global assumption about where books are stored on disk.
   The knowledge for where the books are stored comes from
   `BookStore.default_dir/0`. Normally inside of a LiveView test module you would
@@ -77,7 +77,12 @@ defmodule LocalCents.ProcessConfig do
 
   ## Gotchas
 
-  You do not want to attempt to `put/2` a value inside of `setup_all` because that code [runs in it's own process](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#setup_all/1). Same [is true](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#on_exit/2) for `on_exit`.
+  You do not want to attempt to `put/2` a value inside of `setup_all` because
+  that code [runs in its own
+  process](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#setup_all/1). The
+  same [is
+  true](https://ex-unit.hexdocs.pm/ExUnit.Callbacks.html#on_exit/2) for
+  `on_exit`.
 
   If you need to access resources after the test process is complete (all
   `ProcessConfig` things die when the test process is dead) you may need to
@@ -86,13 +91,18 @@ defmodule LocalCents.ProcessConfig do
   post](https://andrealeopardi.com/posts/async-tests-in-elixir/) for more
   details.
 
-  `BookServer` processes are supervised by the application rather than by the test, so they outlive the test that opened the Book. That is safe because each server is handed its directory as a `start_link` argument and holds it in state — it never tries to resolves the setting, so it has nothing to lose when the test process dies. This does mean memory can climb a bit over time during a large test suite run but we shall leave that future concern to a future day.
+  `BookServer` processes are supervised by the application rather than by the
+  test, so they outlive the test that opened the Book. That is safe because each
+  server is handed its directory as a `start_link` argument and holds it in
+  state — it never tries to resolve the setting, so it has nothing to lose when
+  the test process dies. This does mean memory can climb a bit over time during a
+  large test suite run but we shall leave that future concern to a future day.
   """
 
   use Boundary, top_level?: true, deps: []
 
   # This boolean informs the function logic below if it should look to the process tree for a value.
-  # Only the `:test` environment should configure this to to `true`.
+  # Only the `:test` environment should configure this to `true`.
   @scoped_to_process_tree Application.compile_env(
                             :local_cents,
                             [LocalCents.ProcessConfig, :scoped_to_process_tree],

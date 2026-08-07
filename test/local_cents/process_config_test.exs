@@ -1,7 +1,7 @@
 defmodule LocalCents.ProcessConfigTest do
   @moduledoc """
-  Validated the logic of `LocalCents.ProcessConfig` for scoping configuration to
-  a process tree, and ensuring that descendant processes see the value set by
+  Validates the logic of `LocalCents.ProcessConfig` for scoping configuration to
+  a process tree, and ensures that descendant processes see the value set by
   their ancestor.
   """
 

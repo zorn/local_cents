@@ -54,7 +54,9 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
     @describetag :tmp_dir
 
     # These render `/library`, which reads the books directory. The assertions are all
-    # about headers, so the contents do not matter — but setting a directory is good hygiene.
+    # about headers, so the contents do not matter — but the claim is mandatory: with
+    # `raise_on_process_tree_dir_not_set`, an unclaimed render raises rather than falling
+    # back to a shared directory.
     setup ~M{tmp_dir} do
       LocalCents.ProcessConfig.put(:books_dir, tmp_dir)
       :ok
