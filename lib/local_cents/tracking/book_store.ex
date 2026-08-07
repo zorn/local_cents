@@ -20,10 +20,13 @@ defmodule LocalCents.Tracking.BookStore do
   first argument rather than reading it from a global. This is what lets the
   unit and context tests run with `async: true`: each test passes its own
   temporary directory (see `docs/research/avoiding-async-false-tests.md`) instead
-  of sharing one. `default_dir/0` resolves the ambient default for the callers
-  that don't inject a directory: the production app, and the LiveView feature
-  tests, which have no way to inject one and instead claim a directory for their
-  own process tree (see `LocalCents.ProcessConfig`).
+  of sharing one.
+
+  To accommodate test modules that do not call the context directly, but still
+  need isolation they should look toward `LocalCents.ProcessConfig` to set a
+  `:books_dir` for their process tree. Once set the `default_dir/0` function
+  will return that directory for any process in that tree allowing `async: true`
+  tests to run without stepping on each other.
   """
 
   alias LocalCents.ProcessConfig
@@ -37,7 +40,7 @@ defmodule LocalCents.Tracking.BookStore do
                                        false
                                      )
 
-  @doc """
+  @doc \"""
   Returns the default books directory, creating it if needed.
 
   During a non-test run this is the platform's per-user application-support location
