@@ -189,8 +189,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
   describe "first-run demo seeding" do
     # Seeding is disabled by default in the test env (config/test.exs); these tests
     # turn it back on for their own process tree, so no concurrent test starts seeding
-    # a library out from under itself. The claim needs no teardown — it lives in the
-    # test process and dies with it.
+    # a library out from under itself.
     setup do
       ProcessConfig.put(:demo_seeding, true)
       :ok
@@ -209,9 +208,7 @@ defmodule LocalCentsWeb.LibraryLiveTest do
       conn
       |> visit(~p"/library")
       |> assert_has("[role='status']", text: "Setting up your demo library")
-      # Then wait for the seed to settle rather than returning while its task is still
-      # writing: a task still running after the test process is gone can no longer
-      # resolve the claim, and writes into the shared fallback directory instead.
+      # Wait for the seed to settle and verify it is removed.
       |> refute_has("[role='status']", timeout: 10_000)
     end
 
