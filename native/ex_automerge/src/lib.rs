@@ -200,8 +200,12 @@ rustler::init!("Elixir.LocalCents.Tracking.ExAutomerge");
 // ---------------------------------------------------------------------------
 #[cfg(test)]
 mod automerge_merge_behavior {
-    use super::{BookDoc, Category, Expense};
+    use super::{commit_at, BookDoc, Category, Expense};
     use automerge::{ActorId, AutoCommit, ReadDoc, Value, ROOT};
+
+    // Fixed unix-seconds stamps so the setup commits look like production changes.
+    const ANCESTOR_TIME: i64 = 1_700_000_000;
+    const DIVERGED_TIME: i64 = 1_700_000_100;
 
     fn expense(description: &str) -> Expense {
         Expense {
@@ -226,6 +230,7 @@ mod automerge_merge_behavior {
     fn ancestor_bytes() -> Vec<u8> {
         let mut doc = AutoCommit::new().with_actor(ActorId::from(b"actor-ancestor".to_vec()));
         autosurgeon::reconcile(&mut doc, book_with(vec![expense("original description")])).unwrap();
+        commit_at(&mut doc, ANCESTOR_TIME);
         doc.save()
     }
 
@@ -242,10 +247,11 @@ mod automerge_merge_behavior {
             book_with(vec![expense("EDITED ON DEVICE B")]),
         )
         .unwrap();
+        commit_at(&mut edit_doc, DIVERGED_TIME);
 
-        // Capture the expense object's ObjId *before* the merge, while it is still
-        // reachable via the live list, so the ExId stays valid in `edit_doc` (the
-        // doc that becomes the merged result).
+        // Capture the expense object's id *before* the merge, while it is still
+        // reachable via the live list, so it stays valid in `edit_doc` (the doc
+        // that becomes the merged result).
         let expenses_list = edit_doc
             .get(ROOT, "expenses")
             .unwrap()
@@ -265,6 +271,7 @@ mod automerge_merge_behavior {
             .unwrap()
             .with_actor(ActorId::from(b"actor-delete".to_vec()));
         autosurgeon::reconcile(&mut delete_doc, book_with(vec![])).unwrap();
+        commit_at(&mut delete_doc, DIVERGED_TIME);
 
         edit_doc.merge(&mut delete_doc).unwrap();
 
@@ -296,10 +303,7 @@ mod automerge_merge_behavior {
         );
 
         // Property 2b: iter() (a root-anchored tree walk) does NOT surface the orphan.
-        let orphan_id = expense_objid.to_string();
-        let orphan_in_iter = edit_doc
-            .iter()
-            .any(|item| item.obj.to_string() == orphan_id);
+        let orphan_in_iter = edit_doc.iter().any(|item| *item.obj == expense_objid);
         assert!(
             !orphan_in_iter,
             "iter() is a root tree walk and must not surface the orphaned expense"
