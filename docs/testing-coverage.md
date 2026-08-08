@@ -45,7 +45,7 @@ pass/fail gate, for reasons specific to how we test here.
 A percentage gate rewards writing tests to move the number, and the cheapest way
 to move it is to test implementation details. That is exactly the kind of
 low-value, high-upkeep test our
-[testing strategy](research/testing-strategy-public-api-vs-internals.md) steers
+[testing strategy](https://github.com/zorn/local_cents/blob/main/docs/research/testing-strategy-public-api-vs-internals.md) steers
 away from: we favor tests against a context's public API (`LocalCents.Tracking`)
 over its internals, because those survive refactors and the internal-detail
 tests do not. A coverage ratchet pushes in the opposite direction.

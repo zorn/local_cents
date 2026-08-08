@@ -39,7 +39,7 @@ is retired from user-facing language in favor of the domain noun **Report** (see
 When a destructive action needs a confirmation dialog, follow Apple's long-standing
 alert guidance (unchanged from the 1992 *Macintosh Human Interface Guidelines*
 through the current HIG; see
-[research note](research/apple-hig-destructive-confirmation-alerts.md)):
+[research note](https://github.com/zorn/local_cents/blob/main/docs/research/apple-hig-destructive-confirmation-alerts.md)):
 
 - **Title the buttons with verbs that name the result** — never "OK"/"Yes"/"No".
   A delete confirmation uses **Cancel** and **Delete**, not "OK"/"Cancel".

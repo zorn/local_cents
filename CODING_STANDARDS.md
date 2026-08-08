@@ -114,12 +114,21 @@ gets its own guide or ADR.
   the whole return value when the `@spec` wraps it in `{:error, …}`. This extends
   the "explain the _why_, not the _what_" and "never restate the signature" rules
   to the return value. Reasoning and the library precedent behind it:
-  [research note](docs/research/doc-vs-spec-return-shape.md).
+  [research note](https://github.com/zorn/local_cents/blob/main/docs/research/doc-vs-spec-return-shape.md).
 
 - **Name LiveView events in snake_case.** The event strings behind `phx-*`
   bindings and matched in `handle_event/3` are snake_case and describe what they
   represent — `handle_event("email_changed", …)`, `"validate"`, `"save"` — per
   LiveView's [form events](https://hexdocs.pm/phoenix_live_view/form-bindings.html#form-events).
+
+- **Bind destructured form params as `<resource>_params`; keep bare `_params` for
+  a whole or ignored payload.** When a `handle_event/3` or controller head pulls a
+  resource map out of the params — `%{"expense" => expense_params}` — name it after
+  the resource, and thread that name through the private `save_*`/`validate_*`
+  clauses. Reserve plain `params` / `_params` for the undestructured or unused
+  payload (`mount(_params, …)`, `handle_event("cancel_edit", _params, …)`). This
+  matches the Phoenix generators, which emit `<singular>_params` on a destructured
+  form map and `_params` for ignored ones.
 
 - **Discard an ignored return with `_ = expr`.** When a call is fire-and-forget and
   its result genuinely doesn't matter — e.g. a best-effort `Phoenix.PubSub.broadcast/3`
@@ -153,7 +162,7 @@ gets its own guide or ADR.
   an internal module only for a guarantee the API can't express (a NIF/CRDT
   boundary, a process/durability promise, a complex algorithm). The reasoning and
   the justified exceptions:
-  [research note](docs/research/testing-strategy-public-api-vs-internals.md).
+  [research note](https://github.com/zorn/local_cents/blob/main/docs/research/testing-strategy-public-api-vs-internals.md).
 
 - **Coverage is a local, exploratory tool, not a gate** — run `mix coveralls.html`
   when you want to see untested areas; it is deliberately absent from `precommit`
