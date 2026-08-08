@@ -2,7 +2,7 @@
 
 Modeling vocabulary we use when building LocalCents. These are general
 software / domain-driven-design concepts rather than domain nouns — for the
-project's domain glossary see [CONTEXT.md](../CONTEXT.md).
+project's domain glossary see [ubiquitous_language.md](ubiquitous_language.md).
 
 The name of the application is `LocalCents`, no space. When represented inside Elixir this is atomized as `:local_cents`.
 

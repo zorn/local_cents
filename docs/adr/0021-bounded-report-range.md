@@ -46,7 +46,7 @@ no longer holds, because a trailing range is defined relative to *now*.
 The concept is named **range**, deliberately *not* "window": a **window** in this app
 is a native desktop window (see [ADR 0006](0006-multi-window-desktop-shell.md)), so
 "report window" would misread. See the **Report range** entry in
-[`CONTEXT.md`](../../CONTEXT.md).
+[`ubiquitous_language.md`](../ubiquitous_language.md).
 
 This **amends ADR 0020**: its whole-Book span becomes the **All** preset rather than
 the only mode. Its deferral of *unbounded* / arbitrary custom ranges still stands —
