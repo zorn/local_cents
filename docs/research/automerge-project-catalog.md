@@ -151,3 +151,4 @@ Two seed links are **relevant context but not standalone projects** (so cross-re
 3. **Subduction, mergeparty, iroh-automerge, automerge-repo-storage-opfs** — concrete options and prior art for the sync/transport/storage layer we have not built yet.
 4. **OnlyGroceries** — a small Tauri+Svelte Automerge app *and* a documented experiment swapping Automerge for iroh; readable end-to-end.
 5. **Loro** — the strongest non-Automerge alternative core, with built-in time travel; a useful comparison benchmark.
+6. **Upwelling** — Ink & Switch's Automerge prose editor (drafts merged into a permanent "stack"). Its finding that *automatic merging is necessary but not sufficient* — semantic conflicts need human review — is the clearest prior-art argument for our surface-the-conflict-and-offer-override direction. See the UX survey (#212) for detail.
