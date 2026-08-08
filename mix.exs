@@ -102,7 +102,7 @@ defmodule LocalCents.MixProject do
 
   defp before_closing_body_tag(_), do: ""
 
-  # The guide pages are curated and ordered by hand; the ADR, research, and agents
+  # The guide pages are curated and ordered by hand; the ADR and agents
   # collections are globbed so a newly added decision or note is published without
   # editing this list — the hand-maintained list is exactly what drifted out of date
   # before. `about.md` leads the ADRs, then the numbered files in order. `mix docs`
@@ -128,9 +128,14 @@ defmodule LocalCents.MixProject do
       "docs/adr/about.md"
     ] ++
       Enum.sort(Path.wildcard("docs/adr/0*.md")) ++
-      Enum.sort(Path.wildcard("docs/research/*.md")) ++
       Enum.sort(Path.wildcard("docs/agents/*.md"))
   end
+
+  # `docs/research/*.md` is deliberately not published. A research note records
+  # what was true on the day it was written and pins module and API names that
+  # then drift, so rendering it as living docs invites stale-link churn for a
+  # dated snapshot. The notes stay in git; anything that cites one links to it as
+  # a GitHub blob URL rather than an ex_doc extra.
 
   # Groups the "Pages" (extras) in the docs sidebar. Anything not matched here
   # (README, API Reference) stays ungrouped at the top.
@@ -156,7 +161,6 @@ defmodule LocalCents.MixProject do
       ],
       Proposals: ~r{docs/proposals/},
       Decisions: ~r{docs/adr/},
-      Research: ~r{docs/research/},
       Agents: ~r{docs/agents/}
     ]
   end

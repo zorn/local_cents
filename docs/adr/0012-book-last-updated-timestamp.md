@@ -24,7 +24,7 @@ document's change history** — read in Rust via `AutoCommit::get_changes/1` and
 each `Change`'s `timestamp/0`, taking the max and dropping unset (`0`) stamps
 (`native/ex_automerge/src/lib.rs`, `document_updated_at/1`). The research behind
 this is captured in
-[`docs/research/automerge-last-updated.md`](../research/automerge-last-updated.md).
+[`docs/research/automerge-last-updated.md`](https://github.com/zorn/local_cents/blob/main/docs/research/automerge-last-updated.md).
 
 This is derived history, so it can't drift out of sync with the actual edits and,
 after a concurrent merge, it reflects the newest of the merged branch tips.
