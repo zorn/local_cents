@@ -75,7 +75,7 @@ Every seed link from #216 is triaged below (into list 1, list 2, or not-relevant
 | [y-sweet](https://github.com/jamsocket/y-sweet) | Yjs | Source | Yjs sync server backed by S3. |
 | [AFFiNE / BlockSuite / OctoBase](https://github.com/toeverything/AFFiNE) | Yjs (OctoBase = Rust) | Source | Notion/Miro-style knowledge base; BlockSuite is its editor toolkit, OctoBase its Rust local-first data engine. |
 | [Liveblocks](https://github.com/liveblocks/liveblocks) | Yjs-compatible | Source + hosted | Commercial realtime-multiplayer infrastructure. |
-| [mutxt.com](https://github.com/alangibson/awesome-crdt) | Yjs + Peritext | Live app | Polished local-first rich-text editor using the Peritext rich-text CRDT. Cited for UX polish. |
+| [mutxt.com](https://mutxt.com) | Yjs + Peritext | Live app ([via awesome-crdt](https://github.com/alangibson/awesome-crdt)) | Polished local-first rich-text editor using the Peritext rich-text CRDT. Cited for UX polish. |
 
 ### Loro ecosystem
 
