@@ -111,7 +111,7 @@ defmodule LocalCents.MixProject do
   defp extras do
     [
       "README.md",
-      "CONTEXT.md",
+      "docs/ubiquitous_language.md",
       "docs/ui-language.md",
       "docs/software-terms.md",
       "docs/module-boundaries.md",
@@ -140,7 +140,7 @@ defmodule LocalCents.MixProject do
       # path strings match by equality, which reads far better than one long
       # alternation regex. Keep this list in the same order as `extras/0`.
       Guides: [
-        "CONTEXT.md",
+        "docs/ubiquitous_language.md",
         "docs/ui-language.md",
         "docs/software-terms.md",
         "docs/module-boundaries.md",

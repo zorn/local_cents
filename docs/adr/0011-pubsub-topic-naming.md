@@ -21,8 +21,8 @@ discoverable. Raised in review of #75.
 bare `"<kind>"` for a resource collection or global stream.**
 
 - `<kind>` is the singular, lowercase, kebab-case name of the resource the topic
-  concerns, using the term as defined in `CONTEXT.md` — e.g. `book`. A `<kind>`
-  for a resource the glossary does not yet name must be added to `CONTEXT.md`
+  concerns, using the term as defined in `docs/ubiquitous_language.md` — e.g. `book`. A `<kind>`
+  for a resource the glossary does not yet name must be added to `docs/ubiquitous_language.md`
   before it is used in a topic, so topic strings never drift ahead of the
   ubiquitous language.
 - `:` (colon) is the only separator. Ids follow the last colon.
@@ -33,7 +33,7 @@ bare `"<kind>"` for a resource collection or global stream.**
 
 Example: `book:0192f3c1-…` (one Book's changes). A future collection stream — say
 a not-yet-defined term for "the set of Books changed" — would be a bare
-`<kind>`, added to `CONTEXT.md` first.
+`<kind>`, added to `docs/ubiquitous_language.md` first.
 
 **The topic string is owned by the module that broadcasts on it, exposed as a
 `topic/1` (or `topic/0`) function; callers never hand-build the string.**

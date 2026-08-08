@@ -35,7 +35,7 @@ Uses the default triage vocabulary (`needs-triage`, `needs-info`, `ready-for-age
 
 ### Domain docs
 
-Single-context layout (`CONTEXT.md` glossary + `docs/adr/` at the repo root). See `docs/agents/domain.md`.
+Single-context layout (`docs/ubiquitous_language.md` glossary + `docs/adr/`). See `docs/agents/domain.md`.
 
 <!-- usage-rules-start -->
 <!-- igniter-start -->

@@ -18,7 +18,7 @@ the library's.
   blob and nothing meaningful would open it. We want the file to identify as a
   *LocalCents Book*.
 - **The `book` suffix reinforces the domain.** `Book` is the core noun of the
-  domain model (the first term in `CONTEXT.md`); having the file say `book` keeps
+  domain model (the first term in `docs/ubiquitous_language.md`); having the file say `book` keeps
   the ubiquitous language visible.
 - **The `lc` prefix provides collision-resistance.** A bare `.book` is generic and
   already collides (e.g. Adobe FrameMaker). Namespacing to `.lcbook` makes it

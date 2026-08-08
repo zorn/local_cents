@@ -4,8 +4,8 @@ How the engineering skills should consume this repo's domain documentation when 
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
+- **`docs/ubiquitous_language.md`** — the glossary, or
+- **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one glossary per context. Read each one relevant to the topic.
 - **`docs/adr/`** — read the decision records (ADRs) that touch the area you're about to work in. They always live here at the root, even when the repo has multiple contexts. See `docs/adr/about.md` for this repo's ADR conventions (four-digit sequential prefix, kebab-case slug).
 
 If any of these files don't exist, **proceed silently**. Don't flag their absence; don't suggest creating them upfront. The `/domain-modeling` skill (reached via `/grill-with-docs` and `/improve-codebase-architecture`) creates them lazily when terms or decisions actually get resolved.
@@ -16,11 +16,12 @@ Single-context repo (most repos):
 
 ```
 /
-├── CONTEXT.md
-├── docs/adr/
-│   ├── about.md
-│   ├── 0001-which-automerge-rust-library.md
-│   └── 0002-expense-attributes.md
+├── docs/
+│   ├── ubiquitous_language.md
+│   └── adr/
+│       ├── about.md
+│       ├── 0001-which-automerge-rust-library.md
+│       └── 0002-expense-attributes.md
 └── lib/
 ```
 
@@ -40,7 +41,7 @@ Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `CONTEXT.md`. Don't drift to synonyms the glossary explicitly avoids.
+When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `docs/ubiquitous_language.md`. Don't drift to synonyms the glossary explicitly avoids.
 
 If the concept you need isn't in the glossary yet, that's a signal — either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
 

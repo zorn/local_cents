@@ -12,7 +12,7 @@ Write a decision only when **all three** of these are true:
 2. **Surprising without context** — a future reader will look at the code and wonder "why on earth did they do it this way?"
 3. **The result of a real trade-off** — there were genuine alternatives and you picked one for specific reasons.
 
-If a choice is easy to reverse, skip it; you'll just reverse it. If it isn't surprising, nobody will wonder why. If there was no real alternative, there is nothing to record beyond "we did the obvious thing." A choice that fails this test but still needs writing down is usually a coding standard (see `CODING_STANDARDS.md` at the repo root) or a glossary term (see [`CONTEXT.md`](../../CONTEXT.md)), not a decision.
+If a choice is easy to reverse, skip it; you'll just reverse it. If it isn't surprising, nobody will wonder why. If there was no real alternative, there is nothing to record beyond "we did the obvious thing." A choice that fails this test but still needs writing down is usually a coding standard (see `CODING_STANDARDS.md` at the repo root) or a glossary term (see [`ubiquitous_language.md`](../ubiquitous_language.md)), not a decision.
 
 ## Keep them short
 

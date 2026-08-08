@@ -24,7 +24,7 @@ changed silently.
 ## Decision Made
 
 **The MVP Review is a Category × Month matrix, not a flat list.** Categories are
-rows, calendar **Months** (see [`CONTEXT.md`](../../CONTEXT.md)) are columns, and
+rows, calendar **Months** (see [`ubiquitous_language.md`](../ubiquitous_language.md)) are columns, and
 each cell is the total spent in that Category that Month. Row totals give the
 per-Category lifetime sum (the original #68 shape, now a strict subset), column
 totals give the per-Month grand, and the bottom-right cell is the grand total.
@@ -50,7 +50,7 @@ deferred" to "*unbounded* time-series and filtering deferred; a whole-Book
 per-Month breakdown is in."
 
 The `Tracking` context owns the computation as a pure, recomputed-on-demand read
-model (a **Report**, see [`CONTEXT.md`](../../CONTEXT.md)); the presentation is a
+model (a **Report**, see [`ubiquitous_language.md`](../ubiquitous_language.md)); the presentation is a
 separate in-window view built later (see [ADR 0017](0017-in-window-secondary-views.md)).
 
 ## Consequences & Tradeoffs

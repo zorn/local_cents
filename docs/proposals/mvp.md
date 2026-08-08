@@ -1,13 +1,13 @@
 # LocalCents MVP Proposal
 
 **Status:** Accepted — in progress. _(Flip to `Implemented / Archived` once the
-MVP ships. From that point this document is history: the ADRs, `CONTEXT.md`, and
+MVP ships. From that point this document is history: the ADRs, `docs/ubiquitous_language.md`, and
 the code are the source of truth, and where they disagree with this proposal, they
 win.)_
 
 This document is the agreed scope for the first buildable slice of LocalCents,
 forged in a design session. It is a **summary and index** — the binding decisions
-live in [`CONTEXT.md`](../../CONTEXT.md) (the glossary) and in the ADRs under
+live in [`ubiquitous_language.md`](../ubiquitous_language.md) (the glossary) and in the ADRs under
 [`docs/adr/`](../adr/about.md), which each section links to. Where this document and an ADR
 disagree, the ADR wins.
 
@@ -153,7 +153,7 @@ See [ADR 0002](../adr/0002-expense-attributes.md) and
 
 ## Decision index
 
-- Glossary: [`CONTEXT.md`](../../CONTEXT.md)
+- Glossary: [`ubiquitous_language.md`](../ubiquitous_language.md)
 - [ADR 0002 — Expense Attributes](../adr/0002-expense-attributes.md) (amended)
 - [ADR 0005 — Categories Not Tags](../adr/0005-categories-not-tags.md)
 - [ADR 0006 — Multi-Window Desktop Shell](../adr/0006-multi-window-desktop-shell.md)

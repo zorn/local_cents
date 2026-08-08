@@ -2,8 +2,8 @@
 
 The domain glossary for LocalCents — the canonical vocabulary for the app's core
 concepts. Keep this file to domain nouns only: UI verbs live in
-[UI Language](docs/ui-language.md), and general software / DDD modeling terms live
-in [Software Terms](docs/software-terms.md).
+[UI Language](ui-language.md), and general software / DDD modeling terms live
+in [Software Terms](software-terms.md).
 
 ## Language
 
@@ -21,7 +21,7 @@ change history so it survives sync: after a merge it reflects the latest edit
 across the merged copies rather than the latest local write. Because change times
 come from the writing device's clock, it is a best-effort, advisory value, not an
 authoritative ordering (see
-[ADR 0012](docs/adr/0012-book-last-updated-timestamp.md)).
+[ADR 0012](adr/0012-book-last-updated-timestamp.md)).
 
 **Expense**:
 A financial transaction that represents money the user has spent. Its **Cost**,
@@ -29,7 +29,7 @@ when recorded, is non-negative — the MVP tracks spending only, so refunds, cre
 and income are out of scope. A missing Cost is left _absent_ rather than recorded as
 zero, so totals stay honest and a genuine zero-Cost Expense is distinct from one
 whose amount simply has not been entered yet (see
-[ADR 0008](docs/adr/0008-mvp-expense-shape.md)).
+[ADR 0008](adr/0008-mvp-expense-shape.md)).
 
 **Quick-add**:
 The deliberately minimal capture path for recording an Expense from a single typed
@@ -58,7 +58,7 @@ The calendar year-and-month (e.g. `2026-03`) derived from an Expense's **Date** 
 the time bucket the **Report** groups spending into. A Month is a calendar span,
 not a rolling window or a billing cycle, and like the Date it comes from it carries
 no time-of-day and no timezone (see
-[ADR 0015](docs/adr/0015-expense-identity-and-date-encoding.md)). A Report's columns
+[ADR 0015](adr/0015-expense-identity-and-date-encoding.md)). A Report's columns
 are the Months in its selected **Report range** — by default the trailing few
 months, up to the whole Book. Within that range a Month with no spending still
 appears and reads as zero.
@@ -67,7 +67,7 @@ appears and reads as zero.
 A computed, read-only summary of a Book's Expenses. For the MVP it is the total of
 each Category — plus the **Uncategorized** bucket when any Expense is
 uncategorized — broken down by **Month**, reconciling to a grand total (see
-[ADR 0020](docs/adr/0020-bounded-time-series-in-review.md)). A Report derives
+[ADR 0020](adr/0020-bounded-time-series-in-review.md)). A Report derives
 entirely from the Expenses it summarizes: it stores nothing of its own and is
 recomputed on demand. It covers the Months in its **Report range**, and every
 total — each Category row, each Month column, and the grand total — reconciles to
@@ -81,6 +81,6 @@ Report reconciles to the range it covers (see **Report**), a shorter range re-sc
 each Category's total to spending _within_ it; only the _all_ range recovers a
 Category's lifetime figure. Deliberately a small set of trailing presets, not an
 arbitrary custom start/end — bounded, in the spirit of
-[ADR 0020](docs/adr/0020-bounded-time-series-in-review.md). Named _range_, not
+[ADR 0020](adr/0020-bounded-time-series-in-review.md). Named _range_, not
 "window," because a **window** in this app is a native desktop window (see
-[ADR 0006](docs/adr/0006-multi-window-desktop-shell.md)).
+[ADR 0006](adr/0006-multi-window-desktop-shell.md)).
