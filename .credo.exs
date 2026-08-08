@@ -254,6 +254,8 @@
           {OeditusCredo.Check.Warning.MissingHandleAsync, []},
           {OeditusCredo.Check.Warning.BlockingInPlug, []},
           {OeditusCredo.Check.Warning.SwallowingException, []},
+          {OeditusCredo.Check.Refactoring.PreferDotAccessForStructs, []},
+          {OeditusCredo.Check.Refactoring.PreferFunctionCapture, []},
 
           #
           ## Project-local checks — vendored single rules, loaded via `requires:`
