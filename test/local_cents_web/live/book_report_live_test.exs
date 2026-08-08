@@ -63,6 +63,20 @@ defmodule LocalCentsWeb.BookReportLiveTest do
     end
   end
 
+  describe "choosing a range" do
+    test "picking a range from the Time range control patches the URL and recomputes", ~M{conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      add_expense(book.id, %{date: ~D[2026-01-10], description: "Milk", cost: "10.00"})
+      add_expense(book.id, %{date: ~D[2026-02-10], description: "Bread", cost: "20.00"})
+
+      conn
+      |> visit(~p"/books/#{book.id}/report")
+      |> select("Time range", option: "All time")
+      |> assert_path(~p"/books/#{book.id}/report", query_params: %{range: "all"})
+      |> assert_has("td", text: "$30.00")
+    end
+  end
+
   describe "refresh on demand" do
     test "a change elsewhere shows a stale banner; Refresh recomputes", ~M{conn} do
       {:ok, book} = Tracking.create_book("Family Expenses")

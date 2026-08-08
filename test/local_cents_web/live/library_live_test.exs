@@ -132,6 +132,17 @@ defmodule LocalCentsWeb.LibraryLiveTest do
     |> assert_has("#rename-modal", text: "can't be blank")
   end
 
+  test "the modal's icon-only Close control dismisses it", ~M{conn} do
+    {:ok, book} = Tracking.create_book("Keep Me")
+
+    conn
+    |> visit(~p"/library")
+    |> within("#book-#{book.id}", fn row -> click_button(row, "Rename") end)
+    |> assert_has("#rename-modal")
+    |> within("#rename-modal", fn modal -> click_button(modal, "Close") end)
+    |> refute_has("#rename-modal")
+  end
+
   test "deleting a book through the menu removes it from the list", ~M{conn} do
     {:ok, book} = Tracking.create_book("Doomed")
 

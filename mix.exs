@@ -263,7 +263,7 @@ defmodule LocalCents.MixProject do
 
       # For high-level, browser-like feature tests that read as user flows
       # (`visit/2`, `click_button/2`, `fill_in/3`, `assert_has/3`).
-      {:phoenix_test, "~> 0.11.1", only: :test, runtime: false},
+      {:phoenix_test, "~> 0.12.0", only: :test, runtime: false},
 
       # For local, exploratory test-coverage reports (`mix coveralls.html`). Kept
       # `only: :test` and deliberately out of `precommit`/CI — coverage is an
