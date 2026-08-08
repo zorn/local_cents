@@ -95,6 +95,7 @@ So for LocalCents, silent field-level convergence is free; any conflict *present
 - **Jazz Inspector** — floating dev panel (Cmd+J, or embed `JazzInspector`) showing a CoValue's current state, **history**, and sync status; also hosted at [v2.inspector.jazz.tools](https://v2.inspector.jazz.tools/) — [inspector docs](https://jazz.tools/docs/react/tooling-and-resources/inspector).
 - **InstantDB Devtool** — in-app widget (`Ctrl+Shift+0`) with an Explorer (inspect/modify data + schema) and a Sandbox (try queries/transactions) — [devtool docs](https://www.instantdb.com/docs/devtool). Developer-facing, no end-user history.
 - **Patchwork** — the richest *history* prototype: visual diffs at small and large scale (including on a tldraw canvas), edits grouped into "reviewable units," a chat-like interface to document history, and AI-generated branch names / edit descriptions — [Litt essay](https://buttondown.com/geoffreylitt/archive/towards-universal-version-control-with-patchwork/), [notebook 08](https://www.inkandswitch.com/patchwork/notebook/08/).
+- **Upwelling** — Patchwork's predecessor, an Automerge prose editor: authors work in named **drafts** ("Reworking the introduction") that merge into a permanent **stack**; every keystroke is tracked automatically, changes are shown by author color (deletions as a ➰ rather than strikethrough), and selecting any past layer answers *"what changed since point X?"* Its headline finding is the one that most supports our direction — *"automatic merging is necessary but not sufficient"*: semantic conflicts need human judgment no matter how good the CRDT — [Upwelling](https://www.inkandswitch.com/upwelling/).
 
 **Version history (time-based snapshots, restorable) — the mainstream "change over time" surface:**
 
@@ -120,7 +121,7 @@ So for LocalCents, silent field-level convergence is free; any conflict *present
 
 3. **Jazz — `$jazz.getEdits()` + the Jazz Inspector.** The best model for **per-field provenance**: "who set this amount, and when," available per field for free, plus a live inspector showing a value's history and sync status. Directly answers "why does this expense say $12 now?" at the field level. [jazz.tools/docs](https://jazz.tools/docs), [v2.inspector.jazz.tools](https://v2.inspector.jazz.tools/).
 
-**Honorable mentions to sample, not deep-dive:** the **Yjs `prosemirror-versions`** demo for its color-coded per-author diff (open + runnable); **Obsidian's "Create conflict file"** and **PouchDB's `_conflicts`** as the two examples of actually *surfacing* a conflict, useful if we ever decide a specific field (e.g. a hand-typed note) shouldn't auto-merge silently; and **Patchwork** for the ambitious branch/review + chat-to-history vision if we ever go beyond field-level.
+**Honorable mentions to sample, not deep-dive:** the **Yjs `prosemirror-versions`** demo for its color-coded per-author diff (open + runnable); **Obsidian's "Create conflict file"** and **PouchDB's `_conflicts`** as the two examples of actually *surfacing* a conflict, useful if we ever decide a specific field (e.g. a hand-typed note) shouldn't auto-merge silently; and **Patchwork** / **Upwelling** for the ambitious branch/review + drafts-and-stack vision (and Upwelling's "auto-merge is necessary but not sufficient" finding) if we ever go beyond field-level.
 
 ## Gaps and caveats
 
