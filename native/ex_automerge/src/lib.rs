@@ -179,3 +179,144 @@ fn merge<'a>(
 }
 
 rustler::init!("Elixir.LocalCents.Tracking.ExAutomerge");
+
+// ---------------------------------------------------------------------------
+// Regression test locking in how Automerge merges a concurrent edit-vs-delete
+// of the same expense. Our conflict handling depends on this exact behavior, so
+// the test fails loudly if a future `automerge`/`autosurgeon` bump changes it.
+// It reuses the real `BookDoc` / `Expense` structs so it exercises our actual
+// list-of-map-objects modeling, not a toy. Background and rationale:
+// `docs/research/automerge-edit-vs-delete.md` (issues #213 / #219).
+//
+// Two properties are pinned:
+//   1. When one actor edits an expense field and another deletes the expense
+//      concurrently, the delete wins — the expense is gone from the live list
+//      and from `hydrate` (the read path `decode/1` uses); the edit does not
+//      resurrect it.
+//   2. The dropped edit survives as an orphaned object, reachable via the
+//      expense's `ObjId` (`get_all`) and in `get_changes()`, but NOT via
+//      `iter()` (a root-anchored tree walk). This is what makes a merge-time
+//      diff — not a post-merge `iter()` scan — the viable way to surface it.
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod automerge_merge_behavior {
+    use super::{BookDoc, Category, Expense};
+    use automerge::{ActorId, AutoCommit, ReadDoc, Value, ROOT};
+
+    fn expense(description: &str) -> Expense {
+        Expense {
+            id: "exp-1".to_string(),
+            date: "2026-08-08".to_string(),
+            description: description.to_string(),
+            cost: Some("12.34".to_string()),
+            category_id: None,
+        }
+    }
+
+    fn book_with(expenses: Vec<Expense>) -> BookDoc {
+        BookDoc {
+            name: "Test Book".to_string(),
+            categories: Vec::<Category>::new(),
+            expenses,
+        }
+    }
+
+    // The common ancestor: a book with one expense, saved to bytes, exactly as
+    // `new_document` + `reconcile` would produce it.
+    fn ancestor_bytes() -> Vec<u8> {
+        let mut doc = AutoCommit::new().with_actor(ActorId::from(b"actor-ancestor".to_vec()));
+        autosurgeon::reconcile(&mut doc, book_with(vec![expense("original description")])).unwrap();
+        doc.save()
+    }
+
+    #[test]
+    fn edit_vs_delete_merge_lets_the_delete_win_but_keeps_the_orphaned_edit() {
+        let ancestor = ancestor_bytes();
+
+        // Edit side: change the expense's description in place.
+        let mut edit_doc = AutoCommit::load(&ancestor)
+            .unwrap()
+            .with_actor(ActorId::from(b"actor-edit".to_vec()));
+        autosurgeon::reconcile(
+            &mut edit_doc,
+            book_with(vec![expense("EDITED ON DEVICE B")]),
+        )
+        .unwrap();
+
+        // Capture the expense object's ObjId *before* the merge, while it is still
+        // reachable via the live list, so the ExId stays valid in `edit_doc` (the
+        // doc that becomes the merged result).
+        let expenses_list = edit_doc
+            .get(ROOT, "expenses")
+            .unwrap()
+            .expect("expenses list present")
+            .1;
+        let (elem_value, expense_objid) = edit_doc
+            .get(&expenses_list, 0)
+            .unwrap()
+            .expect("expense element present pre-merge");
+        assert!(
+            matches!(elem_value, Value::Object(_)),
+            "expense is a map object"
+        );
+
+        // Delete side: remove the expense entirely.
+        let mut delete_doc = AutoCommit::load(&ancestor)
+            .unwrap()
+            .with_actor(ActorId::from(b"actor-delete".to_vec()));
+        autosurgeon::reconcile(&mut delete_doc, book_with(vec![])).unwrap();
+
+        edit_doc.merge(&mut delete_doc).unwrap();
+
+        // Property 1: the delete wins, in the live list and via hydrate.
+        let merged_list = edit_doc.get(ROOT, "expenses").unwrap().unwrap().1;
+        assert_eq!(
+            edit_doc.length(&merged_list),
+            0,
+            "delete wins: expense gone from the live list"
+        );
+        let hydrated: BookDoc = autosurgeon::hydrate(&edit_doc).unwrap();
+        assert_eq!(
+            hydrated.expenses.len(),
+            0,
+            "delete wins: decode/1's hydrate path sees no expense"
+        );
+
+        // Property 2a: the dropped edit is still reachable via the orphan's ObjId.
+        let via_get_all: Vec<String> = edit_doc
+            .get_all(&expense_objid, "description")
+            .unwrap()
+            .into_iter()
+            .filter_map(|(v, _)| v.to_scalar().and_then(|s| s.to_str().map(String::from)))
+            .collect();
+        assert_eq!(
+            via_get_all,
+            vec!["EDITED ON DEVICE B".to_string()],
+            "get_all on the orphan ObjId still returns the dropped edit"
+        );
+
+        // Property 2b: iter() (a root-anchored tree walk) does NOT surface the orphan.
+        let orphan_id = expense_objid.to_string();
+        let orphan_in_iter = edit_doc
+            .iter()
+            .any(|item| item.obj.to_string() == orphan_id);
+        assert!(
+            !orphan_in_iter,
+            "iter() is a root tree walk and must not surface the orphaned expense"
+        );
+
+        // Property 2c: the dropped edit's op survives in change history.
+        let found_in_changes = edit_doc.get_changes(&[]).iter().any(|change| {
+            change.decode().operations.iter().any(|op| {
+                matches!(
+                    op.primitive_value(),
+                    Some(automerge::ScalarValue::Str(s)) if s.as_str() == "EDITED ON DEVICE B"
+                )
+            })
+        });
+        assert!(
+            found_in_changes,
+            "the dropped edit survives in change history (get_changes)"
+        );
+    }
+}
