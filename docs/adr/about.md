@@ -18,6 +18,8 @@ If a choice is easy to reverse, skip it; you'll just reverse it. If it isn't sur
 
 A decision can be a single paragraph, and most should be. One to three sentences — the situation, the choice, the reason — is a complete record. `__template.md` offers **Problem Statement**, **Decision Made**, and **Consequences & Tradeoffs** as optional sections; use one only when it carries weight the summary cannot, and delete the rest. Filling out every heading turns a record into an essay that nobody rereads.
 
+Keep the title short too — 30 characters or fewer. It is used verbatim in the generated docs' navigation sidebar, which truncates longer titles with an ellipsis. Prefer a concise noun phrase ("Automerge Rust Library") over a full sentence.
+
 ## Amending an earlier decision
 
 Decision documents are **immutable**. Never rewrite one to match how the code works today — that turns the record of *why we chose* into a second, competing statement of *what we do*, and the two drift.
