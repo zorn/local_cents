@@ -9,7 +9,7 @@ Two lists:
 1. **Automerge-based projects** — anything built on Automerge, any language binding.
 2. **Other CRDT / local-first projects** — Yjs, Loro, iroh, custom CRDTs. Not Automerge, but the same problem space, still worth tracking.
 
-Every seed link from #216 is triaged below (into list 1, list 2, or not-relevant with a reason). Discovery then went beyond the seeds via GitHub `topic:automerge` / `topic:crdt` / `topic:local-first`, the Ink & Switch project index, `crdt.tech`, `awesome-crdt` / `awesome-local-first`, and the Yjs / Loro / iroh ecosystems.
+Every seed link from #216 was triaged into list 1 or list 2; links that turned out not to be CRDT/local-first projects were dropped. Discovery then went beyond the seeds via GitHub `topic:automerge` / `topic:crdt` / `topic:local-first`, the Ink & Switch project index, `crdt.tech`, `awesome-crdt` / `awesome-local-first`, and the Yjs / Loro / iroh ecosystems.
 
 **Provenance caveat:** the seed links were captured from the Automerge Discord `#look-what-i-made` channel, which is login-gated. These seeds partly fill that gap, but the full channel was **not** crawled — treat the seed set as a sample, not a census.
 
@@ -113,35 +113,10 @@ Every seed link from #216 is triaged below (into list 1, list 2, or not-relevant
 | [Colanode](https://github.com/colanode/colanode) | Local-first (CRDT) | Source | Open-source local-first Slack/Notion alternative. |
 | [Yorkie](https://github.com/yorkie-team/yorkie) | Custom CRDT | Source | Document store for collaborative editing apps. |
 
----
-
-## Not relevant (triaged out, with reasons)
-
-Seed links that are **not** CRDT/local-first projects, kept here so they aren't silently dropped:
-
-| Link | Verdict |
-|---|---|
-| [gritzko/beagle](https://github.com/gritzko/beagle) | **Not CRDT.** A git-compatible source-control system redesigned for LLM-era, parallel-worktree development. (Author gritzko is a known CRDT author — RON / Swarm.js — but *this* project isn't CRDT.) |
-| [replicated.live/blog/away](https://replicated.live/blog/away) | **Not CRDT.** A blog post about automating dev work with Claude, wrapping LLM non-determinism in the deterministic Beagle SCM tooling above. Despite the "replicated" domain, no replication/CRDT content. |
-| [gritzko gist (scmandllm)](https://gist.github.com/gritzko/6e81b5391eacb585ae207f5e634db07e) | **Borderline / proposal only.** An essay proposing a future CRDT + AST-aware source-control system ("a database for the code"). Aspirational, not a usable project — noted, not cataloged. |
-| [putt.day](https://putt.day/) | **Not relevant.** A daily mini-golf browser game. No CRDT/sync. |
-| [encribe.com](https://encribe.com/) | **Ambiguous — no CRDT confirmed.** A writing platform with keystroke-biometric authorship proof; mentions "offline writing with device sync" but names no CRDT/Automerge/local-first tech. Flagged, not cataloged. |
-| [adamsolove …/better-podcast-ui](https://www.adamsolove.com/ui/ducking/2026/06/03/better-podcast-ui.html) | **Not CRDT (companion piece).** UI-design article for the Ducking podcast editor; only the [multiplayer post](https://www.adamsolove.com/ui/ducking/2026/06/10/podcast-multiplayer.html) (cataloged in List 1) covers Automerge. |
-| [github.com/c4lliope](https://github.com/c4lliope) | **Not relevant.** A developer profile with no CRDT/local-first repos surfaced. |
-| [quarto-dev/q2](https://github.com/quarto-dev/q2) | **Not CRDT.** Experimental Rust rewrite of the Quarto publishing framework. No CRDT/local-first. |
-
-Two seed links are **relevant context but not standalone projects** (so cross-referenced above rather than listed):
-
-- [jgm/pandoc discussion #11443](https://github.com/jgm/pandoc/discussions/11443) — a proposal to add Automerge + ProseMirror + doc-diffing to Pandoc. Context for [automerge-pandoc](https://github.com/oktana-coop/automerge-pandoc) (List 1), not itself a project.
-- [yjs/y-prosemirror PR #217](https://github.com/yjs/y-prosemirror/pull/217) — a rewrite-goals doc, folded into the y-prosemirror row (List 2).
-
----
-
 ## Counts
 
 - **List 1 (Automerge):** ~30 projects (12 from seeds + ~18 discovered; Ink & Switch counted as one cluster covering ~9 sub-prototypes).
 - **List 2 (other CRDT / local-first):** ~30 projects across the Yjs, Loro, iroh, and custom-CRDT ecosystems.
-- **Not relevant / non-project:** 8 seed links triaged out (5 not-relevant, 1 ambiguous with no confirmed CRDT, 2 relevant-context discussions cross-referenced).
 - **Dead links:** none. One redirect (`probability-nz.github.io` → `dev.probability.nz`, noted inline).
 
 ## Standouts for LocalCents
