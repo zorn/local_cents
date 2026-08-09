@@ -70,6 +70,10 @@ defmodule LocalCentsWeb.Router do
       # The debug bar's Docs link goes here rather than straight at `/doc/index.html`,
       # so missing or stale docs can offer to rebuild themselves (see ADR 0023).
       live "/docs", LocalCentsWeb.DevDocsLive
+
+      # THROWAWAY prototype for issue #220 — the Automerge conflict experience.
+      # Delete once the direction is settled.
+      live "/conflict-prototype", LocalCentsWeb.ConflictPrototypeLive
     end
   end
 end
