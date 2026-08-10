@@ -217,9 +217,9 @@ defmodule LocalCents.Docs.Mermaid do
   Reads the verdict the harness left in `dumped_dom`.
 
   An absent or empty results element is an error rather than "everything passed":
-  it means the page never finished — a browser crash, or a virtual-time budget
-  that ran out mid-parse — and silently reporting that as success is exactly the
-  failure mode this check exists to prevent.
+  it means the page never finished — a browser crash, or a run cut off at its
+  deadline before the parse wrote its verdict — and silently reporting that as
+  success is exactly the failure mode this check exists to prevent.
   """
   @spec decode_results(dumped_dom :: String.t()) :: {:ok, results()} | {:error, String.t()}
   def decode_results(dumped_dom) do

@@ -163,6 +163,13 @@ defmodule LocalCents.Docs.MermaidTest do
       assert Mermaid.decode_results(dom) == {:ok, %{0 => nil, 1 => "Parse error on line 2"}}
     end
 
+    test "reads the results from a DOM truncated right after the results element" do
+      dom = dump([%{id: 0, error: nil}])
+      truncated = String.replace(dom, ~r{</div>.*}s, "</")
+
+      assert Mermaid.decode_results(truncated) == {:ok, %{0 => nil}}
+    end
+
     test "errors when the results element is missing" do
       assert {:error, message} = Mermaid.decode_results("<html><body>nothing here</body></html>")
       assert message =~ "did not report"
