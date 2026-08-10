@@ -19,9 +19,11 @@ defmodule LocalCents.Docs.Mermaid.Runner do
 
   @cache_dir "_build/mermaid"
 
-  # Enough virtual time for Mermaid to boot and parse every block. Virtual time is
-  # not wall-clock: Chrome fast-forwards timers, so this bounds work, not seconds.
-  @virtual_time_budget_ms 20_000
+  # Wall-clock ceiling on one browser run. `--dump-dom` prints the finished DOM in
+  # well under a second, so this is not how long a run takes — it is the cutoff for
+  # a browser that never dumps at all (a load that hangs, a crash), past which the
+  # run is reported as a skip rather than left to block.
+  @deadline_ms 30_000
 
   @browser_candidates [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -50,7 +52,8 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   """
   @spec run(blocks :: [Block.t()]) :: outcome()
   def run(blocks) do
-    with {:ok, browser} <- find_browser(),
+    with :ok <- ensure_unix(),
+         {:ok, browser} <- find_browser(),
          {:ok, mermaid_js} <- fetch_mermaid() do
       run_dir = run_dir()
 
@@ -59,6 +62,17 @@ defmodule LocalCents.Docs.Mermaid.Runner do
       after
         File.rm_rf(run_dir)
       end
+    end
+  end
+
+  # `capture_dom/2` drives the browser with a POSIX shell and stops it with `kill`,
+  # so the check runs on Unix-like systems only. On Windows it skips here rather
+  # than crashing `mix precommit` at one of those calls — the same graceful skip a
+  # missing browser gets — and CI enforces the check on Linux.
+  defp ensure_unix do
+    case :os.type() do
+      {:unix, _flavor} -> :ok
+      _other -> {:skip, "the Mermaid check runs on Unix-like systems only"}
     end
   end
 
@@ -129,10 +143,64 @@ defmodule LocalCents.Docs.Mermaid.Runner do
   defp dump_dom(browser, harness, run_dir, count) do
     Mix.shell().info("Parsing #{count} diagram(s) with Mermaid #{Mermaid.version()} ...")
 
-    case System.cmd(browser, browser_args(harness, run_dir), env: []) do
-      {dom, 0} -> decode(dom)
-      {_dom, status} -> {:skip, "#{Path.basename(browser)} exited with status #{status}"}
+    capture_dom(browser, browser_args(harness, run_dir))
+  end
+
+  # Chrome 132 dropped the old headless mode, so `--headless` now runs the new one
+  # (https://developer.chrome.com/blog/removing-headless-old-from-chrome); the old
+  # dump-and-exit behavior survives only as the separate `chrome-headless-shell`
+  # binary. Under new headless, `--dump-dom` prints the finished DOM but then
+  # lingers instead of exiting — observed on the Chromium we run, not a documented
+  # contract — so a blocking `System.cmd` never returns. The browser is driven
+  # through a Port instead, its stdout read as it streams, and the run stops the
+  # instant the dumped DOM decodes to the harness's verdict. A browser that never
+  # dumps is bounded by `@deadline_ms` and reported as a skip. stderr is dropped: a
+  # headless browser narrates to it, and none of that is the check's to print.
+  defp capture_dom(browser, args) do
+    port =
+      Port.open({:spawn_executable, "/bin/sh"}, [
+        :binary,
+        :exit_status,
+        :hide,
+        args: ["-c", ~s(exec "$0" "$@" 2>/dev/null), browser | args]
+      ])
+
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+    deadline = System.monotonic_time(:millisecond) + @deadline_ms
+    collect(port, os_pid, "", deadline)
+  end
+
+  defp collect(port, os_pid, dom, deadline) do
+    receive do
+      {^port, {:data, chunk}} ->
+        dom = dom <> chunk
+
+        case Mermaid.decode_results(dom) do
+          {:ok, results} -> halt(port, os_pid, {:ok, results})
+          {:error, _reason} -> collect(port, os_pid, dom, deadline)
+        end
+
+      # An older Chromium that still exits on its own lands here; judge by whatever
+      # it dumped before leaving rather than treating the exit itself as a verdict.
+      {^port, {:exit_status, _status}} ->
+        decode(dom)
+    after
+      max(deadline - System.monotonic_time(:millisecond), 0) ->
+        halt(
+          port,
+          os_pid,
+          {:skip, "the browser reported no parse results within #{@deadline_ms}ms"}
+        )
     end
+  end
+
+  # Kills the browser — it will not leave on its own — and closes the Port so its
+  # helper processes lose their parent and follow. `Port.info/1` guards the close:
+  # a browser that already exited has closed the Port, and closing it twice raises.
+  defp halt(port, os_pid, result) do
+    System.cmd("kill", ["-KILL", Integer.to_string(os_pid)], env: [], stderr_to_stdout: true)
+    if Port.info(port), do: Port.close(port)
+    result
   end
 
   defp decode(dom) do
@@ -156,7 +224,6 @@ defmodule LocalCents.Docs.Mermaid.Runner do
       # Keep out of the developer's real Chrome profile, which may be in use.
       "--user-data-dir=#{Path.join(run_dir, "chrome-profile")}",
       "--dump-dom",
-      "--virtual-time-budget=#{@virtual_time_budget_ms}",
       "file://#{Path.expand(harness)}"
     ]
   end

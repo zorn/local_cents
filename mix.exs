@@ -415,11 +415,9 @@ defmodule LocalCents.MixProject do
         # lookup fails with "task could not be found".
         "cmd mix hex.audit",
         "cmd sh -c 'MIX_ENV=dev mix docs --warnings-as-errors'",
-        # `mermaid.check` is out of the local precommit for now: on macOS it drives
-        # the developer's installed Chrome, which spins up Google's updater and
-        # hangs precommit indefinitely. CI still enforces it with `--strict` in
-        # `.github/workflows/code-quality.yaml`. Restore this once the local run is
-        # reliable — see https://github.com/zorn/local_cents/issues/225.
+        # Deliberately not `--strict`: a contributor without Chrome or without a
+        # network connection gets a skip here, and CI (which has both) enforces it.
+        "mermaid.check",
         "test --warnings-as-errors"
       ]
     ]
