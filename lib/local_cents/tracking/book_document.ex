@@ -85,6 +85,49 @@ defmodule LocalCents.Tracking.BookDocument do
   @spec updated_at(doc_bytes :: binary()) :: integer() | nil
   def updated_at(doc_bytes), do: ExAutomerge.document_updated_at(doc_bytes)
 
+  # The three functions below bridge the delta-based sync transport (ADR 0025) the
+  # same way `from_bytes/1` and `updated_at/1` bridge the codec: they carry no domain
+  # logic, but keeping them here lets the process shell
+  # (`LocalCents.Tracking.BookServer`) drive a peer reconcile without ever touching
+  # `LocalCents.Tracking.ExAutomerge` directly.
+
+  @typedoc """
+  A live per-peer sync state handle, re-exported from
+  `t:LocalCents.Tracking.ExAutomerge.sync_state/0` so the process shell names it
+  through this bridge rather than reaching into the codec module.
+  """
+  @type sync_state() :: ExAutomerge.sync_state()
+
+  @doc """
+  Returns a fresh per-peer `t:sync_state/0`.
+
+  A `BookServer` keeps one of these per remote peer it reconciles with, then drives
+  the exchange by alternating `generate_sync_message/2` and `receive_sync_message/3`.
+  """
+  @spec new_sync_state() :: sync_state()
+  def new_sync_state, do: ExAutomerge.new_sync_state()
+
+  @doc """
+  Returns the next sync message `doc_bytes` owes the peer that `sync_state` tracks, or
+  `nil` when there is nothing to send, advancing `sync_state` in place. The message
+  carries only the changes the remote is missing.
+  """
+  @spec generate_sync_message(doc_bytes :: binary(), sync_state()) :: binary() | nil
+  def generate_sync_message(doc_bytes, sync_state) do
+    ExAutomerge.generate_sync_message(doc_bytes, sync_state)
+  end
+
+  @doc """
+  Folds an inbound sync `message` into `doc_bytes` and returns the updated bytes,
+  advancing `sync_state` in place. The receiving half of the exchange that
+  `generate_sync_message/2` starts.
+  """
+  @spec receive_sync_message(doc_bytes :: binary(), sync_state(), message :: binary()) ::
+          binary()
+  def receive_sync_message(doc_bytes, sync_state, message) do
+    ExAutomerge.receive_sync_message(doc_bytes, sync_state, message)
+  end
+
   @doc """
   Builds a `BookDocument` from the raw state map produced by
   `LocalCents.Tracking.ExAutomerge.decode/1`, parsing each category into a

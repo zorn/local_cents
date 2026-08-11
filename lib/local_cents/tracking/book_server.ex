@@ -270,6 +270,35 @@ defmodule LocalCents.Tracking.BookServer do
     GenServer.call(via(id), {:unassign_category, expense_id, time})
   end
 
+  @doc """
+  Returns the next sync message this Book owes `peer`, or `nil` when there is nothing
+  to send. Advances the server's per-peer sync state in place, creating one on first
+  contact with a `peer`.
+
+  The read half of a peer reconcile: the message carries only the changes `peer` is
+  missing (ADR 0025). The caller delivers it to `peer`'s server via
+  `receive_sync_message/3` and loops until both sides yield `nil`.
+  """
+  @spec generate_sync_message(Book.id(), peer()) :: binary() | nil
+  def generate_sync_message(id, peer) when is_binary(id) do
+    GenServer.call(via(id), {:generate_sync_message, peer})
+  end
+
+  @doc """
+  Folds an inbound sync `message` from `peer` into this Book, persisting and
+  broadcasting like any other change so open windows re-render the reconciled result.
+
+  The write half of a peer reconcile. It records no new change time: the folded-in
+  changes keep the stamps `peer` wrote them with, so the Book's `updated_at` reflects
+  the latest edit across both peers rather than the moment of the sync (see
+  [ADR 0012](0012-book-last-updated-timestamp.html)). Returns an error if the write
+  fails, or if `message` is not a valid sync message.
+  """
+  @spec receive_sync_message(Book.id(), peer(), message :: binary()) :: :ok | {:error, term()}
+  def receive_sync_message(id, peer, message) when is_binary(id) and is_binary(message) do
+    GenServer.call(via(id), {:receive_sync_message, peer, message})
+  end
+
   @doc "Stops the process. The document is already persisted after every change."
   @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
@@ -323,12 +352,26 @@ defmodule LocalCents.Tracking.BookServer do
   #
   # `reap_timer` is the pending auto-shutdown timer ref (or `nil`), armed when the
   # last viewer leaves and cancelled when one returns.
+  #
+  # `sync_states` holds one live per-peer sync state (see
+  # `t:LocalCents.Tracking.BookDocument.sync_state/0`) for each remote peer this server
+  # reconciles with, keyed by the caller's `peer` handle. It lives in memory only, so a
+  # `close`/`open` drops it — which is honest reconnection behavior: a fresh link
+  # starts a fresh exchange (ADR 0025).
   @typep state() :: %{
            id: Book.id(),
            doc: binary(),
            dir: String.t(),
-           reap_timer: reference() | nil
+           reap_timer: reference() | nil,
+           sync_states: %{peer() => BookDocument.sync_state()}
          }
+
+  @typedoc """
+  An opaque handle naming a remote peer this server syncs with. The caller (a future
+  sync Channel, or a test driver standing in for one) picks it; the server only uses
+  it to key the matching per-peer sync state.
+  """
+  @type peer() :: term()
 
   # A pure `BookDocument` command: given the decoded document it returns the new
   # document — with an optional result value (the created/updated Expense or
@@ -357,7 +400,7 @@ defmodule LocalCents.Tracking.BookServer do
       # snapshot of them here — the next diff reconciles against `Presence.list/1`, and
       # until one arrives there is nothing to reap.
       Phoenix.PubSub.subscribe(LocalCents.PubSub, presence_topic(id))
-      {:ok, %{id: id, doc: doc, dir: dir, reap_timer: nil}}
+      {:ok, %{id: id, doc: doc, dir: dir, reap_timer: nil, sync_states: %{}}}
     else
       {:error, :invalid_document} -> {:stop, {:invalid_document, id}}
       {:error, reason} -> {:stop, {:load_failed, reason}}
@@ -436,6 +479,35 @@ defmodule LocalCents.Tracking.BookServer do
 
   def handle_call({:unassign_category, expense_id, time}, _from, state) do
     run(state, time, &BookDocument.unassign_category(&1, expense_id))
+  end
+
+  def handle_call({:generate_sync_message, peer}, _from, state) do
+    {sync_state, state} = ensure_sync_state(state, peer)
+    {:reply, BookDocument.generate_sync_message(state.doc, sync_state), state}
+  end
+
+  def handle_call({:receive_sync_message, peer, message}, _from, state) do
+    {sync_state, state} = ensure_sync_state(state, peer)
+    new_doc = BookDocument.receive_sync_message(state.doc, sync_state, message)
+
+    # A message that carried no new changes leaves the document byte-identical (an
+    # Automerge save is deterministic for a given history), so there is nothing to
+    # persist or announce — the closing acknowledgment rounds of an exchange take this
+    # path. Only a message that actually advanced the document commits and broadcasts.
+    if new_doc == state.doc do
+      {:reply, :ok, state}
+    else
+      # A reconcile can fold in any kind of change, and the opaque bytes don't say
+      # which — a concurrent category edit from the peer among them. A view that
+      # refreshes its category cache only on `:categories_updated` (ADR 0018) would
+      # miss that, so a committed reconcile conservatively emits the category signal
+      # alongside `:book_updated` rather than trying to detect what moved.
+      persist_and_commit(state, new_doc, :ok, @category_signals)
+    end
+  rescue
+    # A malformed message makes the decode NIF raise `ArgumentError`; return it rather
+    # than crash the server, mirroring `run/4`.
+    e in ArgumentError -> {:reply, {:error, e}, state}
   end
 
   # A viewer joined or left the Book's presence topic (see `register_viewer/1`).
@@ -530,7 +602,16 @@ defmodule LocalCents.Tracking.BookServer do
           {:reply, reply(), state()}
   defp commit(state, document, time, reply, extra_signals) do
     new_doc = BookDocument.to_bytes(document, state.doc, time)
+    persist_and_commit(state, new_doc, reply, extra_signals)
+  end
 
+  # The persist-then-commit tail shared by a domain command (`commit/5`, which encodes
+  # the new document first) and a received sync message (which already holds the new
+  # bytes from the codec). Persist first, adopt to memory and broadcast only on
+  # success — a failed write leaves the in-memory state untouched and returns the error.
+  @spec persist_and_commit(state(), new_doc :: binary(), reply(), extra_signals :: [atom()]) ::
+          {:reply, reply(), state()}
+  defp persist_and_commit(state, new_doc, reply, extra_signals) do
     case BookStore.save(state.dir, state.id, new_doc) do
       :ok ->
         broadcast(state.id, {:book_updated, state.id})
@@ -539,6 +620,21 @@ defmodule LocalCents.Tracking.BookServer do
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
+    end
+  end
+
+  # Returns the per-peer sync state for `peer`, creating and storing a fresh one on
+  # first contact. A `BookServer` keeps one sync state per remote peer (ADR 0025); the
+  # handle mutates in place across calls, so it is stored once and reused.
+  @spec ensure_sync_state(state(), peer()) :: {BookDocument.sync_state(), state()}
+  defp ensure_sync_state(state, peer) do
+    case Map.fetch(state.sync_states, peer) do
+      {:ok, sync_state} ->
+        {sync_state, state}
+
+      :error ->
+        sync_state = BookDocument.new_sync_state()
+        {sync_state, %{state | sync_states: Map.put(state.sync_states, peer, sync_state)}}
     end
   end
 

@@ -542,6 +542,41 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
+  Returns the next sync message the open Book `id` owes `peer`, or `nil` when there is
+  nothing to send. Returns a `:not_open` error if the Book's process is not running.
+
+  The read half of a two-peer reconcile (ADR 0025): the message carries only the
+  changes `peer` is missing, and the server advances its per-peer sync state in place.
+  A caller drives a full reconcile by looping this and `receive_sync_message/3` between
+  the two peers until both yield `nil`. `peer` is an opaque handle the caller picks to
+  name the remote it is exchanging with (see `t:LocalCents.Tracking.BookServer.peer/0`).
+  """
+  @spec generate_sync_message(Book.id(), BookServer.peer()) ::
+          binary() | nil | {:error, :not_open}
+  def generate_sync_message(id, peer) when is_binary(id) do
+    BookServer.generate_sync_message(id, peer)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Folds an inbound sync `message` from `peer` into the open Book `id`, persisting and
+  broadcasting the reconciled result. Returns a `:not_open` error if the Book's process
+  is not running, or another error if the write fails or `message` is malformed.
+
+  The write half of a two-peer reconcile (ADR 0025). It records no new change time, so
+  the Book's `updated_at` reflects the latest edit across both peers rather than the
+  moment of the sync (see [ADR 0012](0012-book-last-updated-timestamp.html)).
+  """
+  @spec receive_sync_message(Book.id(), BookServer.peer(), message :: binary()) ::
+          :ok | {:error, term()}
+  def receive_sync_message(id, peer, message) when is_binary(id) and is_binary(message) do
+    BookServer.receive_sync_message(id, peer, message)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
   Subscribes the calling process to a Book's change broadcasts.
 
   After subscribing, the caller receives `{:book_updated, id}` messages whenever
