@@ -50,8 +50,11 @@ defmodule LocalCents.Tracking.ExAutomerge do
   explicitly.
 
   Because the document is a CRDT, two independently edited copies can be combined
-  with `merge/2` without conflicts, which is the foundation for future
-  multi-device sync.
+  with `merge/2` without conflicts. `merge/2` ships the whole document, so it is the
+  way to combine two copies, not the sync transport. The delta-based transport is the
+  sync protocol — `new_sync_state/0`, `generate_sync_message/2` and
+  `receive_sync_message/3` — which sends only the changes the remote is missing (see
+  `t:sync_state/0` and [ADR 0025](0025-two-peer-sync-architecture.html)).
 
   The function bodies below call `:erlang.nif_error/1`; that is only a fallback
   raised if the native library failed to load. At runtime the Rust
@@ -150,4 +153,55 @@ defmodule LocalCents.Tracking.ExAutomerge do
   """
   @spec merge(left_bytes :: binary(), right_bytes :: binary()) :: binary()
   def merge(_left_bytes, _right_bytes), do: :erlang.nif_error(:nif_not_loaded)
+
+  @typedoc """
+  A per-peer sync `State` as an opaque, mutable handle (a NIF resource reference).
+
+  Each peer keeps one **per remote peer** it talks to; the handle remembers what the
+  two sides have exchanged, so a later reconcile ships only the missing changes. It is
+  a live handle rather than bytes because Automerge serializes only the cross-session
+  part of a sync `State` and drops the in-session progress needed to avoid re-sending.
+  So `generate_sync_message/2` and `receive_sync_message/3` mutate it in place, and it
+  belongs to one connection and is never sent over the wire — only the messages are.
+  """
+  @type sync_state() :: reference()
+
+  @doc """
+  Returns a fresh, empty per-peer sync `t:sync_state/0`.
+
+  A peer creates one of these for each remote peer it reconciles with, then
+  drives the exchange by alternating `generate_sync_message/2` and
+  `receive_sync_message/3` until both sides have nothing left to send.
+  """
+  @spec new_sync_state() :: sync_state()
+  def new_sync_state, do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+  Returns the next sync message `doc_bytes` needs to send the remote peer that
+  `sync_state` tracks, or `nil` when there is nothing to send, and advances
+  `sync_state` in place.
+
+  The message carries only the changes the remote is missing. A `nil` message means
+  the remote is up to date or we are waiting for it to acknowledge an in-flight
+  message — the handle still advances, so the caller reuses it on the next call.
+  """
+  @spec generate_sync_message(doc_bytes :: binary(), sync_state()) :: binary() | nil
+  def generate_sync_message(_doc_bytes, _sync_state), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+  Applies an inbound sync `message` to `doc_bytes`, folding in the changes it
+  carries, returns the updated document bytes, and advances `sync_state` in place.
+
+  The write half of the sync exchange: `generate_sync_message/2` on one peer
+  produces the `message`, this receives it on the other. Reconciling two
+  divergent documents is a loop of generate-then-receive on each side until both
+  `generate_sync_message/2` calls return `nil`.
+  """
+  @spec receive_sync_message(
+          doc_bytes :: binary(),
+          sync_state(),
+          message :: binary()
+        ) :: binary()
+  def receive_sync_message(_doc_bytes, _sync_state, _message),
+    do: :erlang.nif_error(:nif_not_loaded)
 end

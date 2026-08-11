@@ -296,4 +296,144 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       assert by_id["c"].cost == "9.99"
     end
   end
+
+  describe "sync protocol" do
+    # Drives the Automerge sync exchange between two peers to completion: each peer
+    # holds its own document bytes and a per-peer sync state, and the loop alternates
+    # generate-then-receive on both sides until neither has a message left to send.
+    # This is the same exchange the two-BEAM demo runs (ADR 0025), reduced to a pure
+    # function so the assertions stay deterministic. It also totals the bytes of every
+    # delivered message so a test can compare how much crossed the wire, returning
+    # `{doc_a, doc_b, transferred_bytes}`.
+    defp run_sync(doc_a, state_a, doc_b, state_b, transferred \\ 0) do
+      # Both peers generate against the round's starting state before either delivers,
+      # so termination is judged on the same state the messages were built from.
+      # Receiving A's message into B first (then generating B) would leave B with a
+      # fresh acknowledgment to send every round and the loop would never settle. The
+      # state handles advance in place, so only the document bytes thread through.
+      message_a = ExAutomerge.generate_sync_message(doc_a, state_a)
+      message_b = ExAutomerge.generate_sync_message(doc_b, state_b)
+
+      if is_nil(message_a) and is_nil(message_b) do
+        {doc_a, doc_b, transferred}
+      else
+        doc_b =
+          if message_a,
+            do: ExAutomerge.receive_sync_message(doc_b, state_b, message_a),
+            else: doc_b
+
+        doc_a =
+          if message_b,
+            do: ExAutomerge.receive_sync_message(doc_a, state_a, message_b),
+            else: doc_a
+
+        transferred = transferred + message_bytes(message_a) + message_bytes(message_b)
+        run_sync(doc_a, state_a, doc_b, state_b, transferred)
+      end
+    end
+
+    defp message_bytes(nil), do: 0
+    defp message_bytes(message), do: byte_size(message)
+
+    test "generate_sync_message returns nil once a peer has nothing left to send" do
+      doc = ExAutomerge.new_document("Book", @earlier)
+      state = ExAutomerge.new_sync_state()
+
+      # The first message always goes out so the remote learns this peer's heads;
+      # with no reply and no new local changes, the next call has nothing to add.
+      first_message = ExAutomerge.generate_sync_message(doc, state)
+      assert byte_size(first_message) > 0
+      assert ExAutomerge.generate_sync_message(doc, state) == nil
+    end
+
+    test "a reconcile after a small edit ships only the missing change, not the whole document" do
+      base = ExAutomerge.new_document("Book", @earlier)
+
+      expenses =
+        for n <- 1..20, do: expense("id#{n}", "2026-07-11", "Expense number #{n}", "#{n}.00")
+
+      # Peer A holds twenty expenses; peer B is still at the empty base. Their per-peer
+      # sync states persist across both exchanges, which is what lets the second one
+      # ship a delta instead of starting over.
+      state_a = ExAutomerge.new_sync_state()
+      state_b = ExAutomerge.new_sync_state()
+
+      peer_a =
+        ExAutomerge.reconcile(base, with_expenses(ExAutomerge.decode(base), expenses), @earlier)
+
+      {peer_a, peer_b, full_sync_bytes} = run_sync(peer_a, state_a, base, state_b)
+
+      # Both sides now match, and each state remembers the shared point. Peer A edits
+      # one field of one expense.
+      [first | rest] = ExAutomerge.decode(peer_a).expenses
+
+      edited =
+        ExAutomerge.reconcile(
+          peer_a,
+          with_expenses(ExAutomerge.decode(peer_a), [%{first | description: "Espresso"} | rest]),
+          @later
+        )
+
+      {edited, peer_b, delta_bytes} = run_sync(edited, state_a, peer_b, state_b)
+
+      assert full_sync_bytes > 0
+      assert delta_bytes > 0
+      # The one-field reconcile crosses far less than the initial full transfer and
+      # less than the whole document — only the missing change went over the wire.
+      assert delta_bytes < full_sync_bytes
+      assert delta_bytes < byte_size(edited)
+      assert ExAutomerge.decode(edited) == ExAutomerge.decode(peer_b)
+    end
+
+    test "two divergent documents converge to the same state" do
+      base = ExAutomerge.new_document("Book", @earlier)
+
+      base =
+        ExAutomerge.reconcile(
+          base,
+          with_expenses(ExAutomerge.decode(base), [
+            expense("a", "2026-07-11", "Coffee", nil),
+            expense("b", "2026-07-11", "Lunch", nil)
+          ]),
+          @earlier
+        )
+
+      # Peer 1 edits expense a; peer 2 edits expense b. Neither has seen the other's
+      # change when the exchange starts.
+      peer_1 =
+        ExAutomerge.reconcile(
+          base,
+          with_expenses(ExAutomerge.decode(base), [
+            expense("a", "2026-07-11", "Espresso", "3.50"),
+            expense("b", "2026-07-11", "Lunch", nil)
+          ]),
+          @later
+        )
+
+      peer_2 =
+        ExAutomerge.reconcile(
+          base,
+          with_expenses(ExAutomerge.decode(base), [
+            expense("a", "2026-07-11", "Coffee", nil),
+            expense("b", "2026-07-11", "Dinner", "20.00")
+          ]),
+          @later
+        )
+
+      {converged_1, converged_2, _transferred} =
+        run_sync(peer_1, ExAutomerge.new_sync_state(), peer_2, ExAutomerge.new_sync_state())
+
+      by_id =
+        converged_1
+        |> ExAutomerge.decode()
+        |> Map.fetch!(:expenses)
+        |> Map.new(&{&1.id, &1})
+
+      assert ExAutomerge.decode(converged_1) == ExAutomerge.decode(converged_2)
+      assert by_id["a"].description == "Espresso"
+      assert by_id["a"].cost == "3.50"
+      assert by_id["b"].description == "Dinner"
+      assert by_id["b"].cost == "20.00"
+    end
+  end
 end
