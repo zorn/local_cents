@@ -227,11 +227,11 @@ struct ChangeStamp {
 // that carried it. Built once per document from its change history. This is how a
 // conflicting value earns its provenance without the summary having to walk Automerge's
 // op set field by field.
-struct Provenance {
+struct ProvenanceIndex {
     changes: Vec<ChangeStamp>,
 }
 
-impl Provenance {
+impl ProvenanceIndex {
     fn build(doc: &mut AutoCommit) -> Self {
         let changes = doc
             .get_changes(&[])
@@ -304,7 +304,7 @@ fn expense_objects(doc: &AutoCommit) -> Result<Vec<(String, ObjId)>, rustler::Er
 // of a single value.
 fn field_conflict(
     doc: &AutoCommit,
-    provenance: &Provenance,
+    provenance: &ProvenanceIndex,
     expense_id: &str,
     expense: &ObjId,
     field: &str,
@@ -356,7 +356,7 @@ fn field_conflict(
 // so the device is always a real actor id.
 fn latest_write(
     doc: &AutoCommit,
-    provenance: &Provenance,
+    provenance: &ProvenanceIndex,
     expense: &ObjId,
 ) -> Result<(String, Option<i64>), rustler::Error> {
     let mut latest: Option<(String, i64)> = None;
@@ -390,7 +390,7 @@ fn dropped_edits(
     merged_ids: &BTreeSet<String>,
 ) -> Result<Vec<EditDeleteConflict>, rustler::Error> {
     let mut doc = AutoCommit::load(doc_bytes).map_err(to_badarg)?;
-    let provenance = Provenance::build(&mut doc);
+    let provenance = ProvenanceIndex::build(&mut doc);
     let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
 
     let mut conflicts = Vec::new();
@@ -432,7 +432,7 @@ fn merge<'a>(
     let mut right = AutoCommit::load(right_bytes.as_slice()).map_err(to_badarg)?;
     merged.merge(&mut right).map_err(to_badarg)?;
 
-    let provenance = Provenance::build(&mut merged);
+    let provenance = ProvenanceIndex::build(&mut merged);
 
     let merged_objects = expense_objects(&merged)?;
     let merged_ids: BTreeSet<String> = merged_objects.iter().map(|(id, _)| id.clone()).collect();

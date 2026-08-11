@@ -444,7 +444,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
   describe "merge/2 conflict summary" do
     # A base document holding one expense "x", the subject of every conflict below.
     # Both sides diverge from this common ancestor.
-    defp base_with_x do
+    defp base_with_one_expense do
       base = ExAutomerge.new_document("Book", @earlier)
 
       ExAutomerge.reconcile(
@@ -470,7 +470,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "a merge with no concurrent edits reports an empty summary" do
-      base = base_with_x()
+      base = base_with_one_expense()
       # A linear descendant, so nothing conflicts.
       descendant = edit_description(base, "x", "Renamed", @later)
 
@@ -480,7 +480,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "concurrent edits to one field surface as one kept value plus alternatives, each with provenance" do
-      base = base_with_x()
+      base = base_with_one_expense()
       fork_a = edit_description(base, "x", "A", 1_700_000_100)
       fork_b = edit_description(base, "x", "B", 1_700_000_200)
 
@@ -509,7 +509,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "three concurrent edits to one field surface all alternatives, not just two" do
-      base = base_with_x()
+      base = base_with_one_expense()
       fork_a = edit_description(base, "x", "A", 1_700_000_100)
       fork_b = edit_description(base, "x", "B", 1_700_000_200)
       fork_c = edit_description(base, "x", "C", 1_700_000_300)
@@ -528,7 +528,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
     end
 
     test "an expense edited on one side and deleted on the other resolves to the delete but surfaces the dropped edit" do
-      base = base_with_x()
+      base = base_with_one_expense()
 
       edited = edit_description(base, "x", "Edited on A", 1_700_000_100)
 

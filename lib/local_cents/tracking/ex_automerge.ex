@@ -108,7 +108,7 @@ defmodule LocalCents.Tracking.ExAutomerge do
   @type conflict_value() :: %{
           value: String.t() | nil,
           device: String.t(),
-          time: integer() | nil
+          time: pos_integer() | nil
         }
 
   @typedoc """
@@ -133,7 +133,7 @@ defmodule LocalCents.Tracking.ExAutomerge do
           expense_id: String.t(),
           expense: raw_expense(),
           device: String.t(),
-          time: integer() | nil
+          time: pos_integer() | nil
         }
 
   @typedoc """
