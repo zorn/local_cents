@@ -15,57 +15,6 @@ defmodule LocalCents.Tracking.SyncTest do
 
   @moduletag :tmp_dir
 
-  # Drives the Automerge sync exchange between two open peers to completion, purely
-  # through the context. Each round both peers generate a message against their
-  # current document before either delivers, so termination is judged on the same
-  # state the messages were built from; the exchange settles once neither peer has a
-  # message left to send. Returns the total bytes delivered, so a test can compare
-  # how much crossed the wire between reconciles.
-  defp reconcile(peer_a, peer_b, transferred \\ 0) do
-    message_a = Tracking.generate_sync_message(peer_a, peer_b)
-    message_b = Tracking.generate_sync_message(peer_b, peer_a)
-
-    if is_nil(message_a) and is_nil(message_b) do
-      transferred
-    else
-      if message_a, do: :ok = Tracking.receive_sync_message(peer_b, peer_a, message_a)
-      if message_b, do: :ok = Tracking.receive_sync_message(peer_a, peer_b, message_b)
-
-      reconcile(peer_a, peer_b, transferred + message_bytes(message_a) + message_bytes(message_b))
-    end
-  end
-
-  defp message_bytes(nil), do: 0
-  defp message_bytes(message), do: byte_size(message)
-
-  # Forks `source_id`'s document into a second open Book in the same directory, so
-  # the two peers share a genuine common ancestor (identical bytes, identical
-  # Automerge history). This is the "both start from a common ancestor" the demo
-  # seeds over the sync link, reduced to a file fork so the shared starting point is
-  # deterministic.
-  defp fork_peer(dir, source_id) do
-    new_id = Ecto.UUID.generate()
-    File.cp!(Path.join(dir, source_id <> ".lcbook"), Path.join(dir, new_id <> ".lcbook"))
-    :ok = Tracking.open_book(new_id, books_dir: dir)
-    new_id
-  end
-
-  defp add_expense(id, description) do
-    {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})
-    expense
-  end
-
-  defp edit_description(id, expense_id, description) do
-    {:ok, expense} = Tracking.edit_expense(id, expense_id, %{description: description})
-    expense
-  end
-
-  defp descriptions_by_id(id) do
-    id
-    |> Tracking.list_expenses()
-    |> Map.new(&{&1.id, &1.description})
-  end
-
   test "two peers that diverged independently converge to the same expenses", %{tmp_dir: dir} do
     {:ok, book} = Tracking.create_book("Family", books_dir: dir)
     coffee = add_expense(book.id, "Coffee")
@@ -182,5 +131,56 @@ defmodule LocalCents.Tracking.SyncTest do
 
     assert_receive {:categories_updated, ^book_id}
     assert [%Tracking.Category{name: "Groceries"}] = Tracking.list_categories(book_id)
+  end
+
+  # Drives the Automerge sync exchange between two open peers to completion, purely
+  # through the context. Each round both peers generate a message against their
+  # current document before either delivers, so termination is judged on the same
+  # state the messages were built from; the exchange settles once neither peer has a
+  # message left to send. Returns the total bytes delivered, so a test can compare
+  # how much crossed the wire between reconciles.
+  defp reconcile(peer_a, peer_b, transferred \\ 0) do
+    message_a = Tracking.generate_sync_message(peer_a, peer_b)
+    message_b = Tracking.generate_sync_message(peer_b, peer_a)
+
+    if is_nil(message_a) and is_nil(message_b) do
+      transferred
+    else
+      if message_a, do: :ok = Tracking.receive_sync_message(peer_b, peer_a, message_a)
+      if message_b, do: :ok = Tracking.receive_sync_message(peer_a, peer_b, message_b)
+
+      reconcile(peer_a, peer_b, transferred + message_bytes(message_a) + message_bytes(message_b))
+    end
+  end
+
+  defp message_bytes(nil), do: 0
+  defp message_bytes(message), do: byte_size(message)
+
+  # Forks `source_id`'s document into a second open Book in the same directory, so
+  # the two peers share a genuine common ancestor (identical bytes, identical
+  # Automerge history). This is the "both start from a common ancestor" the demo
+  # seeds over the sync link, reduced to a file fork so the shared starting point is
+  # deterministic.
+  defp fork_peer(dir, source_id) do
+    new_id = Ecto.UUID.generate()
+    File.cp!(Path.join(dir, source_id <> ".lcbook"), Path.join(dir, new_id <> ".lcbook"))
+    :ok = Tracking.open_book(new_id, books_dir: dir)
+    new_id
+  end
+
+  defp add_expense(id, description) do
+    {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})
+    expense
+  end
+
+  defp edit_description(id, expense_id, description) do
+    {:ok, expense} = Tracking.edit_expense(id, expense_id, %{description: description})
+    expense
+  end
+
+  defp descriptions_by_id(id) do
+    id
+    |> Tracking.list_expenses()
+    |> Map.new(&{&1.id, &1.description})
   end
 end
