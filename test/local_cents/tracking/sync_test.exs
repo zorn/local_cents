@@ -164,4 +164,23 @@ defmodule LocalCents.Tracking.SyncTest do
     assert descriptions_by_id(book_a.id) == descriptions_by_id(peer_b)
     assert descriptions_by_id(book_a.id) == %{coffee.id => "Espresso", lunch.id => "Dinner"}
   end
+
+  test "a reconcile that carries a peer's category change signals category subscribers", %{
+    tmp_dir: dir
+  } do
+    {:ok, book_a} = Tracking.create_book("Family", books_dir: dir)
+    book_id = book_a.id
+    peer_b = fork_peer(dir, book_id)
+
+    # Peer B adds a category A has never seen. A view refreshes its category picker
+    # only on `:categories_updated` (ADR 0018), so a reconcile that lands the category
+    # under `:book_updated` alone would leave that picker stale.
+    {:ok, _} = Tracking.add_category(peer_b, %{name: "Groceries"})
+
+    :ok = Tracking.subscribe(book_id)
+    reconcile(book_id, peer_b)
+
+    assert_receive {:categories_updated, ^book_id}
+    assert [%Tracking.Category{name: "Groceries"}] = Tracking.list_categories(book_id)
+  end
 end

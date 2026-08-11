@@ -497,7 +497,12 @@ defmodule LocalCents.Tracking.BookServer do
     if new_doc == state.doc do
       {:reply, :ok, state}
     else
-      persist_and_commit(state, new_doc, :ok, [])
+      # A reconcile can fold in any kind of change, and the opaque bytes don't say
+      # which — a concurrent category edit from the peer among them. A view that
+      # refreshes its category cache only on `:categories_updated` (ADR 0018) would
+      # miss that, so a committed reconcile conservatively emits the category signal
+      # alongside `:book_updated` rather than trying to detect what moved.
+      persist_and_commit(state, new_doc, :ok, @category_signals)
     end
   rescue
     # A malformed message makes the decode NIF raise `ArgumentError`; return it rather
