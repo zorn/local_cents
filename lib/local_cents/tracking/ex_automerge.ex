@@ -49,9 +49,11 @@ defmodule LocalCents.Tracking.ExAutomerge do
   defaults a change time, so the clock stays in Elixir and is always passed in
   explicitly.
 
-  Because the document is a CRDT, two independently edited copies can be combined
-  with `merge/2` without conflicts. `merge/2` ships the whole document, so it is the
-  way to combine two copies, not the sync transport. The delta-based transport is the
+  Because the document is a CRDT, `merge/2` always combines two independently edited
+  copies without failing, resolving their histories deterministically — concurrent
+  writes to the same field are kept as conflicting values, not silently dropped.
+  `merge/2` ships the whole document, so it is the way to combine two copies, not the
+  sync transport. The delta-based transport is the
   sync protocol — `new_sync_state/0`, `generate_sync_message/2` and
   `receive_sync_message/3` — which sends only the changes the remote is missing (see
   `t:sync_state/0` and [ADR 0025](0025-two-peer-sync-architecture.html)).
