@@ -52,9 +52,11 @@ defmodule LocalCents.Tracking.ExAutomerge do
   Because the document is a CRDT, `merge/2` always combines two independently edited
   copies without failing, resolving their histories deterministically — concurrent
   writes to the same field are kept as conflicting values, not silently dropped.
-  `merge/2` ships the whole document, so it is the way to combine two copies, not the
-  sync transport. The delta-based transport is the
-  sync protocol — `new_sync_state/0`, `generate_sync_message/2` and
+  Alongside the merged bytes it returns a `t:conflict_summary/0` naming what conflicted
+  (the losers that autosurgeon's winner-only hydrate discards), so the offline demo can
+  surface a merge rather than converge silently. `merge/2` ships the whole document, so
+  it is the way to combine two copies, not the sync transport. The delta-based transport
+  is the sync protocol — `new_sync_state/0`, `generate_sync_message/2` and
   `receive_sync_message/3` — which sends only the changes the remote is missing (see
   `t:sync_state/0` and [ADR 0025](0025-two-peer-sync-architecture.html)).
 
@@ -95,6 +97,55 @@ defmodule LocalCents.Tracking.ExAutomerge do
           description: String.t(),
           cost: String.t() | nil,
           category_id: String.t() | nil
+        }
+
+  @typedoc """
+  One value a field held after a merge, the kept winner or a losing alternative. `device`
+  is the Automerge actor id (a hex string) that wrote it; `time` is the unix-seconds stamp
+  of the change that carried the write (`nil` when it had no usable time). Turning the raw
+  actor id into a friendly device name is a higher layer's job.
+  """
+  @type conflict_value() :: %{
+          value: String.t() | nil,
+          device: String.t(),
+          time: pos_integer() | nil
+        }
+
+  @typedoc """
+  A concurrent write to one scalar `field` of one expense that Automerge auto-resolved.
+  Models one kept value plus **N** alternatives — never a fixed pair — because the
+  register can hold more than two concurrent values. `field` is a string ("description").
+  """
+  @type field_conflict() :: %{
+          expense_id: String.t(),
+          field: String.t(),
+          kept: conflict_value(),
+          alternatives: [conflict_value()]
+        }
+
+  @typedoc """
+  An expense edited on one side and deleted on the other: the delete won, so the expense
+  is absent from the merged document, but the dropped edit is surfaced here rather than
+  lost. `expense` carries the surviving side's raw fields (so a caller can offer a
+  restore), and `device`/`time` name that side's most recent write to it.
+  """
+  @type edit_delete_conflict() :: %{
+          expense_id: String.t(),
+          expense: raw_expense(),
+          device: String.t(),
+          time: pos_integer() | nil
+        }
+
+  @typedoc """
+  The plain-data conflict report `merge/2` returns alongside the merged bytes, split
+  into the two groups the conflict UI separates: `field_conflicts` are the scalar
+  conflicts Automerge auto-resolved, and `edit_delete_conflicts` are the expenses a
+  concurrent delete dropped an edit from. Empty lists mean the histories combined with
+  no conflict.
+  """
+  @type conflict_summary() :: %{
+          field_conflicts: [field_conflict()],
+          edit_delete_conflicts: [edit_delete_conflict()]
         }
 
   @doc """
@@ -148,12 +199,19 @@ defmodule LocalCents.Tracking.ExAutomerge do
   def reconcile(_prior_bytes, _new_state, _time), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
-  Merges two documents into one and returns the combined serialized bytes.
+  Merges two documents into one, returning the combined bytes and a `t:conflict_summary/0`
+  reporting what conflicted.
 
-  Automerge resolves the two histories as a CRDT, so the operation is safe even
-  when both sides were edited independently.
+  Automerge resolves the two histories as a CRDT, so the merge is safe even when both
+  sides were edited independently — but a silent resolution is exactly what the offline
+  demo must not do. The summary surfaces the losers that autosurgeon's winner-only hydrate
+  would drop: the scalar-field conflicts it auto-resolved (kept value plus alternatives)
+  and the expenses a concurrent delete dropped an edit from. Detection is a merge-time
+  diff of the two sides' expenses (see [ADR 0025](0025-two-peer-sync-architecture.html)),
+  so it never depends on an orphaned edit staying reachable in the merged bytes.
   """
-  @spec merge(left_bytes :: binary(), right_bytes :: binary()) :: binary()
+  @spec merge(left_bytes :: binary(), right_bytes :: binary()) ::
+          {binary(), conflict_summary()}
   def merge(_left_bytes, _right_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
   @typedoc """

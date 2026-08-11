@@ -1,8 +1,9 @@
+use std::collections::BTreeSet;
 use std::sync::Mutex;
 
 use automerge::sync::{Message as SyncMessage, State as SyncState, SyncDoc};
 use automerge::transaction::CommitOptions;
-use automerge::AutoCommit;
+use automerge::{AutoCommit, ObjId, ObjType, ReadDoc, Value, ROOT};
 use autosurgeon::{hydrate, Hydrate, Reconcile};
 use rustler::{Binary, Env, NewBinary, NifMap, Resource, ResourceArc};
 
@@ -169,16 +170,296 @@ fn reconcile<'a>(
     Ok(binary_from_bytes(env, &doc.save()))
 }
 
+// The scalar expense fields a concurrent edit can conflict on. `id` is excluded: it
+// is the `#[key]`, so two writes to it describe two different expenses, not a
+// conflict on one. A fixed list, rather than the object's live keys, so the summary
+// reports the same fields even if the expense schema changes.
+const EXPENSE_SCALAR_FIELDS: [&str; 4] = ["description", "date", "cost", "category_id"];
+
+// The Elixir `t:conflict_value/0`: one value a field held after a merge, with its
+// writing actor and change time. See that typedoc for the contract.
+#[derive(NifMap)]
+struct ConflictValue {
+    value: Option<String>,
+    device: String,
+    time: Option<i64>,
+}
+
+// The Elixir `t:field_conflict/0`: a scalar conflict Automerge auto-resolved, as a kept
+// value plus its losing alternatives. See that typedoc for the contract.
+#[derive(NifMap)]
+struct FieldConflict {
+    expense_id: String,
+    field: String,
+    kept: ConflictValue,
+    alternatives: Vec<ConflictValue>,
+}
+
+// The Elixir `t:edit_delete_conflict/0`: an expense present on one pre-merge side but
+// dropped by a concurrent delete (see the #219 spike). Detection is the merge-time id
+// diff, so it never depends on the orphaned edit staying reachable in the merged bytes.
+#[derive(NifMap)]
+struct EditDeleteConflict {
+    expense_id: String,
+    expense: Expense,
+    device: String,
+    time: Option<i64>,
+}
+
+// The Elixir `t:conflict_summary/0`: the two conflict groups `merge` returns beside the
+// merged bytes. See that typedoc for the contract.
+#[derive(NifMap)]
+struct ConflictSummary {
+    field_conflicts: Vec<FieldConflict>,
+    edit_delete_conflicts: Vec<EditDeleteConflict>,
+}
+
+// One change's stamp of its ops: `device` (hex actor id) wrote the ops with counters
+// `start_op ..< start_op + op_count`, all at `time`.
+struct ChangeStamp {
+    device: String,
+    start_op: u64,
+    op_count: u64,
+    time: i64,
+}
+
+// Maps an operation's `(device, counter)` back to the wall-clock stamp of the change
+// that carried it. Built once per document from its change history. This is how a
+// conflicting value earns its provenance without the summary having to walk Automerge's
+// op set field by field.
+struct ProvenanceIndex {
+    changes: Vec<ChangeStamp>,
+}
+
+impl ProvenanceIndex {
+    fn build(doc: &mut AutoCommit) -> Self {
+        let changes = doc
+            .get_changes(&[])
+            .iter()
+            .map(|change| ChangeStamp {
+                device: change.actor_id().to_hex_string(),
+                start_op: change.start_op().get(),
+                op_count: change.len() as u64,
+                time: change.timestamp(),
+            })
+            .collect();
+
+        Self { changes }
+    }
+
+    // The stamp of the change that wrote op `counter` by `device`, or `None` when the
+    // change carries no usable (non-zero) time — matching `document_updated_at`'s rule
+    // that a `0` stamp is "unset".
+    fn time_of(&self, device: &str, counter: u64) -> Option<i64> {
+        self.changes.iter().find_map(|change| {
+            let in_change = change.device == device
+                && change.start_op <= counter
+                && counter < change.start_op + change.op_count;
+
+            (in_change && change.time > 0).then_some(change.time)
+        })
+    }
+}
+
+// Splits an object id into the provenance a `ConflictValue` needs: the writing actor
+// (hex) and the operation counter that identifies the write within that actor's stream.
+// `ROOT` has no such provenance and never tags a scalar value, so it reads as empty.
+fn value_provenance(id: &ObjId) -> (String, u64) {
+    match id {
+        ObjId::Id(counter, actor, _) => (actor.to_hex_string(), *counter),
+        ObjId::Root => (String::new(), 0),
+    }
+}
+
+// The live expenses of `doc` as `(expense id, object id)` pairs, in list order. The
+// object id is what lets the conflict walk read a specific expense's fields with
+// `get`/`get_all`, independent of how the list is ordered or how it merges.
+fn expense_objects(doc: &AutoCommit) -> Result<Vec<(String, ObjId)>, rustler::Error> {
+    let mut objects = Vec::new();
+
+    let Some((Value::Object(ObjType::List), list)) =
+        doc.get(ROOT, "expenses").map_err(to_badarg)?
+    else {
+        return Ok(objects);
+    };
+
+    for index in 0..doc.length(&list) {
+        let Some((Value::Object(_), expense)) = doc.get(&list, index).map_err(to_badarg)? else {
+            continue;
+        };
+
+        if let Some((value, _)) = doc.get(&expense, "id").map_err(to_badarg)? {
+            if let Some(id) = value.to_str() {
+                objects.push((id.to_string(), expense));
+            }
+        }
+    }
+
+    Ok(objects)
+}
+
+// Reads one scalar field of one expense and, if more than one concurrent value
+// survives, returns the conflict: the winner (`get`, chosen by op id) as `kept` and the
+// remaining values from `get_all` as `alternatives`. Returns `None` for the common case
+// of a single value.
+fn field_conflict(
+    doc: &AutoCommit,
+    provenance: &ProvenanceIndex,
+    expense_id: &str,
+    expense: &ObjId,
+    field: &str,
+) -> Result<Option<FieldConflict>, rustler::Error> {
+    let all = doc.get_all(expense, field).map_err(to_badarg)?;
+
+    if all.len() < 2 {
+        return Ok(None);
+    }
+
+    let winner = doc.get(expense, field).map_err(to_badarg)?;
+    let winner_id = winner.map(|(_, id)| id.to_bytes());
+
+    let mut kept = None;
+    let mut alternatives = Vec::new();
+
+    for (value, id) in all {
+        let (device, counter) = value_provenance(&id);
+        let time = provenance.time_of(&device, counter);
+
+        let conflict_value = ConflictValue {
+            value: value.to_str().map(str::to_string),
+            device,
+            time,
+        };
+
+        if Some(id.to_bytes()) == winner_id {
+            kept = Some(conflict_value);
+        } else {
+            alternatives.push(conflict_value);
+        }
+    }
+
+    // `get_all` returned two or more values, so the winner is always among them.
+    let kept = kept.ok_or(rustler::Error::BadArg)?;
+
+    Ok(Some(FieldConflict {
+        expense_id: expense_id.to_string(),
+        field: field.to_string(),
+        kept,
+        alternatives,
+    }))
+}
+
+// The most recent write to any scalar field of `expense` on the side that still holds
+// it: its `(device, time)` provenance. Used to describe a dropped edit — the "who last
+// touched this and when" the delete discarded. When no field write carries a usable
+// time, `device` falls back to the actor that created the expense and `time` to `None`,
+// so the device is always a real actor id.
+fn latest_write(
+    doc: &AutoCommit,
+    provenance: &ProvenanceIndex,
+    expense: &ObjId,
+) -> Result<(String, Option<i64>), rustler::Error> {
+    let mut latest: Option<(String, i64)> = None;
+
+    for field in EXPENSE_SCALAR_FIELDS {
+        let Some((_, id)) = doc.get(expense, field).map_err(to_badarg)? else {
+            continue;
+        };
+
+        let (device, counter) = value_provenance(&id);
+
+        if let Some(time) = provenance.time_of(&device, counter) {
+            if latest.as_ref().is_none_or(|(_, best)| time > *best) {
+                latest = Some((device, time));
+            }
+        }
+    }
+
+    match latest {
+        Some((device, time)) => Ok((device, Some(time))),
+        None => Ok((value_provenance(expense).0, None)),
+    }
+}
+
+// The dropped edits contributed by one pre-merge side: expenses it still holds that are
+// absent from the merged result (`merged_ids`), meaning the other side deleted them and
+// the delete won. Loads its own document so the side stays pristine — the merged doc has
+// already collapsed these expenses away.
+fn dropped_edits(
+    doc_bytes: &[u8],
+    merged_ids: &BTreeSet<String>,
+) -> Result<Vec<EditDeleteConflict>, rustler::Error> {
+    let mut doc = AutoCommit::load(doc_bytes).map_err(to_badarg)?;
+    let provenance = ProvenanceIndex::build(&mut doc);
+    let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
+
+    let mut conflicts = Vec::new();
+
+    for (expense_id, expense) in expense_objects(&doc)? {
+        if merged_ids.contains(&expense_id) {
+            continue;
+        }
+
+        let Some(hydrated) = state.expenses.iter().find(|e| e.id == expense_id) else {
+            continue;
+        };
+
+        let (device, time) = latest_write(&doc, &provenance, &expense)?;
+
+        conflicts.push(EditDeleteConflict {
+            expense_id,
+            expense: hydrated.clone(),
+            device,
+            time,
+        });
+    }
+
+    Ok(conflicts)
+}
+
+// Merges two documents and reports what conflicted. Returns the combined bytes plus a
+// plain-data `ConflictSummary` (see the type docs): the scalar-field conflicts Automerge
+// auto-resolved, and the expenses a concurrent delete dropped an edit from. The two
+// pre-merge documents are loaded separately from the merge target so their pristine
+// state stays readable for the merge-time id diff (the #219 seam) and for provenance.
 #[rustler::nif]
 fn merge<'a>(
     env: Env<'a>,
     left_bytes: Binary,
     right_bytes: Binary,
-) -> Result<Binary<'a>, rustler::Error> {
-    let mut left = AutoCommit::load(left_bytes.as_slice()).map_err(to_badarg)?;
+) -> Result<(Binary<'a>, ConflictSummary), rustler::Error> {
+    let mut merged = AutoCommit::load(left_bytes.as_slice()).map_err(to_badarg)?;
     let mut right = AutoCommit::load(right_bytes.as_slice()).map_err(to_badarg)?;
-    left.merge(&mut right).map_err(to_badarg)?;
-    Ok(binary_from_bytes(env, &left.save()))
+    merged.merge(&mut right).map_err(to_badarg)?;
+
+    let provenance = ProvenanceIndex::build(&mut merged);
+
+    let merged_objects = expense_objects(&merged)?;
+    let merged_ids: BTreeSet<String> = merged_objects.iter().map(|(id, _)| id.clone()).collect();
+
+    // Scalar-field conflicts Automerge auto-resolved.
+    let mut field_conflicts = Vec::new();
+    for (expense_id, expense) in &merged_objects {
+        for field in EXPENSE_SCALAR_FIELDS {
+            if let Some(conflict) =
+                field_conflict(&merged, &provenance, expense_id, expense, field)?
+            {
+                field_conflicts.push(conflict);
+            }
+        }
+    }
+
+    // Edit-vs-delete: an expense present on exactly one pre-merge side but gone from the
+    // merged result. The delete won; the surviving side still holds the dropped edit.
+    let mut edit_delete_conflicts = dropped_edits(left_bytes.as_slice(), &merged_ids)?;
+    edit_delete_conflicts.extend(dropped_edits(right_bytes.as_slice(), &merged_ids)?);
+
+    let summary = ConflictSummary {
+        field_conflicts,
+        edit_delete_conflicts,
+    };
+
+    Ok((binary_from_bytes(env, &merged.save()), summary))
 }
 
 // The per-peer sync state for the delta-based transport (ADR 0025), held across NIF

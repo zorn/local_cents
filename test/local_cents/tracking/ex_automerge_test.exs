@@ -23,6 +23,10 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
   defp with_categories(state, categories), do: %{state | categories: categories}
 
+  # The merged bytes alone, for tests asserting the combined document rather than the
+  # conflict summary `merge/2` returns beside it.
+  defp merge_bytes(left, right), do: elem(ExAutomerge.merge(left, right), 0)
+
   describe "new_document/2, document_name/1 and decode/1" do
     test "a new document carries its name and has no expenses" do
       doc = ExAutomerge.new_document("Family Expenses", @earlier)
@@ -138,7 +142,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
       by_id =
         fork_1
-        |> ExAutomerge.merge(fork_2)
+        |> merge_bytes(fork_2)
         |> ExAutomerge.decode()
         |> Map.fetch!(:categories)
         |> Map.new(&{&1.id, &1.name})
@@ -185,7 +189,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       fork_a = apply_expense(base, "Lunch", @earlier)
       fork_b = apply_expense(base, "Bus", @later)
 
-      merged = ExAutomerge.merge(fork_a, fork_b)
+      merged = merge_bytes(fork_a, fork_b)
       assert ExAutomerge.document_updated_at(merged) == @later
     end
   end
@@ -208,7 +212,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
       descriptions =
         fork_a
-        |> ExAutomerge.merge(fork_b)
+        |> merge_bytes(fork_b)
         |> ExAutomerge.decode()
         |> Map.fetch!(:expenses)
         |> Enum.map(& &1.description)
@@ -226,14 +230,14 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
       set_ab =
         fork_a
-        |> ExAutomerge.merge(fork_b)
+        |> merge_bytes(fork_b)
         |> ExAutomerge.decode()
         |> Map.fetch!(:expenses)
         |> MapSet.new()
 
       set_ba =
         fork_b
-        |> ExAutomerge.merge(fork_a)
+        |> merge_bytes(fork_a)
         |> ExAutomerge.decode()
         |> Map.fetch!(:expenses)
         |> MapSet.new()
@@ -285,7 +289,7 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
 
       by_id =
         fork_1
-        |> ExAutomerge.merge(fork_2)
+        |> merge_bytes(fork_2)
         |> ExAutomerge.decode()
         |> Map.fetch!(:expenses)
         |> Map.new(&{&1.id, &1})
@@ -434,6 +438,115 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       assert by_id["a"].cost == "3.50"
       assert by_id["b"].description == "Dinner"
       assert by_id["b"].cost == "20.00"
+    end
+  end
+
+  describe "merge/2 conflict summary" do
+    # A base document holding one expense "x", the subject of every conflict below.
+    # Both sides diverge from this common ancestor.
+    defp base_with_one_expense do
+      base = ExAutomerge.new_document("Book", @earlier)
+
+      ExAutomerge.reconcile(
+        base,
+        with_expenses(ExAutomerge.decode(base), [expense("x", "2026-07-11", "Original", nil)]),
+        @earlier
+      )
+    end
+
+    # Reconciles a new `description` onto expense `id`, stamped `time`, leaving the
+    # rest of the document untouched. Each call loads the prior document afresh, so
+    # two calls off the same base produce two concurrent (conflicting) edits.
+    defp edit_description(doc, id, description, time) do
+      state = ExAutomerge.decode(doc)
+
+      expenses =
+        Enum.map(state.expenses, fn
+          %{id: ^id} = expense -> %{expense | description: description}
+          expense -> expense
+        end)
+
+      ExAutomerge.reconcile(doc, with_expenses(state, expenses), time)
+    end
+
+    test "a merge with no concurrent edits reports an empty summary" do
+      base = base_with_one_expense()
+      # A linear descendant, so nothing conflicts.
+      descendant = edit_description(base, "x", "Renamed", @later)
+
+      {_merged, summary} = ExAutomerge.merge(base, descendant)
+
+      assert summary == %{field_conflicts: [], edit_delete_conflicts: []}
+    end
+
+    test "concurrent edits to one field surface as one kept value plus alternatives, each with provenance" do
+      base = base_with_one_expense()
+      fork_a = edit_description(base, "x", "A", 1_700_000_100)
+      fork_b = edit_description(base, "x", "B", 1_700_000_200)
+
+      {_merged, summary} = ExAutomerge.merge(fork_a, fork_b)
+
+      assert [conflict] = summary.field_conflicts
+      assert conflict.expense_id == "x"
+      assert conflict.field == "description"
+      assert summary.edit_delete_conflicts == []
+
+      values = [conflict.kept | conflict.alternatives]
+      assert length(conflict.alternatives) == 1
+
+      # Which value wins is chosen by Automerge op id (an arbitrary actor tiebreak for
+      # genuinely concurrent edits), so assert the set of surfaced values and each
+      # value's provenance rather than which one was kept.
+      assert values |> Enum.map(& &1.value) |> Enum.sort() == ["A", "B"]
+
+      assert Map.new(values, &{&1.value, &1.time}) == %{
+               "A" => 1_700_000_100,
+               "B" => 1_700_000_200
+             }
+
+      assert Enum.all?(values, &(is_binary(&1.device) and &1.device != ""))
+      assert values |> Enum.map(& &1.device) |> Enum.uniq() |> length() == 2
+    end
+
+    test "three concurrent edits to one field surface all alternatives, not just two" do
+      base = base_with_one_expense()
+      fork_a = edit_description(base, "x", "A", 1_700_000_100)
+      fork_b = edit_description(base, "x", "B", 1_700_000_200)
+      fork_c = edit_description(base, "x", "C", 1_700_000_300)
+
+      {merged_ab, _} = ExAutomerge.merge(fork_a, fork_b)
+      {_merged, summary} = ExAutomerge.merge(merged_ab, fork_c)
+
+      assert [conflict] = summary.field_conflicts
+      assert length(conflict.alternatives) == 2
+
+      values = [conflict.kept | conflict.alternatives]
+      assert values |> Enum.map(& &1.value) |> Enum.sort() == ["A", "B", "C"]
+
+      assert Map.new(values, &{&1.value, &1.time}) ==
+               %{"A" => 1_700_000_100, "B" => 1_700_000_200, "C" => 1_700_000_300}
+    end
+
+    test "an expense edited on one side and deleted on the other resolves to the delete but surfaces the dropped edit" do
+      base = base_with_one_expense()
+
+      edited = edit_description(base, "x", "Edited on A", 1_700_000_100)
+
+      deleted =
+        ExAutomerge.reconcile(base, with_expenses(ExAutomerge.decode(base), []), 1_700_000_200)
+
+      {merged, summary} = ExAutomerge.merge(edited, deleted)
+
+      # The delete wins: x is gone from the reconciled document.
+      assert ExAutomerge.decode(merged).expenses == []
+      assert summary.field_conflicts == []
+
+      # The dropped edit is still surfaced, not lost.
+      assert [conflict] = summary.edit_delete_conflicts
+      assert conflict.expense_id == "x"
+      assert conflict.expense.description == "Edited on A"
+      assert conflict.time == 1_700_000_100
+      assert is_binary(conflict.device) and conflict.device != ""
     end
   end
 end
