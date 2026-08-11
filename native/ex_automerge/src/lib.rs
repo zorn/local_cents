@@ -1,7 +1,10 @@
+use std::sync::Mutex;
+
+use automerge::sync::{Message as SyncMessage, State as SyncState, SyncDoc};
 use automerge::transaction::CommitOptions;
 use automerge::AutoCommit;
 use autosurgeon::{hydrate, Hydrate, Reconcile};
-use rustler::{Binary, Env, NewBinary, NifMap};
+use rustler::{Binary, Env, NewBinary, NifMap, Resource, ResourceArc};
 
 // Every carrier struct below (`Expense`, `Category`, `BookDoc`) derives the same
 // four traits, which together let a plain Rust struct cross both the Automerge and
@@ -176,6 +179,73 @@ fn merge<'a>(
     let mut right = AutoCommit::load(right_bytes.as_slice()).map_err(to_badarg)?;
     left.merge(&mut right).map_err(to_badarg)?;
     Ok(binary_from_bytes(env, &left.save()))
+}
+
+// The per-peer sync state for the delta-based transport (ADR 0025), held across NIF
+// calls as a Rustler resource rather than crossing the boundary as opaque bytes:
+// `sync::State::encode` deliberately persists only the cross-session `shared_heads`
+// and drops the in-session progress (which changes are in flight, what has already
+// been sent), so round-tripping it through bytes between messages would make each
+// peer re-send forever and the exchange would never settle. The resource lives for
+// one connection; Elixir holds an opaque handle and mutates it in place through these
+// NIFs. A reconcile is a loop of `generate_sync_message` / `receive_sync_message` on
+// each side until both `generate` calls yield no message.
+//
+// The `Mutex` gives the interior mutability the sync API needs (`&mut State`); NIF
+// calls on one handle are serialized by the owning process in practice, so the lock
+// is uncontended but keeps the resource `Sync`.
+struct SyncStateResource(Mutex<SyncState>);
+
+#[rustler::resource_impl]
+impl Resource for SyncStateResource {}
+
+// Returns a fresh, empty per-peer sync state as an opaque handle. A peer creates one
+// of these for each remote peer it reconciles with.
+#[rustler::nif]
+fn new_sync_state() -> ResourceArc<SyncStateResource> {
+    ResourceArc::new(SyncStateResource(Mutex::new(SyncState::new())))
+}
+
+// Asks the document for the next sync message to send the peer that `state` tracks,
+// returning the message (`None`/nil when there is nothing to send) and advancing the
+// state handle in place. The message carries only the changes the remote is missing.
+//
+// `generate_sync_message` mutates only the sync state, not the document, but
+// `AutoCommit::sync()` needs `&mut self` to close any pending transaction first —
+// loading from saved bytes leaves none pending, so the document bytes are unchanged
+// and are not returned.
+#[rustler::nif]
+fn generate_sync_message<'a>(
+    env: Env<'a>,
+    doc_bytes: Binary,
+    state: ResourceArc<SyncStateResource>,
+) -> Result<Option<Binary<'a>>, rustler::Error> {
+    let mut doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
+    let mut state = state.0.lock().map_err(to_badarg)?;
+
+    let message = doc.sync().generate_sync_message(&mut state);
+
+    Ok(message.map(|message| binary_from_bytes(env, &message.encode())))
+}
+
+// Applies an inbound sync message to the document, folding in the changes it carries,
+// and returns the updated document bytes. The `state` handle is advanced in place.
+#[rustler::nif]
+fn receive_sync_message<'a>(
+    env: Env<'a>,
+    doc_bytes: Binary,
+    state: ResourceArc<SyncStateResource>,
+    message_bytes: Binary,
+) -> Result<Binary<'a>, rustler::Error> {
+    let mut doc = AutoCommit::load(doc_bytes.as_slice()).map_err(to_badarg)?;
+    let mut state = state.0.lock().map_err(to_badarg)?;
+    let message = SyncMessage::decode(message_bytes.as_slice()).map_err(to_badarg)?;
+
+    doc.sync()
+        .receive_sync_message(&mut state, message)
+        .map_err(to_badarg)?;
+
+    Ok(binary_from_bytes(env, &doc.save()))
 }
 
 rustler::init!("Elixir.LocalCents.Tracking.ExAutomerge");
