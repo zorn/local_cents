@@ -77,8 +77,12 @@ defmodule LocalCents.Tracking.BookStore do
   else
     @spec default_user_space_dir() :: String.t()
     defp default_user_space_dir do
-      System.get_env("LOCAL_CENTS_BOOKS_DIR") ||
-        Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+      # An unset *or empty* override falls back to the platform path — an empty string is
+      # truthy in Elixir, so it would otherwise become the books directory and raise.
+      case System.get_env("LOCAL_CENTS_BOOKS_DIR") do
+        override when is_binary(override) and override != "" -> override
+        _ -> Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+      end
     end
   end
 

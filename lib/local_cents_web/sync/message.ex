@@ -21,7 +21,15 @@ defmodule LocalCentsWeb.Sync.Message do
   @spec wrap(sync_message :: binary()) :: %{message: String.t()}
   def wrap(sync_message), do: %{message: Base.encode64(sync_message)}
 
-  @doc "Unwraps a Channel payload back into the sync message's bytes."
-  @spec unwrap(payload :: %{String.t() => String.t()}) :: binary()
-  def unwrap(%{"message" => encoded}), do: Base.decode64!(encoded)
+  @doc """
+  Unwraps a Channel payload back into the sync message's bytes, or `:error` when the
+  payload is not a well-formed envelope.
+
+  A peer can send anything over the wire, so a missing `"message"` key or invalid
+  Base64 is a dropped message rather than a crash — the sync callers fold `:error`
+  into the same "ignore it" path they use for a Book that is not open.
+  """
+  @spec unwrap(payload :: map()) :: {:ok, binary()} | :error
+  def unwrap(%{"message" => encoded}) when is_binary(encoded), do: Base.decode64(encoded)
+  def unwrap(_payload), do: :error
 end

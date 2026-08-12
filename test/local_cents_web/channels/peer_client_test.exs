@@ -81,9 +81,14 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     # Nothing to send: there is no open Book to generate a message from.
     refute_push ^topic, "sync", _payload
 
-    # An inbound message with no Book to fold into is dropped, not fatal.
+    # An inbound message with no Book to fold into, and a malformed envelope, are both
+    # dropped rather than fatal.
     push(PeerClient, topic, "sync", %{"message" => Base.encode64("ignored")})
-    assert Process.alive?(client)
+    push(PeerClient, topic, "sync", %{"message" => "not valid base64 !!"})
+
+    # A synchronous state read drains the async pushes above and returns (rather than
+    # exiting) only if neither crashed the client.
+    assert :sys.get_state(client)
   end
 
   defp start_client(book_id) do

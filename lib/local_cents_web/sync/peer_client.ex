@@ -28,6 +28,8 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   alias LocalCents.Tracking
   alias LocalCentsWeb.Sync.Message
 
+  require Logger
+
   # One remote peer per client, so its sync state needs only a single constant key.
   @peer :remote
 
@@ -57,8 +59,16 @@ defmodule LocalCentsWeb.Sync.PeerClient do
     :ok = Tracking.subscribe(book_id)
 
     case connect(Keyword.take(opts, [:uri, :test_mode?])) do
-      {:ok, socket} -> {:ok, assign(socket, book_id: book_id, peer: @peer, topic: topic)}
-      {:error, reason} -> {:stop, reason}
+      {:ok, socket} ->
+        {:ok, assign(socket, book_id: book_id, peer: @peer, topic: topic)}
+
+      # A bad `:uri` is the only way `connect/1` fails synchronously — an unreachable
+      # peer still connects (Slipstream retries in the background). Since this client is
+      # supervised in the app tree, crashing here would restart-loop and could take the
+      # whole app down on a misconfigured sync URL, so skip the child and log instead.
+      {:error, reason} ->
+        Logger.warning("Sync PeerClient did not start: #{inspect(reason)}")
+        :ignore
     end
   end
 
@@ -74,11 +84,13 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   def handle_message(_topic, "sync", payload, socket) do
     %{book_id: book_id, peer: peer} = socket.assigns
 
-    case Tracking.receive_sync_message(book_id, peer, Message.unwrap(payload)) do
-      :ok -> {:ok, pump(socket)}
-      # No open Book to fold into (the link can outlive an open Book), or a malformed
-      # message: drop it rather than crash the client. The next exchange recovers.
-      {:error, _reason} -> {:ok, socket}
+    with {:ok, message} <- Message.unwrap(payload),
+         :ok <- Tracking.receive_sync_message(book_id, peer, message) do
+      {:ok, pump(socket)}
+    else
+      # A malformed envelope, or no open Book to fold into (the link can outlive an open
+      # Book): drop it rather than crash the client. The next exchange recovers.
+      _ -> {:ok, socket}
     end
   end
 

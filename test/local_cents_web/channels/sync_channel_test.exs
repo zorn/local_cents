@@ -65,7 +65,8 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
     assert_push "sync", %{message: reply}
 
     # Applying the channel's reply back onto the peer converges it on the edit.
-    :ok = Tracking.receive_sync_message(peer_id, peer, Message.unwrap(%{"message" => reply}))
+    {:ok, reply_bytes} = Message.unwrap(%{"message" => reply})
+    :ok = Tracking.receive_sync_message(peer_id, peer, reply_bytes)
     assert %{description: "Espresso"} = expense(peer_id, coffee.id)
   end
 
@@ -77,7 +78,13 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
     {:ok, _reply, socket} = join(book_id)
 
     refute_push "sync", _payload
-    assert Process.alive?(socket.channel_pid)
+
+    # A malformed envelope is dropped rather than crashing the channel.
+    push(socket, "sync", %{"message" => "not valid base64 !!"})
+
+    # A synchronous state read drains the async push above and returns (rather than
+    # exiting) only if it did not crash the channel.
+    assert :sys.get_state(socket.channel_pid)
   end
 
   defp join(book_id) do

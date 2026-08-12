@@ -55,11 +55,13 @@ defmodule LocalCentsWeb.Sync.Channel do
   def handle_in("sync", payload, socket) do
     %{book_id: book_id, peer: peer} = socket.assigns
 
-    case Tracking.receive_sync_message(book_id, peer, Message.unwrap(payload)) do
-      :ok -> {:noreply, pump(socket)}
-      # No open Book to fold into (a peer can dial in before this side opens the Book),
-      # or a malformed message: drop it rather than crash. The next exchange recovers.
-      {:error, _reason} -> {:noreply, socket}
+    with {:ok, message} <- Message.unwrap(payload),
+         :ok <- Tracking.receive_sync_message(book_id, peer, message) do
+      {:noreply, pump(socket)}
+    else
+      # A malformed envelope, or no open Book to fold into (a peer can dial in before
+      # this side opens the Book): drop it rather than crash. The next exchange recovers.
+      _ -> {:noreply, socket}
     end
   end
 

@@ -69,7 +69,13 @@ defmodule LocalCentsWeb.Sync.TransportTest do
 
   defp restart_endpoint do
     Supervisor.terminate_child(LocalCents.Supervisor, LocalCentsWeb.Endpoint)
-    {:ok, _} = Supervisor.restart_child(LocalCents.Supervisor, LocalCentsWeb.Endpoint)
+
+    # `restart_child/2` returns `{:ok, pid}` or `{:ok, pid, info}` depending on the child;
+    # accept either success shape and let any other return fail the match loudly.
+    case Supervisor.restart_child(LocalCents.Supervisor, LocalCentsWeb.Endpoint) do
+      {:ok, _pid} -> :ok
+      {:ok, _pid, _info} -> :ok
+    end
   end
 
   defp description(book_id, expense_id) do
