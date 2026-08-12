@@ -4,6 +4,8 @@ defmodule LocalCents.TrackingTest do
   # module runs concurrently — see docs/research/avoiding-async-false-tests.md.
   use ExUnit.Case, async: true
 
+  import TinyMaps
+
   alias LocalCents.Tracking
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.Category
@@ -14,15 +16,15 @@ defmodule LocalCents.TrackingTest do
   @moduletag :tmp_dir
 
   describe "option validation" do
-    test "an unknown option key raises rather than being silently ignored", %{tmp_dir: dir} do
+    test "an unknown option key raises rather than being silently ignored", ~M{tmp_dir} do
       # The NimbleOptions schemas are the guardrail against a mistyped seam (e.g.
       # `book_dir:` instead of `books_dir:`) quietly falling back to the default.
       assert_raise NimbleOptions.ValidationError, ~r/unknown options \[:book_dir\]/, fn ->
-        Tracking.create_book("Family", book_dir: dir)
+        Tracking.create_book("Family", book_dir: tmp_dir)
       end
 
       assert_raise NimbleOptions.ValidationError, fn ->
-        Tracking.list_books(book_dir: dir)
+        Tracking.list_books(book_dir: tmp_dir)
       end
     end
 
@@ -34,21 +36,21 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "create_book/2" do
-    test "returns a Book with an id and the given name", %{tmp_dir: dir} do
+    test "returns a Book with an id and the given name", ~M{tmp_dir} do
       assert {:ok, %Book{id: id, name: "Family Expenses"}} =
-               Tracking.create_book("Family Expenses", books_dir: dir)
+               Tracking.create_book("Family Expenses", books_dir: tmp_dir)
 
       assert byte_size(id) > 0
     end
 
-    test "a new book has no expenses", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "a new book has no expenses", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       assert Tracking.list_expenses(book.id) == []
     end
 
-    test "each created book gets a distinct id", %{tmp_dir: dir} do
-      {:ok, a} = Tracking.create_book("A", books_dir: dir)
-      {:ok, b} = Tracking.create_book("B", books_dir: dir)
+    test "each created book gets a distinct id", ~M{tmp_dir} do
+      {:ok, a} = Tracking.create_book("A", books_dir: tmp_dir)
+      {:ok, b} = Tracking.create_book("B", books_dir: tmp_dir)
       refute a.id == b.id
     end
   end
@@ -59,53 +61,55 @@ defmodule LocalCents.TrackingTest do
     @created ~U[2026-06-02 13:34:20.500000Z]
     @edited ~U[2026-06-02 15:10:05.000000Z]
 
-    test "create_book/2 seeds updated_at from now, truncated to the second", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir, now: @created)
+    test "create_book/2 seeds updated_at from now, truncated to the second", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir, now: @created)
       assert book.updated_at == ~U[2026-06-02 13:34:20Z]
     end
 
-    test "list_books/1 and get_book/2 expose the derived updated_at", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir, now: @created)
+    test "list_books/1 and get_book/2 expose the derived updated_at", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir, now: @created)
 
-      assert [%Book{updated_at: ~U[2026-06-02 13:34:20Z]}] = Tracking.list_books(books_dir: dir)
+      assert [%Book{updated_at: ~U[2026-06-02 13:34:20Z]}] =
+               Tracking.list_books(books_dir: tmp_dir)
 
       assert %Book{updated_at: ~U[2026-06-02 13:34:20Z]} =
-               Tracking.get_book(book.id, books_dir: dir)
+               Tracking.get_book(book.id, books_dir: tmp_dir)
     end
 
-    test "adding an expense advances updated_at", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir, now: @created)
+    test "adding an expense advances updated_at", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir, now: @created)
 
       {:ok, _expense} =
         Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"}, now: @edited)
 
       assert %Book{updated_at: ~U[2026-06-02 15:10:05Z]} =
-               Tracking.get_book(book.id, books_dir: dir)
+               Tracking.get_book(book.id, books_dir: tmp_dir)
     end
 
-    test "renaming advances updated_at", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir, now: @created)
+    test "renaming advances updated_at", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir, now: @created)
 
-      :ok = Tracking.rename_book(book.id, "Household", books_dir: dir, now: @edited)
+      :ok = Tracking.rename_book(book.id, "Household", books_dir: tmp_dir, now: @edited)
 
       assert %Book{updated_at: ~U[2026-06-02 15:10:05Z]} =
-               Tracking.get_book(book.id, books_dir: dir)
+               Tracking.get_book(book.id, books_dir: tmp_dir)
     end
 
-    test "an epoch (0) now yields no updated_at, consistent with a later read", %{tmp_dir: dir} do
+    test "an epoch (0) now yields no updated_at, consistent with a later read", ~M{tmp_dir} do
       # A `0` unix stamp is "unset" on the read path (the NIF filters `time > 0`), so
       # the created Book must agree — nil, not the Unix epoch — with what list_books/1
       # would report.
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir, now: ~U[1970-01-01 00:00:00Z])
+      {:ok, book} =
+        Tracking.create_book("Family", books_dir: tmp_dir, now: ~U[1970-01-01 00:00:00Z])
 
       assert book.updated_at == nil
-      assert %Book{updated_at: nil} = Tracking.get_book(book.id, books_dir: dir)
+      assert %Book{updated_at: nil} = Tracking.get_book(book.id, books_dir: tmp_dir)
     end
   end
 
   describe "add_expense/3 and list_expenses/1" do
-    test "adds an expense from attrs and returns it as an Expense struct", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "adds an expense from attrs and returns it as an Expense struct", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:ok, %Expense{id: id, date: ~D[2026-06-02], description: "Coffee"}} =
                Tracking.add_expense(book.id, %{
@@ -120,23 +124,23 @@ defmodule LocalCents.TrackingTest do
       assert Decimal.equal?(cost, Decimal.new("5.00"))
     end
 
-    test "an absent cost is stored as nil", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "an absent cost is stored as nil", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Gift"})
 
       assert [%Expense{description: "Gift", cost: nil}] = Tracking.list_expenses(book.id)
     end
 
-    test "invalid attrs return a changeset without persisting anything", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "invalid attrs return a changeset without persisting anything", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:error, %Ecto.Changeset{}} = Tracking.add_expense(book.id, %{cost: "5.00"})
       assert Tracking.list_expenses(book.id) == []
     end
 
-    test "files the new expense under a category_id passed in attrs", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "files the new expense under a category_id passed in attrs", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, category} = Tracking.add_category(book.id, %{name: "Food"})
 
       assert {:ok, %Expense{category_id: cat_id}} =
@@ -145,8 +149,8 @@ defmodule LocalCents.TrackingTest do
       assert cat_id == category.id
     end
 
-    test "an unknown category_id returns :category_not_found without persisting", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "an unknown category_id returns :category_not_found without persisting", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:error, :category_not_found} =
                Tracking.add_expense(book.id, %{description: "Coffee", category_id: "no-such-id"})
@@ -154,8 +158,8 @@ defmodule LocalCents.TrackingTest do
       assert Tracking.list_expenses(book.id) == []
     end
 
-    test "all added expenses are present", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "all added expenses are present", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee"})
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Lunch"})
@@ -172,8 +176,8 @@ defmodule LocalCents.TrackingTest do
       assert {:error, :not_open} = Tracking.list_expenses(id)
     end
 
-    test "list_expenses/1 returns {:error, :not_open} for a closed book", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "list_expenses/1 returns {:error, :not_open} for a closed book", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       :ok = Tracking.close_book(book.id)
 
       assert {:error, :not_open} = Tracking.list_expenses(book.id)
@@ -181,8 +185,8 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "edit_expense/4" do
-    test "replaces the fields of an existing expense", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "replaces the fields of an existing expense", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
       assert {:ok, %Expense{id: id, description: "Latte"}} =
@@ -198,15 +202,15 @@ defmodule LocalCents.TrackingTest do
       assert Decimal.equal?(cost, Decimal.new("6.50"))
     end
 
-    test "returns {:error, :not_found} for an unknown expense id", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "returns {:error, :not_found} for an unknown expense id", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:error, :not_found} =
                Tracking.edit_expense(book.id, "no-such-id", %{description: "X"})
     end
 
-    test "reassigns and unassigns the category through the edit", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "reassigns and unassigns the category through the edit", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, category} = Tracking.add_category(book.id, %{name: "Food"})
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
 
@@ -225,8 +229,8 @@ defmodule LocalCents.TrackingTest do
                })
     end
 
-    test "an unknown category_id returns :category_not_found", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "an unknown category_id returns :category_not_found", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
 
       assert {:error, :category_not_found} =
@@ -244,22 +248,22 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "delete_expense/3" do
-    test "removes the expense", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "removes the expense", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
 
       assert :ok = Tracking.delete_expense(book.id, expense.id)
       assert Tracking.list_expenses(book.id) == []
     end
 
-    test "returns {:error, :not_found} for an unknown expense id", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "returns {:error, :not_found} for an unknown expense id", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:error, :not_found} = Tracking.delete_expense(book.id, "no-such-id")
     end
 
-    test "broadcasts the change to subscribers", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "broadcasts the change to subscribers", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Coffee"})
       :ok = Tracking.subscribe(book.id)
 
@@ -277,8 +281,8 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "categories: add/list/rename/delete through the context" do
-    test "add_category/3 returns a Category and list_categories/1 sees it", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "add_category/3 returns a Category and list_categories/1 sees it", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:ok, %Category{id: id, name: "Groceries"}} =
                Tracking.add_category(book.id, %{name: "Groceries"})
@@ -287,20 +291,20 @@ defmodule LocalCents.TrackingTest do
       assert [%Category{name: "Groceries"}] = Tracking.list_categories(book.id)
     end
 
-    test "a new book has no categories", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "a new book has no categories", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       assert Tracking.list_categories(book.id) == []
     end
 
-    test "a blank name returns a changeset without persisting", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "a blank name returns a changeset without persisting", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       assert {:error, %Ecto.Changeset{}} = Tracking.add_category(book.id, %{name: "  "})
       assert Tracking.list_categories(book.id) == []
     end
 
-    test "rename_category/4 changes the name", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "rename_category/4 changes the name", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
 
       assert {:ok, %Category{name: "Food"}} =
@@ -309,8 +313,8 @@ defmodule LocalCents.TrackingTest do
       assert [%Category{name: "Food"}] = Tracking.list_categories(book.id)
     end
 
-    test "delete_category/3 removes it and un-files its expenses", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "delete_category/3 removes it and un-files its expenses", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Milk"})
       {:ok, _} = Tracking.assign_category(book.id, expense.id, category.id)
@@ -320,10 +324,8 @@ defmodule LocalCents.TrackingTest do
       assert [%Expense{category_id: nil}] = Tracking.list_expenses(book.id)
     end
 
-    test "category commands broadcast :categories_updated alongside :book_updated", %{
-      tmp_dir: dir
-    } do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "category commands broadcast :categories_updated alongside :book_updated", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       :ok = Tracking.subscribe(book.id)
 
       {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
@@ -337,8 +339,8 @@ defmodule LocalCents.TrackingTest do
       assert_receive {:categories_updated, ^id}
     end
 
-    test "expense edits do not broadcast :categories_updated", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "expense edits do not broadcast :categories_updated", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       :ok = Tracking.subscribe(book.id)
 
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee"})
@@ -360,8 +362,8 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "assign_category/4 and unassign_category/3 through the context" do
-    test "files an expense under a category and un-files it, surviving a reopen", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "files an expense under a category and un-files it, surviving a reopen", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Milk"})
 
@@ -372,7 +374,7 @@ defmodule LocalCents.TrackingTest do
 
       # Reopen the book: the category_id is persisted in the document.
       :ok = Tracking.close_book(book.id)
-      :ok = Tracking.open_book(book.id, books_dir: dir)
+      :ok = Tracking.open_book(book.id, books_dir: tmp_dir)
       assert [%Expense{category_id: ^cat_id}] = Tracking.list_expenses(book.id)
 
       assert {:ok, %Expense{category_id: nil}} =
@@ -381,8 +383,8 @@ defmodule LocalCents.TrackingTest do
       assert [%Expense{category_id: nil}] = Tracking.list_expenses(book.id)
     end
 
-    test "assigning reports which side is unknown", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "assigning reports which side is unknown", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, expense} = Tracking.add_expense(book.id, %{description: "Milk"})
       {:ok, category} = Tracking.add_category(book.id, %{name: "Groceries"})
 
@@ -393,80 +395,79 @@ defmodule LocalCents.TrackingTest do
                Tracking.assign_category(book.id, expense.id, "no-such-category")
     end
 
-    test "adding a category advances updated_at", %{tmp_dir: dir} do
+    test "adding a category advances updated_at", ~M{tmp_dir} do
       earlier = ~U[2026-06-01 12:00:00Z]
       later = ~U[2026-06-02 12:00:00Z]
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir, now: earlier)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir, now: earlier)
 
       {:ok, _} = Tracking.add_category(book.id, %{name: "Groceries"}, now: later)
 
-      assert %Book{updated_at: ^later} = Tracking.get_book(book.id, books_dir: dir)
+      assert %Book{updated_at: ^later} = Tracking.get_book(book.id, books_dir: tmp_dir)
     end
   end
 
   describe "rename_book/3" do
-    test "changes the name seen by list_books/1", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Old Name", books_dir: dir)
+    test "changes the name seen by list_books/1", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Old Name", books_dir: tmp_dir)
 
-      :ok = Tracking.rename_book(book.id, "New Name", books_dir: dir)
+      :ok = Tracking.rename_book(book.id, "New Name", books_dir: tmp_dir)
 
-      assert [%Book{id: id, name: "New Name"}] = Tracking.list_books(books_dir: dir)
+      assert [%Book{id: id, name: "New Name"}] = Tracking.list_books(books_dir: tmp_dir)
       assert id == book.id
     end
 
-    test "renames a closed book by writing its file directly, without starting a process", %{
-      tmp_dir: dir
-    } do
-      {:ok, book} = Tracking.create_book("Old Name", books_dir: dir)
+    test "renames a closed book by writing its file directly, without starting a process",
+         ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Old Name", books_dir: tmp_dir)
       :ok = Tracking.close_book(book.id)
 
-      assert :ok = Tracking.rename_book(book.id, "New Name", books_dir: dir)
+      assert :ok = Tracking.rename_book(book.id, "New Name", books_dir: tmp_dir)
       # The rename must not have resurrected the book's runtime process.
       refute LocalCents.Tracking.BookServer.alive?(book.id)
-      assert %Book{name: "New Name"} = Tracking.get_book(book.id, books_dir: dir)
+      assert %Book{name: "New Name"} = Tracking.get_book(book.id, books_dir: tmp_dir)
     end
 
-    test "renames an open book through its process and broadcasts the change", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Old Name", books_dir: dir)
+    test "renames an open book through its process and broadcasts the change", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Old Name", books_dir: tmp_dir)
       :ok = Tracking.subscribe(book.id)
 
-      assert :ok = Tracking.rename_book(book.id, "New Name", books_dir: dir)
+      assert :ok = Tracking.rename_book(book.id, "New Name", books_dir: tmp_dir)
 
       assert_receive {:book_updated, id}
       assert id == book.id
-      assert %Book{name: "New Name"} = Tracking.get_book(book.id, books_dir: dir)
+      assert %Book{name: "New Name"} = Tracking.get_book(book.id, books_dir: tmp_dir)
     end
 
-    test "returns an error for an id with no book file", %{tmp_dir: dir} do
+    test "returns an error for an id with no book file", ~M{tmp_dir} do
       assert {:error, :enoent} =
                Tracking.rename_book("11111111-1111-4111-8111-111111111111", "New Name",
-                 books_dir: dir
+                 books_dir: tmp_dir
                )
     end
   end
 
   describe "list_books/1" do
-    test "is empty before any book is created", %{tmp_dir: dir} do
-      assert Tracking.list_books(books_dir: dir) == []
+    test "is empty before any book is created", ~M{tmp_dir} do
+      assert Tracking.list_books(books_dir: tmp_dir) == []
     end
 
-    test "enumerates every persisted book", %{tmp_dir: dir} do
-      {:ok, a} = Tracking.create_book("Family", books_dir: dir)
-      {:ok, b} = Tracking.create_book("Business", books_dir: dir)
+    test "enumerates every persisted book", ~M{tmp_dir} do
+      {:ok, a} = Tracking.create_book("Family", books_dir: tmp_dir)
+      {:ok, b} = Tracking.create_book("Business", books_dir: tmp_dir)
 
-      by_id = Map.new(Tracking.list_books(books_dir: dir), &{&1.id, &1.name})
+      by_id = Map.new(Tracking.list_books(books_dir: tmp_dir), &{&1.id, &1.name})
       assert by_id == %{a.id => "Family", b.id => "Business"}
     end
 
-    test "skips a file that is not a valid Book document", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "skips a file that is not a valid Book document", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       # A readable .lcbook file that is not a valid Automerge/Book document must
       # not blank the whole library.
-      File.write!(Path.join(dir, "bad00000-0000-4000-8000-000000000000.lcbook"), "garbage")
+      File.write!(Path.join(tmp_dir, "bad00000-0000-4000-8000-000000000000.lcbook"), "garbage")
 
       log =
         ExUnit.CaptureLog.capture_log(fn ->
-          assert [%Book{id: id, name: "Family"}] = Tracking.list_books(books_dir: dir)
+          assert [%Book{id: id, name: "Family"}] = Tracking.list_books(books_dir: tmp_dir)
           assert id == book.id
         end)
 
@@ -475,49 +476,49 @@ defmodule LocalCents.TrackingTest do
   end
 
   describe "get_book/2" do
-    test "returns the Book for a known id", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "returns the Book for a known id", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
-      assert %Book{id: id, name: "Family"} = Tracking.get_book(book.id, books_dir: dir)
+      assert %Book{id: id, name: "Family"} = Tracking.get_book(book.id, books_dir: tmp_dir)
       assert id == book.id
     end
 
-    test "returns nil for an unknown id", %{tmp_dir: dir} do
-      assert Tracking.get_book("11111111-1111-4111-8111-111111111111", books_dir: dir) == nil
+    test "returns nil for an unknown id", ~M{tmp_dir} do
+      assert Tracking.get_book("11111111-1111-4111-8111-111111111111", books_dir: tmp_dir) == nil
     end
   end
 
   describe "open_book/2 and close_book/1" do
-    test "reopening a closed book still reads its persisted expenses", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "reopening a closed book still reads its persisted expenses", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
       :ok = Tracking.close_book(book.id)
-      :ok = Tracking.open_book(book.id, books_dir: dir)
+      :ok = Tracking.open_book(book.id, books_dir: tmp_dir)
 
       assert [%Expense{description: "Coffee", cost: cost}] = Tracking.list_expenses(book.id)
       assert Decimal.equal?(cost, Decimal.new("5.00"))
     end
 
-    test "open_book/2 errors for an unknown id", %{tmp_dir: dir} do
-      assert {:error, _reason} = Tracking.open_book("does-not-exist", books_dir: dir)
+    test "open_book/2 errors for an unknown id", ~M{tmp_dir} do
+      assert {:error, _reason} = Tracking.open_book("does-not-exist", books_dir: tmp_dir)
     end
   end
 
   describe "delete_book/2" do
-    test "removes the book from the library", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
-      assert [_] = Tracking.list_books(books_dir: dir)
+    test "removes the book from the library", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+      assert [_] = Tracking.list_books(books_dir: tmp_dir)
 
-      assert :ok = Tracking.delete_book(book.id, books_dir: dir)
-      assert Tracking.list_books(books_dir: dir) == []
+      assert :ok = Tracking.delete_book(book.id, books_dir: tmp_dir)
+      assert Tracking.list_books(books_dir: tmp_dir) == []
     end
 
-    test "broadcasts to subscribers so an open document window can react", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "broadcasts to subscribers so an open document window can react", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       :ok = Tracking.subscribe(book.id)
 
-      assert :ok = Tracking.delete_book(book.id, books_dir: dir)
+      assert :ok = Tracking.delete_book(book.id, books_dir: tmp_dir)
 
       assert_receive {:book_updated, id}
       assert id == book.id
@@ -526,8 +527,8 @@ defmodule LocalCents.TrackingTest do
 
   describe "report/2" do
     test "computes the Category × Month matrix for an open book, reconciling to the grand total",
-         %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+         ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
       {:ok, utilities} = Tracking.add_category(book.id, %{name: "Utilities"})
 
@@ -594,8 +595,8 @@ defmodule LocalCents.TrackingTest do
       assert Decimal.equal?(utilities_row.cells[Month.new(2026, 3)].total, Decimal.new(0))
     end
 
-    test "a :range option narrows the matrix to a trailing window", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "a :range option narrows the matrix to a trailing window", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       {:ok, _} =
         Tracking.add_expense(book.id, %{date: ~D[2026-01-10], description: "Old", cost: "99.00"})
@@ -615,8 +616,8 @@ defmodule LocalCents.TrackingTest do
              }
     end
 
-    test "returns {:error, :not_open} when the book's process is not running", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "returns {:error, :not_open} when the book's process is not running", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       :ok = Tracking.close_book(book.id)
 
       assert {:error, :not_open} = Tracking.report(book.id)

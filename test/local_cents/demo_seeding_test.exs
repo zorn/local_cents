@@ -141,10 +141,10 @@ defmodule LocalCents.DemoSeedingTest do
     # This assertion observes the runtime state seeding *leaves behind*, so it needs a
     # fresh seed no other test has opened — its own isolated library.
     @tag :tmp_dir
-    test "leaves no Book runtime process running", %{tmp_dir: dir} do
-      :ok = DemoSeeding.create_books(now: @now, books_dir: dir)
+    test "leaves no Book runtime process running", ~M{tmp_dir} do
+      :ok = DemoSeeding.create_books(now: @now, books_dir: tmp_dir)
 
-      for book <- Tracking.list_books(books_dir: dir) do
+      for book <- Tracking.list_books(books_dir: tmp_dir) do
         assert Tracking.list_expenses(book.id) == {:error, :not_open}
       end
     end
