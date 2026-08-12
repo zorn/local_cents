@@ -13,6 +13,7 @@ defmodule LocalCentsWeb.Sync.TransportTest do
   use ExUnit.Case, async: false
 
   import LocalCents.SyncTestHelper
+  import TinyMaps
 
   alias LocalCents.Eventually
   alias LocalCents.Tracking
@@ -43,13 +44,13 @@ defmodule LocalCentsWeb.Sync.TransportTest do
     :ok
   end
 
-  test "an edit on either connected peer reaches the other", %{tmp_dir: dir} do
+  test "an edit on either connected peer reaches the other", ~M{tmp_dir} do
     # The origin peer holds the Book the dialer joins by topic; the dialer forks it, so
     # the two share an Automerge ancestor but keep their own ids and `.lcbook` files —
     # the shape of a peer seeded over the sync link (ADR 0025).
-    {:ok, origin} = Tracking.create_book("Family", books_dir: dir)
+    {:ok, origin} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, coffee} = Tracking.add_expense(origin.id, %{description: "Coffee", cost: "1.00"})
-    dialer_id = fork_peer(dir, origin.id)
+    dialer_id = fork_peer(tmp_dir, origin.id)
 
     start_supervised!(
       {PeerClient,

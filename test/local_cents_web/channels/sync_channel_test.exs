@@ -12,6 +12,7 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
   use LocalCentsWeb.ChannelCase, async: true
 
   import LocalCents.SyncTestHelper
+  import TinyMaps
 
   alias LocalCents.Tracking
   alias LocalCentsWeb.PeerSocket
@@ -20,8 +21,8 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
 
   @moduletag :tmp_dir
 
-  test "joining the channel initiates the sync exchange", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "joining the channel initiates the sync exchange", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
 
     {:ok, _reply, _socket} = join(book.id)
@@ -31,8 +32,8 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
     assert_push "sync", %{message: _message}
   end
 
-  test "a local edit after join pushes the change to the peer", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "a local edit after join pushes the change to the peer", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
 
     {:ok, _reply, _socket} = join(book.id)
@@ -45,12 +46,12 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
     assert_push "sync", %{message: _message}
   end
 
-  test "an inbound sync message is answered with the change the peer lacks", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "an inbound sync message is answered with the change the peer lacks", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
 
     # A peer forks from the shared ancestor, then this side edits ahead of it.
-    peer_id = fork_peer(dir, book.id)
+    peer_id = fork_peer(tmp_dir, book.id)
     peer = make_ref()
     {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
 
@@ -70,7 +71,7 @@ defmodule LocalCentsWeb.Sync.ChannelTest do
     assert %{description: "Espresso"} = expense(peer_id, coffee.id)
   end
 
-  test "joining a Book with no running server does not push or crash", %{tmp_dir: _dir} do
+  test "joining a Book with no running server does not push or crash" do
     # A peer can dial in before this side has opened the Book. With no server to sync,
     # the channel joins and idles rather than crashing on the opening exchange.
     book_id = Ecto.UUID.generate()

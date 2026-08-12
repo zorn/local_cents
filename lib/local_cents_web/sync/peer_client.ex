@@ -111,9 +111,12 @@ defmodule LocalCentsWeb.Sync.PeerClient do
 
     if joined?(socket, topic) do
       case Tracking.generate_sync_message(socket.assigns.book_id, socket.assigns.peer) do
-        message when is_binary(message) -> _ = push(socket, topic, "sync", Message.wrap(message))
+        message when is_binary(message) ->
+          _ = push(socket, topic, "sync", Message.wrap(message))
+
         # `nil` (nothing to send) or `{:error, :not_open}` (no local Book yet): idle.
-        _ -> :ok
+        _ ->
+          :ok
       end
     end
 

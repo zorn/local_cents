@@ -72,8 +72,12 @@ defmodule LocalCentsWeb.Sync.Channel do
     %{book_id: book_id, peer: peer} = socket.assigns
 
     case Tracking.generate_sync_message(book_id, peer) do
-      message when is_binary(message) -> push(socket, "sync", Message.wrap(message))
-      _ -> :ok
+      message when is_binary(message) ->
+        push(socket, "sync", Message.wrap(message))
+
+      # `nil` (nothing to send) or `{:error, :not_open}` (no open Book yet): idle.
+      _ ->
+        :ok
     end
 
     socket

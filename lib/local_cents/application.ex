@@ -47,9 +47,7 @@ defmodule LocalCents.Application do
 
   # As the OTP entry point this module names every child it wires into the
   # supervision tree, so its dependency breadth is inherent to that role rather than a
-  # smell to refactor away (the same reasoning `LocalCents.Tracking.BookServer` uses to
-  # opt out). Adding the sync `PeerClient` child pushed it one past the project-wide cap,
-  # so it opts out here rather than inflating the cap for every module.
+  # smell to refactor away.
   # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
 
   # Promoted to a top-level boundary so it can depend on both the core and the

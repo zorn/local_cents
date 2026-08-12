@@ -11,14 +11,15 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
   use Slipstream.SocketTest, async: false
 
   import LocalCents.SyncTestHelper
+  import TinyMaps
 
   alias LocalCents.Tracking
   alias LocalCentsWeb.Sync.PeerClient
 
   @moduletag :tmp_dir
 
-  test "joining opens the exchange with a first sync message", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "joining opens the exchange with a first sync message", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
     topic = "sync:" <> book.id
 
@@ -28,13 +29,13 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     assert_push ^topic, "sync", %{message: _message}
   end
 
-  test "an inbound sync message is answered with the change the peer lacks", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "an inbound sync message is answered with the change the peer lacks", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
     topic = "sync:" <> book.id
 
     # A peer forks from the shared ancestor; this side then edits ahead of it.
-    peer_id = fork_peer(dir, book.id)
+    peer_id = fork_peer(tmp_dir, book.id)
     peer = make_ref()
     {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
 
@@ -52,8 +53,8 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     assert %{description: "Espresso"} = expense(peer_id, coffee.id)
   end
 
-  test "a local edit after join pushes the change to the peer", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "a local edit after join pushes the change to the peer", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
     topic = "sync:" <> book.id
 
@@ -68,7 +69,7 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     assert_push ^topic, "sync", %{message: _message}
   end
 
-  test "stays alive when its local Book has no running server", %{tmp_dir: _dir} do
+  test "stays alive when its local Book has no running server" do
     # The client can be started before its Book is opened (it auto-starts from the
     # supervision tree). With no server for the Book, the exchange has nothing to do
     # rather than crashing the client.
