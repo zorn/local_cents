@@ -11,6 +11,8 @@ defmodule LocalCents.Tracking.SyncTest do
   # `:books_dir` env forces serialization.
   use ExUnit.Case, async: true
 
+  import LocalCents.SyncTestHelper
+
   alias LocalCents.Tracking
 
   @moduletag :tmp_dir
@@ -155,18 +157,6 @@ defmodule LocalCents.Tracking.SyncTest do
 
   defp message_bytes(nil), do: 0
   defp message_bytes(message), do: byte_size(message)
-
-  # Forks `source_id`'s document into a second open Book in the same directory, so
-  # the two peers share a genuine common ancestor (identical bytes, identical
-  # Automerge history). This is the "both start from a common ancestor" the demo
-  # seeds over the sync link, reduced to a file fork so the shared starting point is
-  # deterministic.
-  defp fork_peer(dir, source_id) do
-    new_id = Ecto.UUID.generate()
-    File.cp!(Path.join(dir, source_id <> ".lcbook"), Path.join(dir, new_id <> ".lcbook"))
-    :ok = Tracking.open_book(new_id, books_dir: dir)
-    new_id
-  end
 
   defp add_expense(id, description) do
     {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})

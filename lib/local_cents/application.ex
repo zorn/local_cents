@@ -45,6 +45,13 @@ defmodule LocalCents.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
 
+  # As the OTP entry point this module names every child it wires into the
+  # supervision tree, so its dependency breadth is inherent to that role rather than a
+  # smell to refactor away (the same reasoning `LocalCents.Tracking.BookServer` uses to
+  # opt out). Adding the sync `PeerClient` child pushed it one past the project-wide cap,
+  # so it opts out here rather than inflating the cap for every module.
+  # credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
+
   # Promoted to a top-level boundary so it can depend on both the core and the
   # web layer to wire up the supervision tree, without creating a dependency
   # cycle between `LocalCents` and `LocalCentsWeb`.
@@ -96,7 +103,25 @@ defmodule LocalCents.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: LocalCents.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children ++ sync_peer_children(), opts)
+  end
+
+  # The two-peer sync link, started only when this instance is configured to dial a
+  # peer (ADR 0025). `LOCAL_CENTS_SYNC_URL` is the WebSocket URL of the peer's
+  # `LocalCentsWeb.PeerSocket` and `LOCAL_CENTS_SYNC_BOOK_ID` is the Book both sides
+  # reconcile; without them this instance only *hosts* the sync Channel and starts no
+  # client. The client tolerates the Book not being open yet, so ordering after the
+  # rest of the tree is enough — it idles until the Book is opened and edited.
+  @spec sync_peer_children() :: [Supervisor.child_spec() | {module(), term()}]
+  defp sync_peer_children do
+    url = System.get_env("LOCAL_CENTS_SYNC_URL")
+    book_id = System.get_env("LOCAL_CENTS_SYNC_BOOK_ID")
+
+    if url && book_id do
+      [{LocalCentsWeb.Sync.PeerClient, uri: url, book_id: book_id}]
+    else
+      []
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

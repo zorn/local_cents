@@ -46,7 +46,7 @@ call).
 | `LocalCents.ProcessConfig` | `lib/local_cents/process_config.ex` | — | — |
 | `LocalCents.Tracking` | `lib/local_cents/tracking.ex` | `Book`, `Category`, `Expense`, `Month`, `Report` (with its `Cell` and `Row`), `Supervisor` | `LocalCents.ProcessConfig` |
 | `LocalCents.DemoSeeding` | `lib/local_cents/demo_seeding.ex` | — | `LocalCents.Tracking` |
-| `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding`, `LocalCents.ProcessConfig` |
+| `LocalCentsWeb` | `lib/local_cents_web.ex` | `Endpoint`, `Telemetry`, `Sync.PeerClient` | `LocalCents`, `LocalCents.Tracking`, `LocalCents.DemoSeeding`, `LocalCents.ProcessConfig` |
 | `LocalCents.Application` | `lib/local_cents/application.ex` | — | `LocalCents`, `LocalCentsWeb` |
 | `Storybook` | `lib/storybook.ex` | (checks disabled) | (checks disabled) |
 
@@ -85,7 +85,7 @@ the `exports:` option of each boundary's declaring module — see
 ```mermaid
 graph TD
     App["LocalCents.Application<br/><i>top-level</i>"]
-    Web["LocalCentsWeb<br/><small>exports: Endpoint, Telemetry</small>"]
+    Web["LocalCentsWeb<br/><small>exports: Endpoint, Telemetry, Sync.PeerClient</small>"]
     Core["LocalCents<br/><small>core</small>"]
     Tracking["LocalCents.Tracking<br/><small>domain context (exports data-type structs)</small>"]
     DemoSeeding["LocalCents.DemoSeeding<br/><small>consumer (no exports)</small>"]

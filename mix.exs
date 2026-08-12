@@ -121,6 +121,7 @@ defmodule LocalCents.MixProject do
       "docs/testing-coverage.md",
       "docs/book-runtime-architecture.md",
       "docs/book-runtime-lifecycle.md",
+      "docs/two-peer-sync.md",
       "docs/inspecting-a-running-app.md",
       "docs/command-line-history.md",
       "docs/breadboard-demo.md",
@@ -155,6 +156,7 @@ defmodule LocalCents.MixProject do
         "docs/testing-coverage.md",
         "docs/book-runtime-architecture.md",
         "docs/book-runtime-lifecycle.md",
+        "docs/two-peer-sync.md",
         "docs/inspecting-a-running-app.md",
         "docs/command-line-history.md",
         "docs/breadboard-demo.md"
@@ -369,7 +371,13 @@ defmodule LocalCents.MixProject do
       {:dns_cluster, "~> 0.2.0"},
 
       # The HTTP server that runs the Phoenix endpoint.
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+
+      # A Phoenix Channel *client* for the BEAM: it lets one peer's server dial
+      # into the other peer's sync Channel over a WebSocket, the transport the
+      # two-peer offline demo runs on (see ADR 0025). Built on the Mint stack Req
+      # already pulls in, so it adds no parallel HTTP client.
+      {:slipstream, "~> 1.1"}
     ]
   end
 

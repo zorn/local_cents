@@ -23,7 +23,7 @@ defmodule LocalCentsWeb do
   # the process-tree entry points (Endpoint, Telemetry) are exported.
   use Boundary,
     deps: [LocalCents, LocalCents.Tracking, LocalCents.DemoSeeding, LocalCents.ProcessConfig],
-    exports: [Endpoint, Telemetry]
+    exports: [Endpoint, Telemetry, Sync.PeerClient]
 
   @spec static_paths() :: [String.t()]
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
