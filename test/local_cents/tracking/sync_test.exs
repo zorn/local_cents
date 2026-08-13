@@ -11,17 +11,19 @@ defmodule LocalCents.Tracking.SyncTest do
   # `:books_dir` env forces serialization.
   use ExUnit.Case, async: true
 
+  import TinyMaps
+
   alias LocalCents.Tracking
 
   @moduletag :tmp_dir
 
-  test "two peers that diverged independently converge to the same expenses", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "two peers that diverged independently converge to the same expenses", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     coffee = add_expense(book.id, "Coffee")
     lunch = add_expense(book.id, "Lunch")
 
     # A second peer forks from the shared ancestor holding both expenses.
-    peer_b = fork_peer(dir, book.id)
+    peer_b = fork_peer(tmp_dir, book.id)
 
     # The link is suspended (we simply do not reconcile): each peer edits a
     # different expense with no knowledge of the other's change.
@@ -35,8 +37,8 @@ defmodule LocalCents.Tracking.SyncTest do
   end
 
   test "a reconcile after a small edit ships only the missing change, not the whole document",
-       %{tmp_dir: dir} do
-    {:ok, book_a} = Tracking.create_book("Family", books_dir: dir)
+       ~M{tmp_dir} do
+    {:ok, book_a} = Tracking.create_book("Family", books_dir: tmp_dir)
 
     # Peer B forks from the empty common ancestor, before A diverges — so the two
     # share the root document objects and their edits merge into one expenses list
@@ -44,7 +46,7 @@ defmodule LocalCents.Tracking.SyncTest do
     # never seen, so the first reconcile is a full transfer: the baseline the delta is
     # measured against. The peers keep their per-peer sync state between the two
     # reconciles, which is what lets the second ship a delta instead of starting over.
-    peer_b = fork_peer(dir, book_a.id)
+    peer_b = fork_peer(tmp_dir, book_a.id)
     for n <- 1..20, do: add_expense(book_a.id, "Expense number #{n}")
 
     full_sync_bytes = reconcile(book_a.id, peer_b)
@@ -64,36 +66,35 @@ defmodule LocalCents.Tracking.SyncTest do
     assert Map.fetch!(descriptions_by_id(peer_b), expense.id) == "Espresso"
   end
 
-  test "after a reconcile, Last Updated reflects the latest edit across both peers", %{
-    tmp_dir: dir
-  } do
+  test "after a reconcile, Last Updated reflects the latest edit across both peers",
+       ~M{tmp_dir} do
     earlier = ~U[2026-01-01 00:00:00Z]
     later = ~U[2026-06-01 00:00:00Z]
 
-    {:ok, book_a} = Tracking.create_book("Family", books_dir: dir, now: earlier)
+    {:ok, book_a} = Tracking.create_book("Family", books_dir: tmp_dir, now: earlier)
     {:ok, coffee} = Tracking.add_expense(book_a.id, %{description: "Coffee"}, now: earlier)
 
-    peer_b = fork_peer(dir, book_a.id)
+    peer_b = fork_peer(tmp_dir, book_a.id)
 
     # Peer B makes a later edit that A has not seen; A's own latest write is `earlier`.
     {:ok, _} = Tracking.edit_expense(peer_b, coffee.id, %{description: "Espresso"}, now: later)
 
-    assert Tracking.get_book(book_a.id, books_dir: dir).updated_at == earlier
+    assert Tracking.get_book(book_a.id, books_dir: tmp_dir).updated_at == earlier
 
     reconcile(book_a.id, peer_b)
 
     # A now carries B's later change, so its Last Updated is the newer edit across the
     # two peers, not A's latest local write (ADR 0012).
-    assert Tracking.get_book(book_a.id, books_dir: dir).updated_at == later
-    assert Tracking.get_book(peer_b, books_dir: dir).updated_at == later
+    assert Tracking.get_book(book_a.id, books_dir: tmp_dir).updated_at == later
+    assert Tracking.get_book(peer_b, books_dir: tmp_dir).updated_at == later
   end
 
-  test "peers that diverged across an offline period reconnect and converge", %{tmp_dir: dir} do
-    {:ok, book_a} = Tracking.create_book("Family", books_dir: dir)
+  test "peers that diverged across an offline period reconnect and converge", ~M{tmp_dir} do
+    {:ok, book_a} = Tracking.create_book("Family", books_dir: tmp_dir)
     coffee = add_expense(book_a.id, "Coffee")
     lunch = add_expense(book_a.id, "Lunch")
 
-    peer_b = fork_peer(dir, book_a.id)
+    peer_b = fork_peer(tmp_dir, book_a.id)
 
     # Simulate peer B's offline period with a clean close — never a brutal kill of a
     # supervised server. Through the context, B now reads as not open.
@@ -105,7 +106,7 @@ defmodule LocalCents.Tracking.SyncTest do
 
     # B comes back and makes its own independent edit. Its sync state was dropped by the
     # close, so the reconnect drives a fresh exchange.
-    :ok = Tracking.open_book(peer_b, books_dir: dir)
+    :ok = Tracking.open_book(peer_b, books_dir: tmp_dir)
     edit_description(peer_b, lunch.id, "Dinner")
 
     reconcile(book_a.id, peer_b)
@@ -114,12 +115,11 @@ defmodule LocalCents.Tracking.SyncTest do
     assert descriptions_by_id(book_a.id) == %{coffee.id => "Espresso", lunch.id => "Dinner"}
   end
 
-  test "a reconcile that carries a peer's category change signals category subscribers", %{
-    tmp_dir: dir
-  } do
-    {:ok, book_a} = Tracking.create_book("Family", books_dir: dir)
+  test "a reconcile that carries a peer's category change signals category subscribers",
+       ~M{tmp_dir} do
+    {:ok, book_a} = Tracking.create_book("Family", books_dir: tmp_dir)
     book_id = book_a.id
-    peer_b = fork_peer(dir, book_id)
+    peer_b = fork_peer(tmp_dir, book_id)
 
     # Peer B adds a category A has never seen. A view refreshes its category picker
     # only on `:categories_updated` (ADR 0018), so a reconcile that lands the category
@@ -161,10 +161,10 @@ defmodule LocalCents.Tracking.SyncTest do
   # Automerge history). This is the "both start from a common ancestor" the demo
   # seeds over the sync link, reduced to a file fork so the shared starting point is
   # deterministic.
-  defp fork_peer(dir, source_id) do
+  defp fork_peer(tmp_dir, source_id) do
     new_id = Ecto.UUID.generate()
-    File.cp!(Path.join(dir, source_id <> ".lcbook"), Path.join(dir, new_id <> ".lcbook"))
-    :ok = Tracking.open_book(new_id, books_dir: dir)
+    File.cp!(Path.join(tmp_dir, source_id <> ".lcbook"), Path.join(tmp_dir, new_id <> ".lcbook"))
+    :ok = Tracking.open_book(new_id, books_dir: tmp_dir)
     new_id
   end
 

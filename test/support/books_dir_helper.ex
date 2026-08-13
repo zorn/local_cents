@@ -27,6 +27,8 @@ defmodule LocalCents.BooksDirHelper do
   # has no business gaining a dependency on `ProcessConfig` on its behalf.
   use Boundary, top_level?: true, deps: [LocalCents.ProcessConfig]
 
+  import TinyMaps
+
   alias LocalCents.ProcessConfig
 
   # Nothing to tear down. The claim lives in the test process's dictionary and dies
@@ -44,7 +46,7 @@ defmodule LocalCents.BooksDirHelper do
   # dumps the whole context — `conn` struct included — and buries the one line that
   # matters.
   @spec with_async_books_dir(map()) :: :ok
-  def with_async_books_dir(%{tmp_dir: tmp_dir}) do
+  def with_async_books_dir(~M{tmp_dir}) do
     ProcessConfig.put(:books_dir, tmp_dir)
   end
 
