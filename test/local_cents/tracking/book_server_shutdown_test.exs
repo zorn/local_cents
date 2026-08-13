@@ -4,14 +4,16 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
   # grace period is a shared (unmutated) config value, so it forces no serialization.
   use ExUnit.Case, async: true
 
+  import TinyMaps
+
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
 
   @moduletag :tmp_dir
 
   describe "auto-shutdown on last viewer" do
-    test "reaps after the last viewer disconnects, and the document survives", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "reaps after the last viewer disconnects, and the document survives", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
       server = server_pid(book.id)
@@ -27,12 +29,12 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert_receive {:DOWN, ^ref, :process, ^server, :normal}, 1_000
 
       # Reopening reloads the persisted document intact.
-      :ok = Tracking.open_book(book.id, books_dir: dir)
+      :ok = Tracking.open_book(book.id, books_dir: tmp_dir)
       assert [%Tracking.Expense{description: "Coffee"}] = Tracking.list_expenses(book.id)
     end
 
-    test "stays resident while at least one viewer remains", %{tmp_dir: dir} do
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    test "stays resident while at least one viewer remains", ~M{tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       server = server_pid(book.id)
       ref = Process.monitor(server)
@@ -51,11 +53,11 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert_receive {:DOWN, ^ref, :process, ^server, :normal}, 1_000
     end
 
-    test "a viewer returning within the grace window cancels the reap (nav gap)", %{tmp_dir: dir} do
+    test "a viewer returning within the grace window cancels the reap (nav gap)", ~M{tmp_dir} do
       # The push_navigate between a Book's views (ADR 0017) is a full remount: the old
       # viewer leaves, then a new one joins moments later. The grace period must bridge
       # that gap so ordinary navigation does not tear the process down.
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       server = server_pid(book.id)
       ref = Process.monitor(server)
@@ -74,10 +76,10 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert_receive {:DOWN, ^ref, :process, ^server, :normal}, 1_000
     end
 
-    test "a Book that never had a viewer stays resident", %{tmp_dir: dir} do
+    test "a Book that never had a viewer stays resident", ~M{tmp_dir} do
       # create_book starts a server with no window; a bare open_book likewise. Neither
       # ever holds a viewer, so neither is ever reaped — only explicit close/1 stops it.
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       server = server_pid(book.id)
       ref = Process.monitor(server)
@@ -86,21 +88,21 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert BookServer.alive?(book.id)
     end
 
-    test "reopening right after closing yields a live, serving process", %{tmp_dir: dir} do
+    test "reopening right after closing yields a live, serving process", ~M{tmp_dir} do
       # Open-after-close: `close_book/1` stops the server, and auto-shutdown makes this
       # churn routine. The reopen is safe with no guard in `ensure_started/2` because
       # `Registry` registration for `:unique` keys evicts a dead holder and retries
       # before it will report `{:already_started, _}` — so the pid handed back is always
       # live. This pins that, since a regression there would surface as a `:noproc` exit
       # on the next call rather than anything louder.
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
       {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
       before = server_pid(book.id)
       :ok = Tracking.close_book(book.id)
 
       # Reopen immediately — the Registry may not have cleared `before` yet.
-      :ok = Tracking.open_book(book.id, books_dir: dir)
+      :ok = Tracking.open_book(book.id, books_dir: tmp_dir)
 
       live = server_pid(book.id)
       assert live != before
@@ -109,7 +111,7 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert [%Tracking.Expense{description: "Coffee"}] = Tracking.list_expenses(book.id)
     end
 
-    test "a viewer tracked across a restart keeps the new server resident", %{tmp_dir: dir} do
+    test "a viewer tracked across a restart keeps the new server resident", ~M{tmp_dir} do
       # Presence lives in its own process, so a viewer stays tracked even while the
       # Book's server is down. On restart the new server must see it via Presence.list
       # at init and stay resident rather than reaping. Closing and reopening exercises
@@ -117,13 +119,13 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       # read — without brutally killing a supervised process (a `Process.exit/2` :kill
       # would propagate through the BookServer's link to the shared Registry/PubSub
       # partitions and, being bidirectional, could disturb unrelated Books).
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       viewer = start_viewer(book.id)
       await_viewer_observed(server_pid(book.id))
 
       :ok = Tracking.close_book(book.id)
-      :ok = Tracking.open_book(book.id, books_dir: dir)
+      :ok = Tracking.open_book(book.id, books_dir: tmp_dir)
 
       restarted = server_pid(book.id)
       ref = Process.monitor(restarted)
@@ -139,13 +141,13 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
   end
 
   describe "what actually gates the reap" do
-    test "a Book that never had a viewer receives no presence_diff at all", %{tmp_dir: dir} do
+    test "a Book that never had a viewer receives no presence_diff at all", ~M{tmp_dir} do
       # The load-bearing fact behind that rule. A `presence_diff` is only broadcast on
       # a topic something has tracked on, and the only thing that ever tracks on
       # `presence_topic/1` is `register_viewer/1`. So a never-viewed Book's server is
       # never woken to reconcile, which is what keeps it resident — no server-side flag
       # is required to achieve it.
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       Phoenix.PubSub.subscribe(LocalCents.PubSub, BookServer.presence_topic(book.id))
 
@@ -153,7 +155,7 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       assert BookServer.alive?(book.id)
     end
 
-    test "a viewer gone before the server observes its join still arms the reap", %{tmp_dir: dir} do
+    test "a viewer gone before the server observes its join still arms the reap", ~M{tmp_dir} do
       # The server reconciles by re-reading `Presence.list/1`, not by inspecting the
       # diff payload, so a viewer that dies before the server drains its mailbox is
       # never *seen* as present — both the join and the leave diff are processed against
@@ -166,7 +168,7 @@ defmodule LocalCents.Tracking.BookServerShutdownTest do
       # `Tracking` facade, because the facade also reads the Book back from the server
       # and would block on the suspension; the presence side — all this test cares
       # about — is identical either way.
-      {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+      {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
       server = server_pid(book.id)
       ref = Process.monitor(server)

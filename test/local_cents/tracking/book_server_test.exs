@@ -3,13 +3,15 @@ defmodule LocalCents.Tracking.BookServerTest do
   # create_book/open_book), so no shared `:books_dir` env forces serialization.
   use ExUnit.Case, async: true
 
+  import TinyMaps
+
   alias LocalCents.Tracking
   alias LocalCents.Tracking.BookServer
 
   @moduletag :tmp_dir
 
-  test "a command broadcasts {:book_updated, id} to subscribers", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "a command broadcasts {:book_updated, id} to subscribers", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     :ok = Tracking.subscribe(book.id)
 
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
@@ -18,19 +20,19 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert id == book.id
   end
 
-  test "a failed persist returns an error, keeps state, and does not broadcast", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "a failed persist returns an error, keeps state, and does not broadcast", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     :ok = Tracking.subscribe(book.id)
 
     # Make the books directory read-only so the atomic write (temp file + rename)
     # cannot create its temp file (non-root).
-    File.chmod!(dir, 0o555)
+    File.chmod!(tmp_dir, 0o555)
 
     assert {:error, _reason} =
              Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     # Restore write access so the temp-dir cleanup can remove the directory.
-    File.chmod!(dir, 0o755)
+    File.chmod!(tmp_dir, 0o755)
 
     # Persist-then-commit: the in-memory document was not updated, no broadcast fired,
     # and the server stayed alive rather than crashing and losing the change.
@@ -39,8 +41,8 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert BookServer.alive?(book.id)
   end
 
-  test "an invalid command returns a changeset without crashing the server", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "an invalid command returns a changeset without crashing the server", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
 
     # A missing description fails validation in the functional core.
     assert {:error, %Ecto.Changeset{}} = Tracking.add_expense(book.id, %{cost: "5.00"})
@@ -50,21 +52,19 @@ defmodule LocalCents.Tracking.BookServerTest do
     assert Tracking.list_expenses(book.id) == []
   end
 
-  test "open_book/2 fails and starts no server for a readable but invalid .lcbook", %{
-    tmp_dir: dir
-  } do
+  test "open_book/2 fails and starts no server for a readable but invalid .lcbook", ~M{tmp_dir} do
     id = "bad00000-0000-4000-8000-000000000000"
-    File.write!(Path.join(dir, id <> ".lcbook"), "garbage")
+    File.write!(Path.join(tmp_dir, id <> ".lcbook"), "garbage")
 
-    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id, books_dir: dir)
+    assert {:error, {:invalid_document, ^id}} = Tracking.open_book(id, books_dir: tmp_dir)
     refute BookServer.alive?(id)
   end
 
-  test "close_book stops the server for good and it is not restarted", %{tmp_dir: dir} do
+  test "close_book stops the server for good and it is not restarted", ~M{tmp_dir} do
     # Regression guard: with the default :permanent restart, the DynamicSupervisor
     # would resurrect a just-closed BookServer (defeating close/1). :transient must
     # keep an intentional :normal close stopped.
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     [{pid, _}] = Registry.lookup(LocalCents.Tracking.BookRegistry, book.id)
     ref = Process.monitor(pid)
 
@@ -76,15 +76,15 @@ defmodule LocalCents.Tracking.BookServerTest do
     refute BookServer.alive?(book.id)
   end
 
-  test "state persists across an explicit close and reopen", %{tmp_dir: dir} do
-    {:ok, book} = Tracking.create_book("Family", books_dir: dir)
+  test "state persists across an explicit close and reopen", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
     {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "5.00"})
 
     assert BookServer.alive?(book.id)
     :ok = Tracking.close_book(book.id)
     refute BookServer.alive?(book.id)
 
-    :ok = Tracking.open_book(book.id, books_dir: dir)
+    :ok = Tracking.open_book(book.id, books_dir: tmp_dir)
 
     assert [%Tracking.Expense{description: "Coffee"}] = Tracking.list_expenses(book.id)
   end
