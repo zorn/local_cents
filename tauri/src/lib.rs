@@ -1,9 +1,20 @@
 use serde::Deserialize;
+use std::sync::Arc;
+use tauri::menu::{Menu, MenuItem, SubmenuBuilder};
 use tauri::Manager;
 
 // The Phoenix endpoint every window loads from; window commands carry only the
 // route path and Rust prepends this host (see ADR 0006).
 const BASE_URL: &str = "http://127.0.0.1:4000";
+
+// The Developer > offline-mode menu item. A demo-only control that suspends the sync
+// link so the two peers diverge on cue (ADR 0025). Its title flips between the two
+// actions rather than carrying a checkmark, per the Apple HIG rule for a feature
+// toggle. It starts disabled — there is nothing to toggle until Elixir reports a
+// configured sync link — and enables with the "Enable" title once one does.
+const OFFLINE_MENU_ID: &str = "toggle-offline";
+const ENABLE_OFFLINE_TEXT: &str = "Enable Offline Mode";
+const DISABLE_OFFLINE_TEXT: &str = "Disable Offline Mode";
 
 // Window cascade: the first window opens at CASCADE_ORIGIN and each subsequent
 // window steps CASCADE_STEP down-and-right, so windows never stack exactly.
@@ -36,46 +47,83 @@ const LIBRARY_PATH: &str = "/library";
 // name; this is the library's equivalent.
 const LIBRARY_TITLE: &str = "Library";
 
-/// A window command from Elixir, sent as JSON over the `elixirkit` PubSub bridge
-/// — the one IPC channel between Elixir and Rust (see `CLAUDE.md`).
+/// A command from Elixir, sent as JSON over the `elixirkit` PubSub bridge — the one
+/// IPC channel between Elixir and Rust (see `CLAUDE.md`).
 ///
-/// `label` is the window's tag: for `open-window`, re-requesting an already-open
-/// label focuses that window instead of duplicating it, which is how "one
-/// document window per Book" is enforced; for `close-window` it names the window
-/// to close. `path` (the LiveView route to load) and `title` (the native window
-/// title) are only carried by `open-window`, so they default to empty for
-/// commands that omit them.
+/// Most commands drive windows. `label` is the window's tag: for `open-window`,
+/// re-requesting an already-open label focuses that window instead of duplicating it,
+/// which is how "one document window per Book" is enforced; for `close-window` it names
+/// the window to close. `path` (the LiveView route to load) and `title` (the native
+/// window title) are only carried by `open-window`. `offline` carries the sync link's
+/// state for `set-offline-menu`. Every field but `action` defaults, so a command names
+/// only the fields it uses.
 #[derive(Deserialize)]
-struct WindowCommand {
+struct Command {
     action: String,
+    #[serde(default)]
     label: String,
     #[serde(default)]
     path: String,
     #[serde(default)]
     title: String,
+    #[serde(default)]
+    offline: bool,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let pubsub = elixirkit::PubSub::listen("tcp://127.0.0.1:0").expect("failed to listen");
+    // Shared so the menu-event handler can broadcast to Elixir while `setup` keeps using
+    // it to subscribe and to hand Elixir the bridge URL.
+    let pubsub =
+        Arc::new(elixirkit::PubSub::listen("tcp://127.0.0.1:0").expect("failed to listen"));
+    let menu_pubsub = pubsub.clone();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        // Clicking the offline-mode item asks Elixir to flip the link; Elixir owns the
+        // state and echoes it back as `set-offline-menu`, which relabels the item.
+        .on_menu_event(move |_app, event| {
+            if event.id().0.as_str() == OFFLINE_MENU_ID {
+                if let Err(e) = menu_pubsub.broadcast("messages", br#"{"action":"toggle-offline"}"#)
+                {
+                    eprintln!("[rust] failed to broadcast offline toggle: {}", e);
+                }
+            }
+        })
         .setup(move |app| {
+            // Keep the platform's standard menus (Quit, Edit, Window) and add Developer;
+            // `set_as_app_menu` replaces the whole menu, so it must carry the defaults too.
+            let offline_item = MenuItem::with_id(
+                app.handle(),
+                OFFLINE_MENU_ID,
+                ENABLE_OFFLINE_TEXT,
+                // Disabled until Elixir reports a sync link (see the constant above).
+                false,
+                None::<&str>,
+            )?;
+            let developer = SubmenuBuilder::new(app.handle(), "Developer")
+                .item(&offline_item)
+                .build()?;
+            let menu = Menu::default(app.handle())?;
+            menu.append(&developer)?;
+            menu.set_as_app_menu()?;
+
             let app_handle = app.handle().clone();
+            let offline_item = offline_item.clone();
 
             pubsub.subscribe("messages", move |msg| {
                 if msg == b"ready" {
                     // Launching the app opens the library window (ADR 0006).
                     open_or_focus_window(&app_handle, LIBRARY_LABEL, LIBRARY_PATH, LIBRARY_TITLE);
-                } else if let Ok(cmd) = serde_json::from_slice::<WindowCommand>(msg) {
+                } else if let Ok(cmd) = serde_json::from_slice::<Command>(msg) {
                     match cmd.action.as_str() {
                         "open-window" => {
                             open_or_focus_window(&app_handle, &cmd.label, &cmd.path, &cmd.title)
                         }
                         "close-window" => close_window(&app_handle, &cmd.label),
                         "set-title" => set_window_title(&app_handle, &cmd.label, &cmd.title),
-                        other => println!("[rust] unknown window action: {}", other),
+                        "set-offline-menu" => update_offline_menu(&offline_item, cmd.offline),
+                        other => println!("[rust] unknown action: {}", other),
                     }
                 } else {
                     println!("[rust] {}", String::from_utf8_lossy(msg));
@@ -83,11 +131,12 @@ pub fn run() {
             });
 
             let app_handle = app.handle().clone();
+            let run_pubsub = pubsub.clone();
 
             tauri::async_runtime::spawn_blocking(move || {
                 let mut command = elixir_command(&app_handle);
 
-                command.env("ELIXIRKIT_PUBSUB", pubsub.url());
+                command.env("ELIXIRKIT_PUBSUB", run_pubsub.url());
                 let status = command.status().expect("failed to start Elixir");
 
                 app_handle.exit(status.code().unwrap_or(1));
@@ -173,6 +222,27 @@ fn set_window_title(app_handle: &tauri::AppHandle, label: &str, title: &str) {
         if let Err(e) = window.set_title(title) {
             eprintln!("[rust] failed to set title for window {}: {}", label, e);
         }
+    }
+}
+
+/// Enables the offline-mode menu item and relabels it for the link's state.
+///
+/// Elixir sends this only when a sync link exists, so receiving it both enables the item
+/// — it starts disabled when no peer is configured — and names the action available next:
+/// "Disable Offline Mode" while offline, "Enable Offline Mode" while online (ADR 0025).
+fn update_offline_menu<R: tauri::Runtime>(item: &MenuItem<R>, offline: bool) {
+    let text = if offline {
+        DISABLE_OFFLINE_TEXT
+    } else {
+        ENABLE_OFFLINE_TEXT
+    };
+
+    if let Err(e) = item.set_enabled(true) {
+        eprintln!("[rust] failed to enable the offline menu item: {}", e);
+    }
+
+    if let Err(e) = item.set_text(text) {
+        eprintln!("[rust] failed to relabel the offline menu item: {}", e);
     }
 }
 

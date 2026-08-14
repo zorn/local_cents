@@ -101,8 +101,16 @@ defmodule LocalCents.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: LocalCents.Supervisor]
-    Supervisor.start_link(children ++ sync_peer_children(), opts)
+    Supervisor.start_link(children ++ sync_peer_children() ++ menu_bridge_children(pubsub), opts)
   end
+
+  # The bridge between the native Developer menu's offline toggle and the sync link
+  # (ADR 0025). Started only under the native shell — `ELIXIRKIT_PUBSUB` is set — since
+  # without the bridge there is no menu to drive. Ordered after `sync_peer_children/0` so
+  # the `LocalCentsWeb.Sync.PeerClient` it reads the initial state from is already up.
+  @spec menu_bridge_children(pubsub :: String.t() | nil) :: [Supervisor.child_spec() | module()]
+  defp menu_bridge_children(nil), do: []
+  defp menu_bridge_children(_pubsub), do: [LocalCentsWeb.Sync.MenuBridge]
 
   # The two-peer sync link, started only when this instance is configured to dial a
   # peer (ADR 0025). `LOCAL_CENTS_SYNC_URL` is the WebSocket URL of the peer's

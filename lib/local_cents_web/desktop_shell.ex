@@ -100,4 +100,28 @@ defmodule LocalCentsWeb.DesktopShell do
   def set_title_command(%Book{id: id, name: name}) do
     Jason.encode!(%{action: "set-title", label: "book-" <> id, title: name})
   end
+
+  @doc """
+  Asks the native shell to relabel the Developer menu's offline-mode item for `state`.
+
+  The item's title flips with the sync link ([ADR 0025](0025-two-peer-sync-architecture.html)): "Disable Offline Mode" while
+  offline, "Enable Offline Mode" while online. `LocalCentsWeb.Sync.MenuBridge` pushes
+  each change here. Fire-and-forget like the window commands.
+  """
+  @spec set_offline_menu(state :: :online | :offline) :: :ok
+  def set_offline_menu(state) do
+    ElixirKit.PubSub.broadcast(@channel, set_offline_menu_command(state))
+  end
+
+  @doc """
+  Builds the JSON `set-offline-menu` command for the sync link's `state`.
+
+  Carries `offline` — `true` when the link is suspended — which the shell maps to the
+  item's title. Split out from `set_offline_menu/1` so the wire format is unit testable
+  without a live bridge.
+  """
+  @spec set_offline_menu_command(state :: :online | :offline) :: String.t()
+  def set_offline_menu_command(state) do
+    Jason.encode!(%{action: "set-offline-menu", offline: state == :offline})
+  end
 end

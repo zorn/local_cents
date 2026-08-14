@@ -49,6 +49,85 @@ defmodule LocalCentsWeb.Sync.PeerClient do
     Slipstream.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  @doc """
+  The sync link's current state from the demo's point of view:
+
+    * `:online` — the link is live;
+    * `:offline` — the link has been suspended by `suspend/0`;
+    * `nil` — no client is running, so there is no link (no peer configured).
+
+  This reports the operator's intent, not the socket's moment-to-moment connection
+  status, so a transient reconnect never reads as a deliberate offline.
+  """
+  @spec link_state() :: :online | :offline | nil
+  def link_state do
+    case GenServer.whereis(__MODULE__) do
+      nil -> nil
+      pid -> GenServer.call(pid, :link_state)
+    end
+  end
+
+  @doc """
+  Suspends the sync link — the Mac side going offline.
+
+  Disconnects this client from the peer so no change crosses in either direction, and
+  marks the link suspended so the drop is not auto-reconnected. The two documents keep
+  accepting edits independently until `resume/0`. A no-op when no client is running.
+  """
+  @spec suspend() :: :ok
+  def suspend, do: cast(:suspend)
+
+  @doc """
+  Resumes the sync link — the Mac side coming back online.
+
+  Redials the peer and rejoins, which reopens the exchange so each side catches the
+  other up on the edits it missed while the link was down. A no-op when no client is
+  running.
+  """
+  @spec resume() :: :ok
+  def resume, do: cast(:resume)
+
+  @doc """
+  Flips the link — `suspend/0` when it is online, `resume/0` when it is offline.
+
+  The client owns which way to flip because it owns the state, so the Mac-side toggle
+  can ask for the flip without first reading `link_state/0`. A no-op when no client is
+  running.
+  """
+  @spec toggle_link() :: :ok
+  def toggle_link, do: cast(:toggle)
+
+  @doc """
+  Subscribes the calling process to link-state changes.
+
+  Each flip broadcasts `{:sync_link, :online | :offline}`. `LocalCentsWeb.Sync.MenuBridge`
+  subscribes so the native offline-mode menu item mirrors the link's state.
+  """
+  @spec subscribe() :: :ok
+  def subscribe, do: Phoenix.PubSub.subscribe(LocalCents.PubSub, link_topic())
+
+  @doc """
+  The `Phoenix.PubSub` topic that link-state changes broadcast on.
+
+  The link is a single global stream, so it is a bare `<kind>` (see
+  [ADR 0011](0011-pubsub-topic-naming.html)). Named here so callers never hand-build it.
+  """
+  @spec link_topic() :: String.t()
+  def link_topic, do: "sync-link"
+
+  # Casts `message` to the running client, or does nothing when no peer is configured so
+  # the toggle can call blindly without first checking whether a link exists.
+  defp cast(message) do
+    case GenServer.whereis(__MODULE__) do
+      nil -> :ok
+      pid -> GenServer.cast(pid, message)
+    end
+  end
+
+  defp broadcast_link_state(state) do
+    Phoenix.PubSub.broadcast(LocalCents.PubSub, link_topic(), {:sync_link, state})
+  end
+
   @impl Slipstream
   def init(opts) do
     book_id = Keyword.fetch!(opts, :book_id)
@@ -60,7 +139,7 @@ defmodule LocalCentsWeb.Sync.PeerClient do
 
     case connect(Keyword.take(opts, [:uri, :test_mode?])) do
       {:ok, socket} ->
-        {:ok, assign(socket, book_id: book_id, peer: @peer, topic: topic)}
+        {:ok, assign(socket, book_id: book_id, peer: @peer, topic: topic, suspended?: false)}
 
       # A bad `:uri` is the only way `connect/1` fails synchronously — an unreachable
       # peer still connects (Slipstream retries in the background). Since this client is
@@ -91,6 +170,54 @@ defmodule LocalCentsWeb.Sync.PeerClient do
       # A malformed envelope, or no open Book to fold into (the link can outlive an open
       # Book): drop it rather than crash the client. The next exchange recovers.
       _ -> {:ok, socket}
+    end
+  end
+
+  @impl Slipstream
+  def handle_call(:link_state, _from, socket) do
+    {:reply, if(socket.assigns.suspended?, do: :offline, else: :online), socket}
+  end
+
+  @impl Slipstream
+  def handle_cast(:suspend, socket) do
+    _ = broadcast_link_state(:offline)
+    {:noreply, socket |> assign(suspended?: true) |> disconnect()}
+  end
+
+  def handle_cast(:resume, socket) do
+    _ = broadcast_link_state(:online)
+    socket = assign(socket, suspended?: false)
+
+    # `reconnect/1` refuses (`{:error, :connected}`) when the link never actually
+    # dropped — a resume with nothing to resume — so keep the socket as-is there.
+    case reconnect(socket) do
+      {:ok, socket} -> {:noreply, socket}
+      {:error, _reason} -> {:noreply, socket}
+    end
+  end
+
+  # The flip lives here, next to the state it reads, rather than in the web-side toggle.
+  def handle_cast(:toggle, %{assigns: %{suspended?: true}} = socket),
+    do: handle_cast(:resume, socket)
+
+  def handle_cast(:toggle, socket), do: handle_cast(:suspend, socket)
+
+  # A disconnect the toggle asked for stays down until `resume/0`; any other is
+  # unexpected, so reconnect with backoff as Slipstream's default does — an unreachable
+  # peer must keep retrying rather than give up the link for good.
+  @impl Slipstream
+  def handle_disconnect(_reason, socket) do
+    if socket.assigns.suspended? do
+      {:ok, socket}
+    else
+      # Keep the socket `reconnect/1` returns — it carries the advanced backoff
+      # counter, so a peer that stays down retries on a lengthening interval toward
+      # the 5s step rather than hot-looping at the first 10ms one. Tolerate an
+      # `{:error, …}` so a reconnect it can't schedule never crash-loops the client.
+      case reconnect(socket) do
+        {:ok, socket} -> {:ok, socket}
+        {:error, _reason} -> {:ok, socket}
+      end
     end
   end
 

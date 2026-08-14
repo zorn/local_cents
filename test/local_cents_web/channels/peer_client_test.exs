@@ -69,6 +69,112 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     assert_push ^topic, "sync", %{message: _message}
   end
 
+  test "a freshly joined client reports itself online", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    assert PeerClient.link_state() == :online
+  end
+
+  test "suspending disconnects the link and reports the client offline", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    :ok = PeerClient.suspend()
+
+    assert_disconnect()
+    assert PeerClient.link_state() == :offline
+  end
+
+  test "a local edit made while suspended does not cross to the peer", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    :ok = PeerClient.suspend()
+    assert_disconnect()
+
+    {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
+
+    refute_push ^topic, "sync", _payload
+  end
+
+  test "resuming reconnects and pushes the change made while offline", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "1.00"})
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    :ok = PeerClient.suspend()
+    assert_disconnect()
+    {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
+
+    :ok = PeerClient.resume()
+
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _catch_up}
+    assert PeerClient.link_state() == :online
+  end
+
+  test "toggle_link flips the link offline, then back online", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    :ok = PeerClient.toggle_link()
+    assert_disconnect()
+    assert PeerClient.link_state() == :offline
+
+    :ok = PeerClient.toggle_link()
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert PeerClient.link_state() == :online
+  end
+
+  test "suspending and resuming broadcast the link state to subscribers", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    :ok = PeerClient.subscribe()
+
+    :ok = PeerClient.suspend()
+    assert_receive {:sync_link, :offline}
+
+    :ok = PeerClient.resume()
+    assert_receive {:sync_link, :online}
+  end
+
+  test "the toggle API is inert when no client is running" do
+    # With no peer configured the client never starts; the Mac-side toggle still calls
+    # these blindly, so state reads as "no link" and the actions quietly no-op rather
+    # than crash.
+    assert PeerClient.link_state() == nil
+    assert PeerClient.suspend() == :ok
+    assert PeerClient.resume() == :ok
+    assert PeerClient.toggle_link() == :ok
+  end
+
   test "stays alive when its local Book has no running server" do
     # The client can be started before its Book is opened (it auto-starts from the
     # supervision tree). With no server for the Book, the exchange has nothing to do
