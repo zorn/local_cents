@@ -150,6 +150,23 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     assert PeerClient.link_state() == :online
   end
 
+  test "suspending and resuming broadcast the link state to subscribers", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    topic = "sync:" <> book.id
+
+    start_client(book.id)
+    connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
+    assert_push ^topic, "sync", %{message: _opening}
+
+    :ok = PeerClient.subscribe()
+
+    :ok = PeerClient.suspend()
+    assert_receive {:sync_link, :offline}
+
+    :ok = PeerClient.resume()
+    assert_receive {:sync_link, :online}
+  end
+
   test "the toggle API is inert when no client is running" do
     # With no peer configured the client never starts; the Mac-side toggle still calls
     # these blindly, so state reads as "no link" and the actions quietly no-op rather

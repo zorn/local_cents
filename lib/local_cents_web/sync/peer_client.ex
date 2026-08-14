@@ -33,6 +33,9 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   # One remote peer per client, so its sync state needs only a single constant key.
   @peer :remote
 
+  # The link is a single global stream, so its topic is a bare `<kind>` (ADR 0011).
+  @link_topic "sync-link"
+
   @doc """
   Starts the client, connecting to the peer at `:uri` to sync the local Book `:book_id`.
 
@@ -106,6 +109,15 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   @spec toggle_link() :: :ok
   def toggle_link, do: cast(:toggle)
 
+  @doc """
+  Subscribes the calling process to link-state changes.
+
+  Each flip broadcasts `{:sync_link, :online | :offline}`, so every open window's toggle
+  reflects the same link even when the flip came from another window.
+  """
+  @spec subscribe() :: :ok
+  def subscribe, do: Phoenix.PubSub.subscribe(LocalCents.PubSub, @link_topic)
+
   # Casts `message` to the running client, or does nothing when no peer is configured so
   # the toggle can call blindly without first checking whether a link exists.
   defp cast(message) do
@@ -113,6 +125,10 @@ defmodule LocalCentsWeb.Sync.PeerClient do
       nil -> :ok
       pid -> GenServer.cast(pid, message)
     end
+  end
+
+  defp broadcast_link_state(state) do
+    Phoenix.PubSub.broadcast(LocalCents.PubSub, @link_topic, {:sync_link, state})
   end
 
   @impl Slipstream
@@ -167,10 +183,12 @@ defmodule LocalCentsWeb.Sync.PeerClient do
 
   @impl Slipstream
   def handle_cast(:suspend, socket) do
+    broadcast_link_state(:offline)
     {:noreply, socket |> assign(suspended?: true) |> disconnect()}
   end
 
   def handle_cast(:resume, socket) do
+    broadcast_link_state(:online)
     socket = assign(socket, suspended?: false)
 
     # `reconnect/1` refuses (`{:error, :connected}`) when the link never actually
