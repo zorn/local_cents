@@ -31,8 +31,9 @@ defmodule LocalCentsWeb.Sync.MenuBridge do
     :ok = ElixirKit.PubSub.subscribe("messages")
     :ok = PeerClient.subscribe()
 
-    # Label the item for the link's current state so the menu opens correct rather than
-    # waiting for the first flip. `nil` (no peer configured) leaves the shell's default.
+    # Report the link's current state so the item opens enabled and labeled rather than
+    # waiting for the first flip. `nil` (no peer configured) sends nothing, leaving the
+    # item disabled — there is no link to toggle.
     push_menu(PeerClient.link_state())
 
     {:ok, %{}}

@@ -10,7 +10,8 @@ const BASE_URL: &str = "http://127.0.0.1:4000";
 // The Developer > offline-mode menu item. A demo-only control that suspends the sync
 // link so the two peers diverge on cue (ADR 0025). Its title flips between the two
 // actions rather than carrying a checkmark, per the Apple HIG rule for a feature
-// toggle. The app always starts online, so the resting title offers "Enable".
+// toggle. It starts disabled — there is nothing to toggle until Elixir reports a
+// configured sync link — and enables with the "Enable" title once one does.
 const OFFLINE_MENU_ID: &str = "toggle-offline";
 const ENABLE_OFFLINE_TEXT: &str = "Enable Offline Mode";
 const DISABLE_OFFLINE_TEXT: &str = "Disable Offline Mode";
@@ -96,7 +97,8 @@ pub fn run() {
                 app.handle(),
                 OFFLINE_MENU_ID,
                 ENABLE_OFFLINE_TEXT,
-                true,
+                // Disabled until Elixir reports a sync link (see the constant above).
+                false,
                 None::<&str>,
             )?;
             let developer = SubmenuBuilder::new(app.handle(), "Developer")
@@ -120,7 +122,7 @@ pub fn run() {
                         }
                         "close-window" => close_window(&app_handle, &cmd.label),
                         "set-title" => set_window_title(&app_handle, &cmd.label, &cmd.title),
-                        "set-offline-menu" => set_offline_menu_text(&offline_item, cmd.offline),
+                        "set-offline-menu" => update_offline_menu(&offline_item, cmd.offline),
                         other => println!("[rust] unknown action: {}", other),
                     }
                 } else {
@@ -223,17 +225,21 @@ fn set_window_title(app_handle: &tauri::AppHandle, label: &str, title: &str) {
     }
 }
 
-/// Relabels the offline-mode menu item to match the link's state.
+/// Enables the offline-mode menu item and relabels it for the link's state.
 ///
-/// Elixir owns the state and pushes each change here, so the item's title always names
-/// the action available next: "Disable Offline Mode" while offline, "Enable Offline
-/// Mode" while online (ADR 0025).
-fn set_offline_menu_text<R: tauri::Runtime>(item: &MenuItem<R>, offline: bool) {
+/// Elixir sends this only when a sync link exists, so receiving it both enables the item
+/// — it starts disabled when no peer is configured — and names the action available next:
+/// "Disable Offline Mode" while offline, "Enable Offline Mode" while online (ADR 0025).
+fn update_offline_menu<R: tauri::Runtime>(item: &MenuItem<R>, offline: bool) {
     let text = if offline {
         DISABLE_OFFLINE_TEXT
     } else {
         ENABLE_OFFLINE_TEXT
     };
+
+    if let Err(e) = item.set_enabled(true) {
+        eprintln!("[rust] failed to enable the offline menu item: {}", e);
+    }
 
     if let Err(e) = item.set_text(text) {
         eprintln!("[rust] failed to relabel the offline menu item: {}", e);
