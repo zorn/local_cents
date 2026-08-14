@@ -45,8 +45,8 @@ PEER_B_PID=""
 # nothing. Each `lsof` reap catches the BEAM that `mix`/`cargo tauri` spawns,
 # which a bare `kill` on the wrapper can orphan. `-sTCP:LISTEN` keeps it to the
 # server that owns the port, never a client connected to it (the browser, or peer
-# A's link). Reaping port 4000 is safe: the preflight refused to start if 4000
-# was already taken, so a listener there is ours.
+# A's link). Reaping port 4000 is safe because the trap is armed only after the
+# preflight confirms both ports are free, so any listener we reap is one we booted.
 cleanup() {
   trap - EXIT INT TERM
   echo
@@ -59,7 +59,6 @@ cleanup() {
   rm -rf "$DEMO_ROOT"
   echo "==> Done."
 }
-trap cleanup EXIT INT TERM
 
 # --- Preflight -------------------------------------------------------------
 
@@ -78,6 +77,11 @@ if lsof -ti "tcp:4000" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "error: port 4000 is already in use — stop your other dev server first (peer A needs it)" >&2
   exit 1
 fi
+
+# Arm teardown only now that preflight has passed. Armed earlier, a preflight
+# failure would exit through cleanup and reap the foreign listener it was refusing
+# to start against — killing the user's own server rather than protecting it.
+trap cleanup EXIT INT TERM
 
 # A stale directory from a crashed prior run would let peer A open the old Book;
 # start from nothing so the seed below is the only ancestor.
@@ -126,10 +130,12 @@ PEER_B_PID=$!
 
 # Wait until peer B answers before dialing it, so peer A's client connects on its
 # first try rather than backing off. Give it generous time for a cold compile.
+ready=false
 echo -n "==> Waiting for peer B to come up"
 for _ in {1..60}; do
   if curl -sf -o /dev/null "http://127.0.0.1:${PEER_B_PORT}/"; then
     echo " — ready."
+    ready=true
     break
   fi
   if ! kill -0 "$PEER_B_PID" 2>/dev/null; then
@@ -140,6 +146,16 @@ for _ in {1..60}; do
   echo -n "."
   sleep 1
 done
+
+# Do not let a timeout pass silently. Peer A's client tolerates an unreachable
+# peer and reconnects, so the demo can still recover — but say so rather than
+# boot on as if peer B were up.
+if [ "$ready" = false ]; then
+  echo
+  echo "warning: peer B did not answer on port ${PEER_B_PORT} within 60s — it may still be" >&2
+  echo "         compiling. Peer A will keep retrying the link; if the browser cannot reach" >&2
+  echo "         peer B, quit and re-run (a warm build comes up fast)." >&2
+fi
 
 # --- 4. Open the browser to peer B -----------------------------------------
 
