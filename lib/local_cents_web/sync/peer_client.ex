@@ -210,10 +210,14 @@ defmodule LocalCentsWeb.Sync.PeerClient do
     if socket.assigns.suspended? do
       {:ok, socket}
     else
-      # Best-effort reconnect on an unexpected drop, then stay alive whether or not it
-      # was accepted — a `reconnect/1` error must not crash-loop the supervised client.
-      _ = reconnect(socket)
-      {:ok, socket}
+      # Keep the socket `reconnect/1` returns — it carries the advanced backoff
+      # counter, so a peer that stays down retries on a lengthening interval toward
+      # the 5s step rather than hot-looping at the first 10ms one. Tolerate an
+      # `{:error, …}` so a reconnect it can't schedule never crash-loops the client.
+      case reconnect(socket) do
+        {:ok, socket} -> {:ok, socket}
+        {:error, _reason} -> {:ok, socket}
+      end
     end
   end
 
