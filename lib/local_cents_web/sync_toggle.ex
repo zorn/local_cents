@@ -16,9 +16,10 @@ defmodule LocalCentsWeb.SyncToggle do
     * attaches a `handle_event/3` hook so the toggle's `toggle_sync_link` click is
       handled in this one place rather than repeated in each of the four LiveViews.
 
-  The click asks `PeerClient` to flip the link, then re-reads the state so the control
-  reflects what actually happened. Reading back rather than assuming keeps the button
-  honest even if the link never came up.
+  The click asks `PeerClient` to flip the link, then re-reads `link_state/0` so the
+  control shows the result — including the no-op when no client is running. That state
+  is the operator's intent, not a confirmed socket: resuming reports `:online` as soon
+  as the redial is asked for, before the reconnect completes.
   """
 
   import Phoenix.Component, only: [assign: 3]

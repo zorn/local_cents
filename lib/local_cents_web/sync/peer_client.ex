@@ -62,8 +62,17 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   @spec link_state() :: :online | :offline | nil
   def link_state do
     case GenServer.whereis(__MODULE__) do
-      nil -> nil
-      pid -> GenServer.call(pid, :link_state)
+      nil ->
+        nil
+
+      pid ->
+        try do
+          GenServer.call(pid, :link_state)
+        catch
+          # The supervised client can die between the lookup and the call; a lost race
+          # reads as "no link" rather than crashing the LiveView mount that asked.
+          :exit, _ -> nil
+        end
     end
   end
 
@@ -186,7 +195,13 @@ defmodule LocalCentsWeb.Sync.PeerClient do
     if socket.assigns.suspended? do
       {:ok, socket}
     else
-      {:ok, _socket} = reconnect(socket)
+      # Reconnect can refuse (e.g. `{:error, :no_config}`); keep the socket rather than
+      # crash-loop the supervised client on a disconnect it can't retry, matching
+      # `handle_cast(:resume, …)`.
+      case reconnect(socket) do
+        {:ok, socket} -> {:ok, socket}
+        {:error, _reason} -> {:ok, socket}
+      end
     end
   end
 
