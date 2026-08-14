@@ -106,7 +106,6 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     :ok = PeerClient.suspend()
     assert_disconnect()
 
-    # The Mac edits while offline; the change must stay local until the link resumes.
     {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
 
     refute_push ^topic, "sync", _payload
@@ -127,7 +126,6 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
 
     :ok = PeerClient.resume()
 
-    # The reopened exchange now carries the Espresso edit the peer missed while offline.
     connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
     assert_push ^topic, "sync", %{message: _catch_up}
     assert PeerClient.link_state() == :online

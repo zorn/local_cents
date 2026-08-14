@@ -107,7 +107,7 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   def subscribe, do: Phoenix.PubSub.subscribe(LocalCents.PubSub, link_topic())
 
   @doc """
-  The `Phoenix.PubSub` topic link-state changes broadcast on.
+  The `Phoenix.PubSub` topic that link-state changes broadcast on.
 
   The link is a single global stream, so it is a bare `<kind>` (see
   [ADR 0011](0011-pubsub-topic-naming.html)). Named here so callers never hand-build it.

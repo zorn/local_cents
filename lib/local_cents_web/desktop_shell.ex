@@ -104,7 +104,7 @@ defmodule LocalCentsWeb.DesktopShell do
   @doc """
   Asks the native shell to relabel the Developer menu's offline-mode item for `state`.
 
-  The item's title flips with the sync link (ADR 0025): "Disable Offline Mode" while
+  The item's title flips with the sync link ([ADR 0025](0025-two-peer-sync-architecture.html)): "Disable Offline Mode" while
   offline, "Enable Offline Mode" while online. `LocalCentsWeb.Sync.MenuBridge` pushes
   each change here. Fire-and-forget like the window commands.
   """

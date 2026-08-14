@@ -3,7 +3,7 @@ defmodule LocalCentsWeb.Sync.MenuBridge do
   Ties the native Developer menu's offline-mode item to the sync link.
 
   The offline toggle is a native macOS menu item (`tauri/src/lib.rs`), not a web control,
-  so its two directions cross the `ElixirKit.PubSub` bridge (ADR 0025):
+  so its two directions cross the `ElixirKit.PubSub` bridge ([ADR 0025](0025-two-peer-sync-architecture.html)):
 
     * a click arrives from Rust as `{"action":"toggle-offline"}` on the `"messages"`
       channel; this process folds it into `LocalCentsWeb.Sync.PeerClient.toggle_link/0`;
@@ -40,19 +40,19 @@ defmodule LocalCentsWeb.Sync.MenuBridge do
   end
 
   @impl GenServer
-  def handle_info({:sync_link, state}, menu_bridge) do
-    push_menu(state)
-    {:noreply, menu_bridge}
+  def handle_info({:sync_link, link_state}, state) do
+    push_menu(link_state)
+    {:noreply, state}
   end
 
   # An inbound bridge message is the Rust side's raw JSON payload.
-  def handle_info(message, menu_bridge) when is_binary(message) do
+  def handle_info(message, state) when is_binary(message) do
     if action(message) == "toggle-offline", do: PeerClient.toggle_link()
-    {:noreply, menu_bridge}
+    {:noreply, state}
   end
 
   # Ignore anything else on the bridge rather than crash (ADR 0019).
-  def handle_info(_message, menu_bridge), do: {:noreply, menu_bridge}
+  def handle_info(_message, state), do: {:noreply, state}
 
   defp push_menu(nil), do: :ok
   defp push_menu(state), do: DesktopShell.set_offline_menu(state)
