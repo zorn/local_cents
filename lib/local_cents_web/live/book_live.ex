@@ -43,7 +43,13 @@ defmodule LocalCentsWeb.BookLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
+    <Layouts.app
+      flash={@flash}
+      client={@client}
+      sync_link={@sync_link}
+      window_title={@book.name}
+      back_path={~p"/library"}
+    >
       <%!-- `relative` scopes the side-panel editor's `absolute inset-0` to this
       content area (below the native title bar), not the whole window; `h-full` pins
       the column so the list scrolls inside it and the action bar stays visible. --%>

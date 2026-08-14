@@ -28,7 +28,7 @@ defmodule LocalCentsWeb.Bond do
     * **Layouts** (`LocalCentsWeb.Bond.Layouts`) — slot-driven arrangement
       shells that position content but carry no data of their own:
       `debug_bar/1`, `desktop_window/1`, `input_bar/1`, `modal/1`,
-      `side_panel/1`, `window_bar/1`.
+      `offline_toggle/1`, `side_panel/1`, `window_bar/1`.
     * **Composites** (`LocalCentsWeb.Bond.Composites`) — domain-aware units that
       combine elements into a single view: `book_cell/1`, `category_row/1`,
       `expense_cell/1`, `report_matrix/1`.
@@ -52,6 +52,7 @@ defmodule LocalCentsWeb.Bond do
   defdelegate desktop_window(assigns), to: LocalCentsWeb.Bond.Layouts.DesktopWindow
   defdelegate input_bar(assigns), to: LocalCentsWeb.Bond.Layouts.InputBar
   defdelegate modal(assigns), to: LocalCentsWeb.Bond.Layouts.Modal
+  defdelegate offline_toggle(assigns), to: LocalCentsWeb.Bond.Layouts.OfflineToggle
   defdelegate side_panel(assigns), to: LocalCentsWeb.Bond.Layouts.SidePanel
   defdelegate window_bar(assigns), to: LocalCentsWeb.Bond.Layouts.WindowBar
   defdelegate book_cell(assigns), to: LocalCentsWeb.Bond.Composites.BookCell

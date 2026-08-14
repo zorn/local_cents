@@ -98,7 +98,7 @@ defmodule LocalCentsWeb.LibraryLive do
   def render(assigns) do
     ~H"""
     <%!-- No `back_path`: the library is where the browser's back link goes. --%>
-    <Layouts.app flash={@flash} client={@client} window_title="Library">
+    <Layouts.app flash={@flash} client={@client} sync_link={@sync_link} window_title="Library">
       <%!-- h-full (not min-h-screen) pins the column to the shell's content area so
       the list scrolls inside it and the bottom bar stays visible no matter how many
       books; the title bar above already claimed its slice of the viewport. --%>

@@ -70,6 +70,11 @@ defmodule LocalCentsWeb do
       # it — see `LocalCentsWeb.Client` and ADR 0023.
       on_mount LocalCentsWeb.Client
 
+      # Wires the Mac-side offline toggle into every window: assigns `@sync_link` and
+      # handles its click in one place. After `Client` so it can read `@client` — the
+      # toggle is desktop-only (see `LocalCentsWeb.SyncToggle` and ADR 0025).
+      on_mount LocalCentsWeb.SyncToggle
+
       import LocalCentsWeb.LiveViewPipes
 
       # Appends a catch-all `handle_info/2` after this view's own clauses so a view
