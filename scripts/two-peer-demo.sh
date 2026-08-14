@@ -43,16 +43,18 @@ PEER_B_PID=""
 # Reaps both peers and removes the throwaway directories. Runs on any exit — a
 # clean quit, a Ctrl-C, or an error — so a repeated run always starts from
 # nothing. Each `lsof` reap catches the BEAM that `mix`/`cargo tauri` spawns,
-# which a bare `kill` on the wrapper can orphan. Reaping port 4000 is safe: the
-# preflight refused to start if 4000 was already taken, so a BEAM there is ours.
+# which a bare `kill` on the wrapper can orphan. `-sTCP:LISTEN` keeps it to the
+# server that owns the port, never a client connected to it (the browser, or peer
+# A's link). Reaping port 4000 is safe: the preflight refused to start if 4000
+# was already taken, so a listener there is ours.
 cleanup() {
   trap - EXIT INT TERM
   echo
   echo "==> Tearing down the demo…"
 
   [ -n "$PEER_B_PID" ] && kill "$PEER_B_PID" 2>/dev/null || true
-  lsof -ti "tcp:${PEER_B_PORT}" 2>/dev/null | xargs kill 2>/dev/null || true
-  lsof -ti "tcp:4000" 2>/dev/null | xargs kill 2>/dev/null || true
+  lsof -ti "tcp:${PEER_B_PORT}" -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
+  lsof -ti "tcp:4000" -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
 
   rm -rf "$DEMO_ROOT"
   echo "==> Done."
@@ -65,14 +67,14 @@ for tool in cargo mix open lsof curl; do
   command -v "$tool" >/dev/null 2>&1 || { echo "error: '$tool' is not on PATH" >&2; exit 1; }
 done
 
-if lsof -ti "tcp:${PEER_B_PORT}" >/dev/null 2>&1; then
+if lsof -ti "tcp:${PEER_B_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "error: port ${PEER_B_PORT} is already in use — stop that process or set PEER_B_PORT" >&2
   exit 1
 fi
 
 # Peer A is the Tauri app, which always binds the dev default 4000 (it is not
 # configurable). Fail early rather than let the Mac app's BEAM crash on a taken port.
-if lsof -ti "tcp:4000" >/dev/null 2>&1; then
+if lsof -ti "tcp:4000" -sTCP:LISTEN >/dev/null 2>&1; then
   echo "error: port 4000 is already in use — stop your other dev server first (peer A needs it)" >&2
   exit 1
 fi
@@ -125,7 +127,7 @@ PEER_B_PID=$!
 # Wait until peer B answers before dialing it, so peer A's client connects on its
 # first try rather than backing off. Give it generous time for a cold compile.
 echo -n "==> Waiting for peer B to come up"
-for _ in $(seq 1 60); do
+for _ in {1..60}; do
   if curl -sf -o /dev/null "http://127.0.0.1:${PEER_B_PORT}/"; then
     echo " — ready."
     break
