@@ -21,11 +21,14 @@ LOCAL_CENTS_BOOKS_DIR=/tmp/localcents-peer-b PORT=4001 mix phx.server
 
 ## 2. Share a Book
 
-Both peers reconcile one Book, and they must start from a common Automerge ancestor. Until the launcher seeds peer B over the sync link, copy the origin's `.lcbook` into peer B's directory so the two share history and id:
+Both peers reconcile one Book, and they must start from a common Automerge ancestor. Until the launcher seeds peer B over the sync link, copy the origin's `.lcbook` into peer B's directory so the two share history and id. Booting peer B does not create the directory — `default_dir/0` only makes it on the first store operation — so create it yourself before the copy:
 
 ```
+mkdir -p /tmp/localcents-peer-b
 cp "$HOME/Library/Application Support/LocalCents/books/<book-id>.lcbook" /tmp/localcents-peer-b/
 ```
+
+Peer B enumerates its directory when the library loads, so refresh <http://localhost:4001> after the copy to see the Book.
 
 ## 3. Establish the link from peer A
 
