@@ -84,3 +84,10 @@ arbitrary custom start/end — bounded, in the spirit of
 [ADR 0020](adr/0020-bounded-time-series-in-review.md). Named _range_, not
 "window," because a **window** in this app is a native desktop window (see
 [ADR 0006](adr/0006-multi-window-desktop-shell.md)).
+
+**Sync link**:
+The connection between two LocalCents peers over which they exchange changes to
+reconcile a shared **Book**. The Mac side can _suspend_ the link — go offline — so the
+two copies accept edits independently and diverge, then _resume_ it to reconcile them.
+Suspending and resuming on cue is the offline-collaboration demo's control (see
+[ADR 0025](adr/0025-two-peer-sync-architecture.md)).

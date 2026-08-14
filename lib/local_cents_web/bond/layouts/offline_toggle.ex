@@ -4,11 +4,10 @@ defmodule LocalCentsWeb.Bond.Layouts.OfflineToggle do
   that forces divergence during a live or recorded demo (see
   [ADR 0025](0025-two-peer-sync-architecture.html)).
 
-  Like the `LocalCentsWeb.Bond.Layouts.DebugBar` it is a developer affordance, not part
-  of the product surface: `LocalCentsWeb.Layouts` decides when it shows (the desktop
-  client, and only when a sync link exists), and this component only draws the state it
-  is handed. It floats in the corner rather than taking a slice of the layout, so no
-  screen has to make room for it.
+  Like the `LocalCentsWeb.Bond.Layouts.DebugBar`, it is a developer affordance rather
+  than product surface, and draws only the state it is handed — `LocalCentsWeb.SyncToggle`
+  decides when it shows. It floats in the corner rather than taking a slice of the
+  layout, so no screen has to make room for it.
 
   It renders the current state, not just an action: online is the quiet resting look;
   offline is tinted amber so the operator can see at a glance that the app is holding
@@ -45,10 +44,10 @@ defmodule LocalCentsWeb.Bond.Layouts.OfflineToggle do
     """
   end
 
-  # Amber while offline so the abnormal, edits-are-diverging state reads at a glance; the
-  # neutral surface stamp while online keeps the resting control quiet.
+  # Offline overrides the marble background inline (a class wouldn't reliably beat
+  # `bond-marble`); the amber tint is the at-a-glance signal the moduledoc describes.
   defp toggle_style(online) do
     shadow = "--bond-stamp-shadow: var(--color-surface-950)"
-    if online, do: shadow, else: shadow <> "; background: var(--color-warning-700); color: white"
+    if online, do: shadow, else: shadow <> "; background: var(--color-warning-700)"
   end
 end

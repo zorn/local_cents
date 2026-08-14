@@ -33,9 +33,6 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   # One remote peer per client, so its sync state needs only a single constant key.
   @peer :remote
 
-  # The link is a single global stream, so its topic is a bare `<kind>` (ADR 0011).
-  @link_topic "sync-link"
-
   @doc """
   Starts the client, connecting to the peer at `:uri` to sync the local Book `:book_id`.
 
@@ -80,7 +77,7 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   end
 
   @doc """
-  Suspends the sync link — the Mac-side offline toggle going offline.
+  Suspends the sync link — the Mac side going offline.
 
   Disconnects this client from the peer so no change crosses in either direction, and
   marks the link suspended so the drop is not auto-reconnected. The two documents keep
@@ -90,7 +87,7 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   def suspend, do: cast(:suspend)
 
   @doc """
-  Resumes the sync link — the Mac-side offline toggle coming back online.
+  Resumes the sync link — the Mac side coming back online.
 
   Redials the peer and rejoins, which reopens the exchange so each side catches the
   other up on the edits it missed while the link was down. A no-op when no client is
@@ -116,7 +113,16 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   reflects the same link even when the flip came from another window.
   """
   @spec subscribe() :: :ok
-  def subscribe, do: Phoenix.PubSub.subscribe(LocalCents.PubSub, @link_topic)
+  def subscribe, do: Phoenix.PubSub.subscribe(LocalCents.PubSub, link_topic())
+
+  @doc """
+  The `Phoenix.PubSub` topic link-state changes broadcast on.
+
+  The link is a single global stream, so it is a bare `<kind>` (see
+  [ADR 0011](0011-pubsub-topic-naming.html)). Named here so callers never hand-build it.
+  """
+  @spec link_topic() :: String.t()
+  def link_topic, do: "sync-link"
 
   # Casts `message` to the running client, or does nothing when no peer is configured so
   # the toggle can call blindly without first checking whether a link exists.
@@ -128,7 +134,7 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   end
 
   defp broadcast_link_state(state) do
-    Phoenix.PubSub.broadcast(LocalCents.PubSub, @link_topic, {:sync_link, state})
+    Phoenix.PubSub.broadcast(LocalCents.PubSub, link_topic(), {:sync_link, state})
   end
 
   @impl Slipstream
@@ -183,12 +189,12 @@ defmodule LocalCentsWeb.Sync.PeerClient do
 
   @impl Slipstream
   def handle_cast(:suspend, socket) do
-    broadcast_link_state(:offline)
+    _ = broadcast_link_state(:offline)
     {:noreply, socket |> assign(suspended?: true) |> disconnect()}
   end
 
   def handle_cast(:resume, socket) do
-    broadcast_link_state(:online)
+    _ = broadcast_link_state(:online)
     socket = assign(socket, suspended?: false)
 
     # `reconnect/1` refuses (`{:error, :connected}`) when the link never actually
@@ -205,9 +211,9 @@ defmodule LocalCentsWeb.Sync.PeerClient do
 
   def handle_cast(:toggle, socket), do: handle_cast(:suspend, socket)
 
-  # A disconnect the toggle asked for stays down until `resume/0`; any other drop is an
-  # unexpected one, so reconnect with backoff as Slipstream's default does — an
-  # unreachable peer must keep retrying rather than give up the link for good.
+  # A disconnect the toggle asked for stays down until `resume/0`; any other is
+  # unexpected, so reconnect with backoff as Slipstream's default does — an unreachable
+  # peer must keep retrying rather than give up the link for good.
   @impl Slipstream
   def handle_disconnect(_reason, socket) do
     if socket.assigns.suspended? do

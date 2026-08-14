@@ -17,12 +17,10 @@ defmodule LocalCentsWeb.SyncToggle do
       `{:sync_link, state}` broadcast, so a flip in one window moves every open window's
       pill rather than leaving the others stale;
     * attaches a `handle_event/3` hook so the toggle's `toggle_sync_link` click is
-      handled in this one place rather than repeated in each of the LiveViews.
+      handled in this one place rather than repeated in every LiveView.
 
-  The click only asks `PeerClient` to flip the link; the broadcast that follows is what
-  moves the pills, the clicked one included. That state is the operator's intent, not a
-  confirmed socket: resuming reports `:online` as soon as the redial is asked for,
-  before the reconnect completes.
+  The click only asks `PeerClient` to flip the link; the broadcast that follows moves
+  the pills, the clicked one included.
   """
 
   import Phoenix.Component, only: [assign: 3]
@@ -53,7 +51,7 @@ defmodule LocalCentsWeb.SyncToggle do
   # Subscribe only when the socket is live and a link exists; the static first render has
   # no broadcast to hear, and a view with no toggle has nothing to keep in sync.
   defp subscribe_when_connected(socket) do
-    if connected?(socket) and socket.assigns.sync_link, do: PeerClient.subscribe()
+    _ = if connected?(socket) and socket.assigns.sync_link, do: PeerClient.subscribe()
     socket
   end
 
