@@ -16,6 +16,11 @@ defmodule LocalCentsWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
+  # The sync transport a second BEAM peer dials into to exchange Automerge sync
+  # messages (see `LocalCentsWeb.PeerSocket` and ADR 0025). Kept off the LiveView
+  # socket so peer traffic and browser clients never share a path.
+  socket "/peer", LocalCentsWeb.PeerSocket, websocket: true, longpoll: false
+
   # Serve at "/" the static files from "priv/static" directory.
   #
   # When code reloading is disabled (e.g., in production),

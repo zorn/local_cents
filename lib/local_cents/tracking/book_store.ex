@@ -43,8 +43,11 @@ defmodule LocalCents.Tracking.BookStore do
   @doc """
   Returns the default books directory, creating it if needed.
 
-  During a non-test run this is the platform's per-user application-support location
-  (`~/Library/Application Support/LocalCents/books` on macOS).
+  During a non-test run this is the `LOCAL_CENTS_BOOKS_DIR` environment variable when
+  set, otherwise the platform's per-user application-support location
+  (`~/Library/Application Support/LocalCents/books` on macOS). The override is what
+  lets a second peer instance own its own `.lcbook` files rather than sharing the
+  first's directory (see [ADR 0025](0025-two-peer-sync-architecture.html)).
 
   During a test run this is the `:books_dir` set inside `ProcessConfig`. If a test process has not set that value this function will raise, because we never want a test to touch user space.
   """
@@ -74,7 +77,12 @@ defmodule LocalCents.Tracking.BookStore do
   else
     @spec default_user_space_dir() :: String.t()
     defp default_user_space_dir do
-      Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+      # An unset *or empty* override falls back to the platform path — an empty string is
+      # truthy in Elixir, so it would otherwise become the books directory and raise.
+      case System.get_env("LOCAL_CENTS_BOOKS_DIR") do
+        override when is_binary(override) and override != "" -> override
+        _ -> Path.join(:filename.basedir(:user_data, "LocalCents"), "books")
+      end
     end
   end
 
