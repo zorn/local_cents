@@ -69,14 +69,6 @@ defmodule LocalCentsWeb.Layouts do
     default: nil,
     doc: "where the title bar's browser-only back link goes; omitted on the library itself"
 
-  attr :sync_link, :atom,
-    default: nil,
-    values: [nil, :online, :offline],
-    doc: """
-    The Mac-side sync link's state, from `LocalCentsWeb.SyncToggle`; `nil` on a browser
-    tab or an instance with no peer, which hides the offline toggle (see ADR 0025)
-    """
-
   slot :inner_block, required: true
 
   @spec app(Socket.assigns()) :: Rendered.t()
@@ -107,10 +99,6 @@ defmodule LocalCentsWeb.Layouts do
     <%!-- Rendered outside <main> so the floating pill is never subject to the window
     shell's `overflow-hidden`. --%>
     <Bond.debug_bar :if={@client == :browser and @debug_links != []} links={@debug_links} />
-
-    <%!-- The Mac-side offline toggle (ADR 0025). `@sync_link` is `nil` on every browser
-    tab and on any instance with no peer, so the control shows only where it works. --%>
-    <Bond.offline_toggle :if={@sync_link} online={@sync_link == :online} />
     """
   end
 

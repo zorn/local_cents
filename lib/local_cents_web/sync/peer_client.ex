@@ -62,17 +62,8 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   @spec link_state() :: :online | :offline | nil
   def link_state do
     case GenServer.whereis(__MODULE__) do
-      nil ->
-        nil
-
-      pid ->
-        try do
-          GenServer.call(pid, :link_state)
-        catch
-          # The supervised client can die between the lookup and the call; a lost race
-          # reads as "no link" rather than crashing the LiveView mount that asked.
-          :exit, _ -> nil
-        end
+      nil -> nil
+      pid -> GenServer.call(pid, :link_state)
     end
   end
 
@@ -109,8 +100,8 @@ defmodule LocalCentsWeb.Sync.PeerClient do
   @doc """
   Subscribes the calling process to link-state changes.
 
-  Each flip broadcasts `{:sync_link, :online | :offline}`, so every open window's toggle
-  reflects the same link even when the flip came from another window.
+  Each flip broadcasts `{:sync_link, :online | :offline}`. `LocalCentsWeb.Sync.MenuBridge`
+  subscribes so the native offline-mode menu item mirrors the link's state.
   """
   @spec subscribe() :: :ok
   def subscribe, do: Phoenix.PubSub.subscribe(LocalCents.PubSub, link_topic())
@@ -219,13 +210,10 @@ defmodule LocalCentsWeb.Sync.PeerClient do
     if socket.assigns.suspended? do
       {:ok, socket}
     else
-      # Reconnect can refuse (e.g. `{:error, :no_config}`); keep the socket rather than
-      # crash-loop the supervised client on a disconnect it can't retry, matching
-      # `handle_cast(:resume, …)`.
-      case reconnect(socket) do
-        {:ok, socket} -> {:ok, socket}
-        {:error, _reason} -> {:ok, socket}
-      end
+      # Best-effort reconnect on an unexpected drop, then stay alive whether or not it
+      # was accepted — a `reconnect/1` error must not crash-loop the supervised client.
+      _ = reconnect(socket)
+      {:ok, socket}
     end
   end
 

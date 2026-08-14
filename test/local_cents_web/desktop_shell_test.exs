@@ -51,4 +51,16 @@ defmodule LocalCentsWeb.DesktopShellTest do
                Jason.decode!(DesktopShell.set_title_command(book))
     end
   end
+
+  describe "set_offline_menu_command/1" do
+    test "an offline link asks the shell to show the disable action" do
+      assert %{"action" => "set-offline-menu", "offline" => true} =
+               Jason.decode!(DesktopShell.set_offline_menu_command(:offline))
+    end
+
+    test "an online link asks the shell to show the enable action" do
+      assert %{"action" => "set-offline-menu", "offline" => false} =
+               Jason.decode!(DesktopShell.set_offline_menu_command(:online))
+    end
+  end
 end

@@ -37,7 +37,7 @@ defmodule LocalCentsWeb.DevDocsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} client={@client} sync_link={@sync_link} window_title="Docs">
+    <Layouts.app flash={@flash} client={@client} window_title="Docs">
       <div class="flex h-full flex-col items-center justify-center gap-6 p-8">
         <div class="max-w-md text-center">
           <h1 class="text-lg font-semibold text-surface-800">

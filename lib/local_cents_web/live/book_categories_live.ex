@@ -40,7 +40,6 @@ defmodule LocalCentsWeb.BookCategoriesLive do
     <Layouts.app
       flash={@flash}
       client={@client}
-      sync_link={@sync_link}
       window_title={@book.name}
       back_path={~p"/library"}
     >

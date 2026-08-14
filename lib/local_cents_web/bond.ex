@@ -23,15 +23,16 @@ defmodule LocalCentsWeb.Bond do
   domain:
 
     * **Elements** (`LocalCentsWeb.Bond.Elements`) — the smallest building
-      blocks, styled but domain-agnostic: `button/1`, `input/1`, `select/1`,
-      `empty_state/1`, `loading_state/1`, `list_view/1`, `menu/1`.
+      blocks, styled but domain-agnostic (buttons, inputs, list views).
     * **Layouts** (`LocalCentsWeb.Bond.Layouts`) — slot-driven arrangement
-      shells that position content but carry no data of their own:
-      `debug_bar/1`, `desktop_window/1`, `input_bar/1`, `modal/1`,
-      `offline_toggle/1`, `side_panel/1`, `window_bar/1`.
+      shells that position content but carry no data of their own (the window
+      shell, modals, side panels).
     * **Composites** (`LocalCentsWeb.Bond.Composites`) — domain-aware units that
-      combine elements into a single view: `book_cell/1`, `category_row/1`,
-      `expense_cell/1`, `report_matrix/1`.
+      combine elements into a single view (the Book cell, the Report matrix).
+
+  The `defdelegate` list below is the authoritative roster of each tier's
+  components; this prose only sketches the tiers, so a new component needs no edit
+  here.
 
   ## Usage
 
@@ -52,7 +53,6 @@ defmodule LocalCentsWeb.Bond do
   defdelegate desktop_window(assigns), to: LocalCentsWeb.Bond.Layouts.DesktopWindow
   defdelegate input_bar(assigns), to: LocalCentsWeb.Bond.Layouts.InputBar
   defdelegate modal(assigns), to: LocalCentsWeb.Bond.Layouts.Modal
-  defdelegate offline_toggle(assigns), to: LocalCentsWeb.Bond.Layouts.OfflineToggle
   defdelegate side_panel(assigns), to: LocalCentsWeb.Bond.Layouts.SidePanel
   defdelegate window_bar(assigns), to: LocalCentsWeb.Bond.Layouts.WindowBar
   defdelegate book_cell(assigns), to: LocalCentsWeb.Bond.Composites.BookCell
