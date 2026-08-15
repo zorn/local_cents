@@ -37,7 +37,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
+    <Layouts.app flash={@flash} client={@client} window_title={@page_title} back_path={~p"/library"}>
       <div class="relative flex h-full flex-col overflow-hidden">
         <div class="flex items-center gap-3 border-b border-surface-200 px-4 py-3">
           <.link
@@ -303,13 +303,14 @@ defmodule LocalCentsWeb.BookCategoriesLive do
   def handle_info({:book_updated, id}, socket) do
     case Tracking.get_book(id) do
       %Tracking.Book{} = book ->
-        # `page_title` updates the document `<title>`; the native title bar does not
-        # follow it, so push the (possibly renamed) name to the shell too, matching
-        # `BookLive`.
+        # `page_title` drives the HTML title bar and document `<title>`, but the native
+        # window's title does not follow it — push the new name to the shell too, as
+        # `BookLive` does.
         DesktopShell.set_book_title(book)
 
         socket
-        |> assign(book: book, page_title: book.name, categories: load_categories(id))
+        |> assign(book: book, categories: load_categories(id))
+        |> put_title(book.name)
         |> clear_editing_if_gone()
         |> clear_confirm_if_gone()
         |> noreply()

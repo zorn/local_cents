@@ -62,7 +62,7 @@ defmodule LocalCentsWeb.BookReportLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
+    <Layouts.app flash={@flash} client={@client} window_title={@page_title} back_path={~p"/library"}>
       <div class="relative flex h-full flex-col overflow-hidden">
         <div class="flex items-center gap-3 border-b border-surface-200 px-4 py-3">
           <.link
@@ -145,7 +145,8 @@ defmodule LocalCentsWeb.BookReportLive do
         DesktopShell.set_book_title(book)
 
         socket
-        |> assign(book: book, page_title: book.name, stale?: true)
+        |> assign(book: book, stale?: true)
+        |> put_title(book.name)
         |> noreply()
 
       nil ->

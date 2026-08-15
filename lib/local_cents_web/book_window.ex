@@ -32,6 +32,7 @@ defmodule LocalCentsWeb.BookWindow do
   import Phoenix.LiveView, only: [connected?: 1, push_navigate: 2, put_flash: 3]
 
   alias LocalCents.Tracking
+  alias LocalCentsWeb.WindowTitle
   alias Phoenix.LiveView.Socket
 
   require Logger
@@ -45,7 +46,7 @@ defmodule LocalCentsWeb.BookWindow do
     # view renders.
     with :ok <- Tracking.open_book(book_id),
          %Tracking.Book{} = book <- fetch_book(socket, book_id) do
-      {:cont, assign(socket, book: book, page_title: book.name)}
+      {:cont, socket |> assign(book: book) |> WindowTitle.put_title(book.name)}
     else
       _ ->
         socket =
