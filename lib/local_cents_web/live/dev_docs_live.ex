@@ -29,7 +29,8 @@ defmodule LocalCentsWeb.DevDocsLive do
 
       status ->
         socket
-        |> assign(status: status, generating: false, error: nil, page_title: "Docs")
+        |> assign(status: status, generating: false, error: nil)
+        |> put_title("Docs")
         |> ok()
     end
   end
@@ -37,7 +38,7 @@ defmodule LocalCentsWeb.DevDocsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} client={@client} window_title="Docs">
+    <Layouts.app flash={@flash} client={@client} window_title={@page_title}>
       <div class="flex h-full flex-col items-center justify-center gap-6 p-8">
         <div class="max-w-md text-center">
           <h1 class="text-lg font-semibold text-surface-800">

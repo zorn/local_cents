@@ -43,7 +43,7 @@ defmodule LocalCentsWeb.BookLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} client={@client} window_title={@book.name} back_path={~p"/library"}>
+    <Layouts.app flash={@flash} client={@client} window_title={@page_title} back_path={~p"/library"}>
       <%!-- `relative` scopes the side-panel editor's `absolute inset-0` to this
       content area (below the native title bar), not the whole window; `h-full` pins
       the column so the list scrolls inside it and the action bar stays visible. --%>
@@ -427,12 +427,13 @@ defmodule LocalCentsWeb.BookLive do
   def handle_info({:book_updated, id}, socket) do
     case Tracking.get_book(id) do
       %Tracking.Book{} = book ->
-        # `page_title` updates the document `<title>`, but the native window's
-        # title bar does not follow it — push the new name to the shell too.
+        # `page_title` drives the HTML title bar and document `<title>`, but the native
+        # window's title does not follow it — push the new name to the shell too.
         DesktopShell.set_book_title(book)
 
         socket
-        |> assign(book: book, page_title: book.name, expenses: load_expenses(id))
+        |> assign(book: book, expenses: load_expenses(id))
+        |> put_title(book.name)
         |> close_editor_if_gone()
         |> noreply()
 

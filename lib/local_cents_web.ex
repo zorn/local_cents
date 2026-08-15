@@ -70,6 +70,14 @@ defmodule LocalCentsWeb do
       # it — see `LocalCentsWeb.Client` and ADR 0023.
       on_mount LocalCentsWeb.Client
 
+      # Marks `page_title` `(Offline)` on every window while the operator has the sync
+      # link suspended. Universal like `LocalCentsWeb.Client` because offline is an app-level state
+      # every window mirrors — see `LocalCentsWeb.WindowTitle` and ADR 0025. `put_title/2`
+      # is imported alongside so views set their title through it unqualified, the way
+      # `ok/1` and `noreply/1` are, rather than each taking a dependency on the module.
+      on_mount LocalCentsWeb.WindowTitle
+      import LocalCentsWeb.WindowTitle, only: [put_title: 2]
+
       import LocalCentsWeb.LiveViewPipes
 
       # Appends a catch-all `handle_info/2` after this view's own clauses so a view
