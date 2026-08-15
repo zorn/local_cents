@@ -43,13 +43,11 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     connect_and_assert_join(PeerClient, ^topic, %{}, :ok)
     assert_push ^topic, "sync", %{message: _opening}
 
-    # Play the peer: its opening message tells the client what it already has, and the
-    # client answers with a message carrying the "Espresso" edit the peer lacks.
-    peer_opening = Tracking.generate_sync_message(peer_id, peer)
-    push(PeerClient, topic, "sync", %{"message" => Base.encode64(peer_opening)})
+    # Play the peer, trading sync messages until the "Espresso" edit crosses. Automerge
+    # can trade heads before the change follows, so a single round is not guaranteed to
+    # carry it (issue #255).
+    sync_until(topic, peer_id, peer, coffee.id, "Espresso")
 
-    assert_push ^topic, "sync", %{message: reply}
-    :ok = Tracking.receive_sync_message(peer_id, peer, Base.decode64!(reply))
     assert %{description: "Espresso"} = expense(peer_id, coffee.id)
   end
 
@@ -196,6 +194,22 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     # A synchronous state read drains the async pushes above and returns (rather than
     # exiting) only if neither crashed the client.
     assert :sys.get_state(client)
+  end
+
+  # Drives the exchange until the peer's `expense_id` reads `description`. The client
+  # still owes a reply every round the peer lacks the edit, so `assert_push` holds — the
+  # loop exits the round the edit lands, before the client would fall silent.
+  defp sync_until(topic, peer_id, peer, expense_id, description) do
+    peer_message = Tracking.generate_sync_message(peer_id, peer)
+    push(PeerClient, topic, "sync", %{"message" => Base.encode64(peer_message)})
+
+    assert_push ^topic, "sync", %{message: reply}
+    :ok = Tracking.receive_sync_message(peer_id, peer, Base.decode64!(reply))
+
+    case expense(peer_id, expense_id) do
+      %{description: ^description} -> :ok
+      _ -> sync_until(topic, peer_id, peer, expense_id, description)
+    end
   end
 
   defp start_client(book_id) do
