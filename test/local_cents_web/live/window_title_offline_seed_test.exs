@@ -12,7 +12,9 @@ defmodule LocalCentsWeb.WindowTitleOfflineSeedTest do
 
   setup :with_async_books_dir
 
-  # No flip is broadcast here: the marker must come from the mount-time seed alone.
+  # Suspending broadcasts `{:sync_link, :offline}`, but it fires before the window
+  # mounts and subscribes, so no flip reaches it — the marker must come from the
+  # mount-time seed alone.
   test "a window opened while already offline shows the marker immediately", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")
 
