@@ -70,8 +70,11 @@ defmodule LocalCentsWeb.WindowTitle do
     |> assign(:page_title, decorate(base, socket.assigns.link_state))
   end
 
-  # Recompute the title from the remembered base on each user flip. Every other message
-  # falls through to the view's own `handle_info` clauses.
+  # Recompute the title from the remembered base on each user flip. The hook consumes the
+  # message (`:halt`): no view has its own `{:sync_link, …}` clause, and letting it fall
+  # through would make the ADR 0019 catch-all log an "unhandled message" warning on every
+  # flip, for every open window. A view that later needs to react to a flip should recompute
+  # here rather than add a clause the hook would shadow. Everything else passes untouched.
   defp recompute_on_flip({:sync_link, state}, socket) do
     socket =
       socket
