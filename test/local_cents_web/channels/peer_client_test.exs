@@ -196,19 +196,32 @@ defmodule LocalCentsWeb.Sync.PeerClientTest do
     assert :sys.get_state(client)
   end
 
-  # Drives the exchange until the peer's `expense_id` reads `description`. The client
-  # still owes a reply every round the peer lacks the edit, so `assert_push` holds — the
-  # loop exits the round the edit lands, before the client would fall silent.
-  defp sync_until(topic, peer_id, peer, expense_id, description) do
-    peer_message = Tracking.generate_sync_message(peer_id, peer)
-    push(PeerClient, topic, "sync", %{"message" => Base.encode64(peer_message)})
+  # Drives the exchange until the peer's `expense_id` reads `description`, one round per
+  # message traded. The client still owes a reply every round the peer lacks the edit, so
+  # `assert_push` holds and the loop exits the round the edit lands. A drained peer message
+  # or an exhausted budget means the exchange stalled short of the edit — both flunk here
+  # rather than crash on `encode64(nil)` or spin to the ExUnit timeout.
+  defp sync_until(topic, peer_id, peer, expense_id, description, rounds_left \\ 8)
 
-    assert_push ^topic, "sync", %{message: reply}
-    :ok = Tracking.receive_sync_message(peer_id, peer, Base.decode64!(reply))
+  defp sync_until(_topic, _peer_id, _peer, _expense_id, description, 0) do
+    flunk("sync exchange did not converge on #{inspect(description)} within the round budget")
+  end
 
-    case expense(peer_id, expense_id) do
-      %{description: ^description} -> :ok
-      _ -> sync_until(topic, peer_id, peer, expense_id, description)
+  defp sync_until(topic, peer_id, peer, expense_id, description, rounds_left) do
+    case Tracking.generate_sync_message(peer_id, peer) do
+      nil ->
+        flunk("peer has no sync message to send but #{inspect(description)} has not crossed")
+
+      peer_message ->
+        push(PeerClient, topic, "sync", %{"message" => Base.encode64(peer_message)})
+
+        assert_push ^topic, "sync", %{message: reply}
+        :ok = Tracking.receive_sync_message(peer_id, peer, Base.decode64!(reply))
+
+        case expense(peer_id, expense_id) do
+          %{description: ^description} -> :ok
+          _ -> sync_until(topic, peer_id, peer, expense_id, description, rounds_left - 1)
+        end
     end
   end
 
