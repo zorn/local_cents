@@ -15,13 +15,6 @@ defmodule LocalCentsWeb.WindowTitleTest do
 
   setup :with_async_books_dir
 
-  # Simulates the operator flipping the Mac-side offline toggle: `PeerClient` broadcasts
-  # the same `{:sync_link, state}` on a user flip, which every open window is subscribed
-  # to (see the Sync Demo, ADR 0025).
-  defp flip_link(state) do
-    Phoenix.PubSub.broadcast(LocalCents.PubSub, PeerClient.link_topic(), {:sync_link, state})
-  end
-
   test "a book window's title gains and drops the offline marker with the link", ~M{conn} do
     {:ok, book} = Tracking.create_book("Family Expenses")
 
@@ -65,5 +58,12 @@ defmodule LocalCentsWeb.WindowTitleTest do
     |> visit(~p"/books/#{book.id}")
     |> assert_has("[data-tauri-drag-region]", text: "Family Expenses")
     |> refute_has("[data-tauri-drag-region]", text: "(Offline)")
+  end
+
+  # Simulates the operator flipping the Mac-side offline toggle: `PeerClient` broadcasts
+  # the same `{:sync_link, state}` on a user flip, which every open window is subscribed
+  # to (see the Sync Demo, ADR 0025).
+  defp flip_link(state) do
+    Phoenix.PubSub.broadcast(LocalCents.PubSub, PeerClient.link_topic(), {:sync_link, state})
   end
 end
