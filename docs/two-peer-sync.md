@@ -1,6 +1,20 @@
 # Running the two-peer sync
 
-LocalCents can run as **two BEAM peers** that reconcile a Book over a real WebSocket, the transport behind the offline-collaboration demo ([ADR 0025](0025-two-peer-sync-architecture.html)). This page is the manual way to stand the two peers up and watch an edit cross between them. The one-command launcher that boots, seeds, and connects both is a later deliverable; the pieces below are what it will wrap.
+LocalCents can run as **two BEAM peers** that reconcile a Book over a real WebSocket, the transport behind the offline-collaboration demo ([ADR 0025](0025-two-peer-sync-architecture.html)).
+
+## The one-command launcher
+
+`scripts/two-peer-demo.sh` brings the whole demo up: it seeds a fresh demo Book into peer A, forks it into peer B so both start from a common Automerge ancestor, boots peer B (the host) and peer A (the Tauri Mac app dialing in), opens the browser to peer B, and tears both instances down on exit. Each peer keeps its own `.lcbook` in a throwaway directory, so the demo never touches your real books.
+
+```
+scripts/two-peer-demo.sh
+```
+
+Open the Book in both windows, then use the Mac app's **Developer** menu to toggle offline and force a divergence. Quit the Mac app (or press Ctrl-C) to tear the demo down; a repeated run starts clean. Set `PEER_B_PORT` if 4001 is taken.
+
+## Standing the peers up by hand
+
+The rest of this page is the manual recipe the launcher wraps — the way to stand the two peers up yourself and watch an edit cross between them.
 
 ## The two peers
 
@@ -21,7 +35,7 @@ LOCAL_CENTS_BOOKS_DIR=/tmp/localcents-peer-b PORT=4001 mix phx.server
 
 ## 2. Share a Book
 
-Both peers reconcile one Book, and they must start from a common Automerge ancestor. Until the launcher seeds peer B over the sync link, copy the origin's `.lcbook` into peer B's directory so the two share history and id. Booting peer B does not create the directory — `default_dir/0` only makes it on the first store operation — so create it yourself before the copy:
+Both peers reconcile one Book, and they must start from a common Automerge ancestor. Copy the origin's `.lcbook` into peer B's directory so the two share history and id — a byte copy is a genuine shared ancestor, which is what the launcher automates. Booting peer B does not create the directory — `default_dir/0` only makes it on the first store operation — so create it yourself before the copy:
 
 ```
 mkdir -p /tmp/localcents-peer-b
