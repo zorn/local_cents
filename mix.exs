@@ -49,7 +49,7 @@ defmodule LocalCents.MixProject do
         skip_code_autolink_to: [
           "Storybook"
         ],
-        assets: %{"docs/images" => "images"},
+        assets: %{"docs/images" => "images", "docs/exdoc" => "."},
         before_closing_head_tag: &before_closing_head_tag/1,
         before_closing_body_tag: &before_closing_body_tag/1
       ]
