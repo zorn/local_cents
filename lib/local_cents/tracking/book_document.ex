@@ -128,6 +128,53 @@ defmodule LocalCents.Tracking.BookDocument do
     ExAutomerge.receive_sync_message(doc_bytes, sync_state, message)
   end
 
+  @typedoc """
+  A conflict report, re-exported from `t:LocalCents.Tracking.ExAutomerge.conflict_summary/0`
+  so the process shell names it through this bridge rather than the codec module.
+  """
+  @type conflict_summary() :: ExAutomerge.conflict_summary()
+
+  @doc """
+  Reports what conflicted when `merged_bytes` folded a sync message into `prior_bytes`.
+
+  The sync transport returns only the merged bytes, so a `BookServer` reads the
+  conflicts back out of the before/after pair after a peer reconcile. An empty summary
+  (both lists empty) means the fold converged with nothing to surface.
+  """
+  @spec conflict_summary(prior_bytes :: binary(), merged_bytes :: binary()) :: conflict_summary()
+  def conflict_summary(prior_bytes, merged_bytes) do
+    ExAutomerge.conflict_summary(prior_bytes, merged_bytes)
+  end
+
+  @doc """
+  A conflict summary with nothing surfaced — both groups empty. The value a `BookServer`
+  starts from before any reconcile.
+  """
+  @spec empty_conflict_summary() :: conflict_summary()
+  def empty_conflict_summary, do: %{field_conflicts: [], edit_delete_conflicts: []}
+
+  @doc """
+  Folds a freshly read summary into the one accumulated so far.
+
+  Field conflicts are read anew from the whole merged document each reconcile, so `fresh`
+  already holds the complete current set and replaces the stored one — a resolved conflict
+  simply stops appearing. A dropped edit is visible only in the reconcile that dropped it
+  (the expense is gone from the document afterward), so those accumulate, deduped by
+  expense id in case the same drop is seen twice.
+  """
+  @spec accumulate_conflicts(existing :: conflict_summary(), fresh :: conflict_summary()) ::
+          conflict_summary()
+  def accumulate_conflicts(existing, fresh) do
+    %{
+      field_conflicts: fresh.field_conflicts,
+      edit_delete_conflicts:
+        Enum.uniq_by(
+          existing.edit_delete_conflicts ++ fresh.edit_delete_conflicts,
+          & &1.expense_id
+        )
+    }
+  end
+
   @doc """
   Builds a `BookDocument` from the raw state map produced by
   `LocalCents.Tracking.ExAutomerge.decode/1`, parsing each category into a

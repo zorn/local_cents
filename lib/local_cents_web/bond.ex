@@ -43,6 +43,7 @@ defmodule LocalCentsWeb.Bond do
   """
 
   defdelegate button(assigns), to: LocalCentsWeb.Bond.Elements.Button
+  defdelegate conflict_bell(assigns), to: LocalCentsWeb.Bond.Elements.ConflictBell
   defdelegate empty_state(assigns), to: LocalCentsWeb.Bond.Elements.EmptyState
   defdelegate loading_state(assigns), to: LocalCentsWeb.Bond.Elements.LoadingState
   defdelegate input(assigns), to: LocalCentsWeb.Bond.Elements.Input

@@ -36,6 +36,7 @@ defmodule LocalCentsWeb.BookLive do
     socket
     |> assign(editor: nil, confirm_delete: nil, quick_add_line: "")
     |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
+    |> assign(conflict_count: load_conflict_count(id))
     |> assign_categories(load_categories(id))
     |> ok()
   end
@@ -51,6 +52,14 @@ defmodule LocalCentsWeb.BookLive do
         <%!-- The title bar's book name is decorative chrome (aria-hidden); this
         heading carries the name for assistive tech and document structure. --%>
         <h1 class="sr-only">{@book.name}</h1>
+
+        <%!-- The expenses header's conflict signal: an ambient bell shown only once a
+        sync surfaces a conflict, never as a per-row marker on the list below. Absent
+        while the Book is quiet, so the header takes no space until it has something to
+        say. --%>
+        <div :if={@conflict_count > 0} class="flex justify-end pt-2 pr-2">
+          <Bond.conflict_bell id="conflict-bell" count={@conflict_count} />
+        </div>
 
         <%!-- Quick-add sits at the top so a long expense list never scrolls it out
         of reach. Enter creates the expense and clears the field for the next one;
@@ -433,6 +442,7 @@ defmodule LocalCentsWeb.BookLive do
 
         socket
         |> assign(book: book, expenses: load_expenses(id))
+        |> assign(conflict_count: load_conflict_count(id))
         |> put_title(book.name)
         |> close_editor_if_gone()
         |> noreply()
@@ -478,6 +488,16 @@ defmodule LocalCentsWeb.BookLive do
     case Tracking.list_expenses(id) do
       {:error, :not_open} -> []
       expenses -> Enum.sort_by(expenses, & &1.date, {:desc, Date})
+    end
+  end
+
+  # How many synced changes the bell should badge: every surfaced conflict, scalar
+  # (field) and edit-vs-delete alike, counts as one item needing attention. Zero hides
+  # the bell entirely, so a quiet Book carries no signal.
+  defp load_conflict_count(id) do
+    case Tracking.conflict_summary(id) do
+      {:error, :not_open} -> 0
+      %{field_conflicts: field, edit_delete_conflicts: deletes} -> length(field) + length(deletes)
     end
   end
 

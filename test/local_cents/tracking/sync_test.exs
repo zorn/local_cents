@@ -134,28 +134,41 @@ defmodule LocalCents.Tracking.SyncTest do
     assert [%Tracking.Category{name: "Groceries"}] = Tracking.list_categories(book_id)
   end
 
-  # Drives the Automerge sync exchange between two open peers to completion, purely
-  # through the context. Each round both peers generate a message against their
-  # current document before either delivers, so termination is judged on the same
-  # state the messages were built from; the exchange settles once neither peer has a
-  # message left to send. Returns the total bytes delivered, so a test can compare
-  # how much crossed the wire between reconciles.
-  defp reconcile(peer_a, peer_b, transferred \\ 0) do
-    message_a = Tracking.generate_sync_message(peer_a, peer_b)
-    message_b = Tracking.generate_sync_message(peer_b, peer_a)
+  test "an open Book with no synced conflicts reports an empty conflict summary", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    add_expense(book.id, "Coffee")
 
-    if is_nil(message_a) and is_nil(message_b) do
-      transferred
-    else
-      if message_a, do: :ok = Tracking.receive_sync_message(peer_b, peer_a, message_a)
-      if message_b, do: :ok = Tracking.receive_sync_message(peer_a, peer_b, message_b)
-
-      reconcile(peer_a, peer_b, transferred + message_bytes(message_a) + message_bytes(message_b))
-    end
+    assert Tracking.conflict_summary(book.id) ==
+             %{field_conflicts: [], edit_delete_conflicts: []}
   end
 
-  defp message_bytes(nil), do: 0
-  defp message_bytes(message), do: byte_size(message)
+  test "concurrent edits to one expense's description surface through the context after a reconcile",
+       ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    coffee = add_expense(book.id, "Coffee")
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    # The link is suspended: both peers retitle the same expense with no knowledge of
+    # the other's edit.
+    edit_description(book.id, coffee.id, "Espresso")
+    edit_description(peer_b, coffee.id, "Latte")
+
+    reconcile(book.id, peer_b)
+
+    # Automerge picks one winner but keeps the loser; the conflict surfaces on both
+    # peers, each having folded in the other's edit.
+    for peer <- [book.id, peer_b] do
+      assert %{field_conflicts: [conflict], edit_delete_conflicts: []} =
+               Tracking.conflict_summary(peer)
+
+      assert conflict.expense_id == coffee.id
+      assert conflict.field == "description"
+
+      values = [conflict.kept | conflict.alternatives]
+      assert values |> Enum.map(& &1.value) |> Enum.sort() == ["Espresso", "Latte"]
+    end
+  end
 
   defp add_expense(id, description) do
     {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})

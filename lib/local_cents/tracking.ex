@@ -68,6 +68,7 @@ defmodule LocalCents.Tracking do
     exports: [Book, Category, Expense, Month, Report, Report.Cell, Report.Row, Supervisor]
 
   alias LocalCents.Tracking.Book
+  alias LocalCents.Tracking.BookDocument
   alias LocalCents.Tracking.BookServer
   alias LocalCents.Tracking.BookStore
   alias LocalCents.Tracking.Category
@@ -572,6 +573,23 @@ defmodule LocalCents.Tracking do
           :ok | {:error, term()}
   def receive_sync_message(id, peer, message) when is_binary(id) and is_binary(message) do
     BookServer.receive_sync_message(id, peer, message)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Returns the conflicts that peer reconciles have surfaced on the open Book `id`, as a
+  `t:LocalCents.Tracking.BookDocument.conflict_summary/0`. Returns a `:not_open` error if
+  the Book's process is not running.
+
+  The read behind the ambient bell-and-badge signal: a view loads it on mount and after a
+  `:book_updated`, so a conflicting sync lights the badge. Both lists are empty until a
+  reconcile surfaces something; the summary is held in memory, so it starts empty when the
+  Book is opened.
+  """
+  @spec conflict_summary(Book.id()) :: BookDocument.conflict_summary() | {:error, :not_open}
+  def conflict_summary(id) when is_binary(id) do
+    BookServer.conflict_summary(id)
   catch
     :exit, {:noproc, _} -> {:error, :not_open}
   end
