@@ -445,8 +445,10 @@ fn summarize_conflicts(
         }
     }
 
-    // Edit-vs-delete: an expense a side still holds but gone from the merged result. The
-    // delete won; that side holds the dropped edit.
+    // Edit-vs-delete: an expense a side still holds but gone from the merged result — the
+    // other side deleted it and the delete won. The merge-time diff cannot tell a
+    // concurrent edit here from a plain delete (that would need the common ancestor), so
+    // every such drop is surfaced to the side that still holds the expense.
     let mut edit_delete_conflicts = Vec::new();
     for side in sides {
         edit_delete_conflicts.extend(dropped_edits(side, &merged_ids)?);
