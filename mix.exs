@@ -49,9 +49,6 @@ defmodule LocalCents.MixProject do
         skip_code_autolink_to: [
           "Storybook"
         ],
-        # `docs/exdoc/docs_config.js` is an empty stub for the version-dropdown
-        # script ExDoc always references but never writes here; see that file and
-        # issue #253. Copied to the docs root so the request resolves 200.
         assets: %{"docs/images" => "images", "docs/exdoc" => "."},
         before_closing_head_tag: &before_closing_head_tag/1,
         before_closing_body_tag: &before_closing_body_tag/1
