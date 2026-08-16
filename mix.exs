@@ -312,7 +312,7 @@ defmodule LocalCents.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_view, "~> 1.2.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:phoenix_live_dashboard, "~> 0.9.0"},
       {:lazy_html, ">= 0.1.0", only: :test},
 
       # For building and serving front-end assets.
