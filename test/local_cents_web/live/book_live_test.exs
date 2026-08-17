@@ -2,6 +2,7 @@ defmodule LocalCentsWeb.BookLiveTest do
   use LocalCentsWeb.FeatureCase, async: true
 
   import LocalCents.BooksDirHelper
+  import LocalCents.SyncTestHelper
 
   alias LocalCents.Tracking
 
@@ -346,6 +347,35 @@ defmodule LocalCentsWeb.BookLiveTest do
       {:ok, _} = Tracking.add_category(book.id, %{name: "Groceries"})
 
       assert_has(session, "#expense-editor option", text: "Groceries", timeout: 100)
+    end
+  end
+
+  describe "synced conflict signal" do
+    test "a conflicting sync raises a bell badge with the conflict count", ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      # No signal while the book is quiet.
+      session =
+        conn
+        |> visit(~p"/books/#{book.id}")
+        |> refute_has("#conflict-bell")
+
+      # A second peer forks the book, then both retitle the same expense while their
+      # link is down — a scalar conflict LocalCents auto-resolves but must surface.
+      peer_b = fork_peer(tmp_dir, book.id)
+      {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
+      {:ok, _} = Tracking.edit_expense(peer_b, coffee.id, %{description: "Latte"})
+
+      reconcile(book.id, peer_b)
+
+      # The bell appears in the header with a badge of one, labeled for assistive tech,
+      # and the expense list stays clean — the signal is never a per-row marker.
+      session
+      |> assert_has("#conflict-bell", text: "Synced changes", timeout: 100)
+      |> assert_has("#conflict-bell", text: "1")
+      |> assert_has("#expense-#{coffee.id}")
+      |> refute_has("#expenses #conflict-bell")
     end
   end
 end

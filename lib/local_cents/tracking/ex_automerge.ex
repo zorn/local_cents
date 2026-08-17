@@ -214,6 +214,21 @@ defmodule LocalCents.Tracking.ExAutomerge do
           {binary(), conflict_summary()}
   def merge(_left_bytes, _right_bytes), do: :erlang.nif_error(:nif_not_loaded)
 
+  @doc """
+  Reports what conflicted when `merged_bytes` folded a sync message into `prior_bytes`,
+  as a `t:conflict_summary/0`.
+
+  The delta-based sync transport (`receive_sync_message/3`) returns only the merged
+  bytes, so this reads the conflicts back out of the before/after pair the way `merge/2`
+  reads them from its two sides: the scalar-field conflicts Automerge auto-resolved come
+  from the register the merged document already carries, and an edit-vs-delete comes from
+  an expense `prior_bytes` still held that the incoming delete dropped. `prior_bytes` is
+  the receiving peer's own side, so it surfaces the edits that peer would lose — the
+  reciprocal drop is surfaced on the other peer when it folds in this peer's delete.
+  """
+  @spec conflict_summary(prior_bytes :: binary(), merged_bytes :: binary()) :: conflict_summary()
+  def conflict_summary(_prior_bytes, _merged_bytes), do: :erlang.nif_error(:nif_not_loaded)
+
   @typedoc """
   A per-peer sync `State` as an opaque, mutable handle (a NIF resource reference).
 

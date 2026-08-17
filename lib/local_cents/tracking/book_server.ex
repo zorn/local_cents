@@ -299,6 +299,20 @@ defmodule LocalCents.Tracking.BookServer do
     GenServer.call(via(id), {:receive_sync_message, peer, message})
   end
 
+  @doc """
+  Returns the conflicts that peer reconciles have surfaced on this Book so far, as a
+  `t:LocalCents.Tracking.BookDocument.conflict_summary/0`.
+
+  The read behind the bell-and-badge signal: a view loads it on mount and refreshes it
+  on `:book_updated`, so a conflicting sync lights the badge. Both lists are empty until
+  a reconcile surfaces something. Held in memory only, so it starts empty each time the
+  server starts.
+  """
+  @spec conflict_summary(Book.id()) :: BookDocument.conflict_summary()
+  def conflict_summary(id) when is_binary(id) do
+    GenServer.call(via(id), :conflict_summary)
+  end
+
   @doc "Stops the process. The document is already persisted after every change."
   @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
@@ -358,12 +372,18 @@ defmodule LocalCents.Tracking.BookServer do
   # reconciles with, keyed by the caller's `peer` handle. It lives in memory only, so a
   # `close`/`open` drops it — which is honest reconnection behavior: a fresh link
   # starts a fresh exchange (ADR 0025).
+  #
+  # `conflicts` accumulates what peer reconciles surfaced (see
+  # `BookDocument.accumulate_conflicts/2`), so callers have a source of truth for the
+  # conflicts outstanding this session. In memory only, like `sync_states`: not persisted
+  # state, dropped on a close or reap.
   @typep state() :: %{
            id: Book.id(),
            doc: binary(),
            dir: String.t(),
            reap_timer: reference() | nil,
-           sync_states: %{peer() => BookDocument.sync_state()}
+           sync_states: %{peer() => BookDocument.sync_state()},
+           conflicts: BookDocument.conflict_summary()
          }
 
   @typedoc """
@@ -400,7 +420,16 @@ defmodule LocalCents.Tracking.BookServer do
       # snapshot of them here — the next diff reconciles against `Presence.list/1`, and
       # until one arrives there is nothing to reap.
       Phoenix.PubSub.subscribe(LocalCents.PubSub, presence_topic(id))
-      {:ok, %{id: id, doc: doc, dir: dir, reap_timer: nil, sync_states: %{}}}
+
+      {:ok,
+       %{
+         id: id,
+         doc: doc,
+         dir: dir,
+         reap_timer: nil,
+         sync_states: %{},
+         conflicts: BookDocument.empty_conflict_summary()
+       }}
     else
       {:error, :invalid_document} -> {:stop, {:invalid_document, id}}
       {:error, reason} -> {:stop, {:load_failed, reason}}
@@ -486,6 +515,10 @@ defmodule LocalCents.Tracking.BookServer do
     {:reply, BookDocument.generate_sync_message(state.doc, sync_state), state}
   end
 
+  def handle_call(:conflict_summary, _from, state) do
+    {:reply, state.conflicts, state}
+  end
+
   def handle_call({:receive_sync_message, peer, message}, _from, state) do
     {sync_state, state} = ensure_sync_state(state, peer)
     new_doc = BookDocument.receive_sync_message(state.doc, sync_state, message)
@@ -497,12 +530,21 @@ defmodule LocalCents.Tracking.BookServer do
     if new_doc == state.doc do
       {:reply, :ok, state}
     else
+      # Read what conflicted in the fold before adopting `new_doc`, diffing the prior
+      # bytes against it (the sync transport returns only the merged bytes). Adopted
+      # alongside the new bytes so both land, or neither does, on the same successful write.
+      conflicts =
+        BookDocument.accumulate_conflicts(
+          state.conflicts,
+          BookDocument.conflict_summary(state.doc, new_doc)
+        )
+
       # A reconcile can fold in any kind of change, and the opaque bytes don't say
       # which — a concurrent category edit from the peer among them. A view that
       # refreshes its category cache only on `:categories_updated` (ADR 0018) would
       # miss that, so a committed reconcile conservatively emits the category signal
       # alongside `:book_updated` rather than trying to detect what moved.
-      persist_and_commit(state, new_doc, :ok, @category_signals)
+      persist_and_commit(state, new_doc, :ok, @category_signals, conflicts)
     end
   rescue
     # A malformed message makes the decode NIF raise `ArgumentError`; return it rather
@@ -609,14 +651,23 @@ defmodule LocalCents.Tracking.BookServer do
   # the new document first) and a received sync message (which already holds the new
   # bytes from the codec). Persist first, adopt to memory and broadcast only on
   # success — a failed write leaves the in-memory state untouched and returns the error.
-  @spec persist_and_commit(state(), new_doc :: binary(), reply(), extra_signals :: [atom()]) ::
-          {:reply, reply(), state()}
-  defp persist_and_commit(state, new_doc, reply, extra_signals) do
+  #
+  # `conflicts` is the summary a received sync message surfaced; a domain command passes
+  # `nil` to leave the accumulated summary as it was. Either way it is adopted only on the
+  # successful write, so the badge never gets ahead of the bytes on disk.
+  @spec persist_and_commit(
+          state(),
+          new_doc :: binary(),
+          reply(),
+          extra_signals :: [atom()],
+          conflicts :: BookDocument.conflict_summary() | nil
+        ) :: {:reply, reply(), state()}
+  defp persist_and_commit(state, new_doc, reply, extra_signals, conflicts \\ nil) do
     case BookStore.save(state.dir, state.id, new_doc) do
       :ok ->
         broadcast(state.id, {:book_updated, state.id})
         Enum.each(extra_signals, &broadcast(state.id, {&1, state.id}))
-        {:reply, reply, %{state | doc: new_doc}}
+        {:reply, reply, %{state | doc: new_doc, conflicts: conflicts || state.conflicts}}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}

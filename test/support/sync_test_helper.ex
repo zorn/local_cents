@@ -41,4 +41,42 @@ defmodule LocalCents.SyncTestHelper do
     |> Tracking.list_expenses()
     |> Enum.find(&(&1.id == expense_id))
   end
+
+  @doc """
+  Drives the Automerge sync exchange between two open peers to completion through the
+  context, standing in for the transport a real reconcile runs over. Each round both
+  peers generate a message against their current document before either delivers, so
+  termination is judged on the same state the messages were built from; the exchange
+  settles once neither peer has a message left to send. Returns the total bytes
+  delivered, so a test can compare how much crossed the wire between reconciles.
+  """
+  @spec reconcile(Book.id(), Book.id()) :: non_neg_integer()
+  def reconcile(peer_a, peer_b), do: reconcile(peer_a, peer_b, 0, 0)
+
+  # A healthy two-peer reconcile settles in a handful of rounds, so this cap sits far
+  # above any real exchange. It exists to fail loudly if a regression breaks convergence,
+  # rather than let the loop spin forever and hang the whole suite.
+  @max_sync_rounds 100
+
+  defp reconcile(_peer_a, _peer_b, _transferred, round) when round >= @max_sync_rounds do
+    raise "sync exchange did not converge after #{@max_sync_rounds} rounds"
+  end
+
+  defp reconcile(peer_a, peer_b, transferred, round) do
+    message_a = Tracking.generate_sync_message(peer_a, peer_b)
+    message_b = Tracking.generate_sync_message(peer_b, peer_a)
+
+    if is_nil(message_a) and is_nil(message_b) do
+      transferred
+    else
+      if message_a, do: :ok = Tracking.receive_sync_message(peer_b, peer_a, message_a)
+      if message_b, do: :ok = Tracking.receive_sync_message(peer_a, peer_b, message_b)
+
+      transferred = transferred + message_bytes(message_a) + message_bytes(message_b)
+      reconcile(peer_a, peer_b, transferred, round + 1)
+    end
+  end
+
+  defp message_bytes(nil), do: 0
+  defp message_bytes(message), do: byte_size(message)
 end

@@ -417,11 +417,53 @@ fn dropped_edits(
     Ok(conflicts)
 }
 
+// Reads the conflict summary out of a `merged` document given the pristine pre-merge
+// `sides` it was built from. Shared by `merge` (two divergent siblings) and
+// `conflict_summary` (a peer's prior document and the result of folding a sync message
+// into it): the scalar-field conflicts come from the register the merged document
+// already carries, so they read from `merged` alone, while an edit-vs-delete comes from
+// an expense a `side` still holds that a concurrent delete dropped from the result. Each
+// side is loaded separately from the merged target so its pristine state stays readable
+// for the id diff (the #219 seam) and for provenance.
+fn summarize_conflicts(
+    merged: &mut AutoCommit,
+    sides: &[&[u8]],
+) -> Result<ConflictSummary, rustler::Error> {
+    let provenance = ProvenanceIndex::build(merged);
+
+    let merged_objects = expense_objects(merged)?;
+    let merged_ids: BTreeSet<String> = merged_objects.iter().map(|(id, _)| id.clone()).collect();
+
+    // Scalar-field conflicts Automerge auto-resolved.
+    let mut field_conflicts = Vec::new();
+    for (expense_id, expense) in &merged_objects {
+        for field in EXPENSE_SCALAR_FIELDS {
+            if let Some(conflict) = field_conflict(merged, &provenance, expense_id, expense, field)?
+            {
+                field_conflicts.push(conflict);
+            }
+        }
+    }
+
+    // Edit-vs-delete: an expense a side still holds but gone from the merged result — the
+    // other side deleted it and the delete won. The merge-time diff cannot tell a
+    // concurrent edit here from a plain delete (that would need the common ancestor), so
+    // every such drop is surfaced to the side that still holds the expense.
+    let mut edit_delete_conflicts = Vec::new();
+    for side in sides {
+        edit_delete_conflicts.extend(dropped_edits(side, &merged_ids)?);
+    }
+
+    Ok(ConflictSummary {
+        field_conflicts,
+        edit_delete_conflicts,
+    })
+}
+
 // Merges two documents and reports what conflicted. Returns the combined bytes plus a
 // plain-data `ConflictSummary` (see the type docs): the scalar-field conflicts Automerge
-// auto-resolved, and the expenses a concurrent delete dropped an edit from. The two
-// pre-merge documents are loaded separately from the merge target so their pristine
-// state stays readable for the merge-time id diff (the #219 seam) and for provenance.
+// auto-resolved, and the expenses a concurrent delete dropped an edit from. Both pristine
+// pre-merge sides feed the summary so an edit-vs-delete is caught whichever side deleted.
 #[rustler::nif]
 fn merge<'a>(
     env: Env<'a>,
@@ -432,34 +474,27 @@ fn merge<'a>(
     let mut right = AutoCommit::load(right_bytes.as_slice()).map_err(to_badarg)?;
     merged.merge(&mut right).map_err(to_badarg)?;
 
-    let provenance = ProvenanceIndex::build(&mut merged);
-
-    let merged_objects = expense_objects(&merged)?;
-    let merged_ids: BTreeSet<String> = merged_objects.iter().map(|(id, _)| id.clone()).collect();
-
-    // Scalar-field conflicts Automerge auto-resolved.
-    let mut field_conflicts = Vec::new();
-    for (expense_id, expense) in &merged_objects {
-        for field in EXPENSE_SCALAR_FIELDS {
-            if let Some(conflict) =
-                field_conflict(&merged, &provenance, expense_id, expense, field)?
-            {
-                field_conflicts.push(conflict);
-            }
-        }
-    }
-
-    // Edit-vs-delete: an expense present on exactly one pre-merge side but gone from the
-    // merged result. The delete won; the surviving side still holds the dropped edit.
-    let mut edit_delete_conflicts = dropped_edits(left_bytes.as_slice(), &merged_ids)?;
-    edit_delete_conflicts.extend(dropped_edits(right_bytes.as_slice(), &merged_ids)?);
-
-    let summary = ConflictSummary {
-        field_conflicts,
-        edit_delete_conflicts,
-    };
+    let summary = summarize_conflicts(
+        &mut merged,
+        &[left_bytes.as_slice(), right_bytes.as_slice()],
+    )?;
 
     Ok((binary_from_bytes(env, &merged.save()), summary))
+}
+
+// Reports what conflicted when a sync message was folded into a peer's document, given
+// that document before (`prior_bytes`) and after (`merged_bytes`) the fold. The
+// delta-based sync transport returns only the merged bytes, so this reads the summary
+// back out of the before/after pair. Only the receiving peer's own prior side is
+// available, so it surfaces the edits that peer would lose; the reciprocal drop is
+// surfaced on the other peer when it folds in this peer's delete.
+#[rustler::nif]
+fn conflict_summary(
+    prior_bytes: Binary,
+    merged_bytes: Binary,
+) -> Result<ConflictSummary, rustler::Error> {
+    let mut merged = AutoCommit::load(merged_bytes.as_slice()).map_err(to_badarg)?;
+    summarize_conflicts(&mut merged, &[prior_bytes.as_slice()])
 }
 
 // The per-peer sync state for the delta-based transport (ADR 0025), held across NIF

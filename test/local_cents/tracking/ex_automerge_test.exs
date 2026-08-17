@@ -549,4 +549,57 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       assert is_binary(conflict.device) and conflict.device != ""
     end
   end
+
+  describe "conflict_summary/2" do
+    # The sync path's conflict read: given the document as it stood before a sync
+    # message and the document after folding that message in, report what conflicted.
+    # Field conflicts read from the register the merged document already carries;
+    # edit-vs-delete reads from the prior side an incoming delete dropped an edit from.
+
+    test "a linear descendant reports an empty summary" do
+      base = base_with_one_expense()
+      merged = edit_description(base, "x", "Renamed", @later)
+
+      assert ExAutomerge.conflict_summary(base, merged) ==
+               %{field_conflicts: [], edit_delete_conflicts: []}
+    end
+
+    test "a concurrent edit folded in surfaces as one kept value plus alternatives" do
+      base = base_with_one_expense()
+      prior = edit_description(base, "x", "A", 1_700_000_100)
+      incoming = edit_description(base, "x", "B", 1_700_000_200)
+      {merged, _} = ExAutomerge.merge(prior, incoming)
+
+      summary = ExAutomerge.conflict_summary(prior, merged)
+
+      assert [conflict] = summary.field_conflicts
+      assert conflict.expense_id == "x"
+      assert conflict.field == "description"
+      assert summary.edit_delete_conflicts == []
+
+      values = [conflict.kept | conflict.alternatives]
+      assert values |> Enum.map(& &1.value) |> Enum.sort() == ["A", "B"]
+
+      assert Map.new(values, &{&1.value, &1.time}) ==
+               %{"A" => 1_700_000_100, "B" => 1_700_000_200}
+    end
+
+    test "an incoming delete of an expense edited here surfaces the dropped edit" do
+      base = base_with_one_expense()
+      prior = edit_description(base, "x", "Edited here", 1_700_000_100)
+
+      deleted =
+        ExAutomerge.reconcile(base, with_expenses(ExAutomerge.decode(base), []), 1_700_000_200)
+
+      {merged, _} = ExAutomerge.merge(prior, deleted)
+
+      summary = ExAutomerge.conflict_summary(prior, merged)
+
+      assert summary.field_conflicts == []
+      assert [conflict] = summary.edit_delete_conflicts
+      assert conflict.expense_id == "x"
+      assert conflict.expense.description == "Edited here"
+      assert conflict.time == 1_700_000_100
+    end
+  end
 end
