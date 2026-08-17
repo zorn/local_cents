@@ -610,6 +610,23 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
+  Clears the scalar conflict on one expense's `field` from the open Book `id`, leaving every
+  other conflict, and broadcasts `:book_updated` so open windows re-read the count. Returns a
+  `:not_open` error if the Book's process is not running.
+
+  Backs the editor's "Dismiss conflict" and the cleanup after an override. In memory only, so
+  it does not persist or touch the document.
+  """
+  @spec dismiss_field_conflict(Book.id(), Expense.id(), field :: String.t()) ::
+          :ok | {:error, :not_open}
+  def dismiss_field_conflict(id, expense_id, field)
+      when is_binary(id) and is_binary(expense_id) and is_binary(field) do
+    BookServer.dismiss_field_conflict(id, expense_id, field)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
   Subscribes the calling process to a Book's change broadcasts.
 
   After subscribing, the caller receives `{:book_updated, id}` messages whenever

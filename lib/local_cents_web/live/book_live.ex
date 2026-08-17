@@ -1,3 +1,10 @@
+# credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
+#
+# This view coordinates the whole Book window — expenses, quick-add, categories, report,
+# delete, and the conflict tab — so it exceeds the 15-dependency budget. The exception is
+# carried deliberately so the code stays honest (a real `%Decimal{}` guard, a
+# `Phoenix.HTML.Form` attr type) rather than shaved to fit; decomposing the view and lifting
+# it is tracked in #267.
 defmodule LocalCentsWeb.BookLive do
   @moduledoc """
   A single open `Book`, mounted at `/books/:book_id` — the document view.
@@ -28,13 +35,20 @@ defmodule LocalCentsWeb.BookLive do
   alias LocalCents.Tracking
   alias LocalCents.Tracking.Book
   alias LocalCents.Tracking.Expense
+  alias LocalCentsWeb.ConflictPresenter
   alias LocalCentsWeb.DesktopShell
   alias LocalCentsWeb.MoneyFormat
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{book: %Book{id: id}}} = socket) do
     socket
-    |> assign(editor: nil, confirm_delete: nil, quick_add_line: "", synced_changes_open: false)
+    |> assign(
+      editor: nil,
+      editor_tab: :details,
+      confirm_delete: nil,
+      quick_add_line: "",
+      synced_changes_open: false
+    )
     |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
     |> assign_conflicts(id)
     |> assign_categories(load_categories(id))
@@ -68,7 +82,7 @@ defmodule LocalCentsWeb.BookLive do
             :if={@synced_changes_open}
             id="synced-changes-popup"
             field_conflicts={@conflict_summary.field_conflicts}
-            on_open_conflict="edit_expense"
+            on_open_conflict="open_conflict"
             on_dismiss_all="dismiss_all"
           />
         </div>
@@ -136,67 +150,14 @@ defmodule LocalCentsWeb.BookLive do
           title={editor_title(@editor)}
           on_close="close_editor"
         >
-          <.form
-            for={@form}
-            id="expense-form"
-            phx-submit="save_expense"
-            phx-change="validate_expense"
-            class="space-y-3"
-          >
-            <Bond.input
-              field={@form[:date]}
-              type="date"
-              label="Date"
-              variant="frosted"
-              class="w-full"
-            />
-            <Bond.input
-              field={@form[:description]}
-              label="Description"
-              variant="frosted"
-              class="w-full"
-            />
-            <Bond.input
-              field={@form[:cost]}
-              label="Cost"
-              variant="frosted"
-              class="w-full"
-              placeholder="0.00"
-            />
-            <%!-- Filing is a plain form field (ADR 0018): a blank selection is
-            Uncategorized. With no categories yet, the editor can't create one (that
-            is the Categories view's job), so show a hint instead of a dead select. --%>
-            <Bond.select
-              :if={@categories != []}
-              field={@form[:category_id]}
-              label="Category"
-              variant="frosted"
-              class="w-full"
-              options={category_options(@categories)}
-            />
-            <div :if={@categories == []}>
-              <span class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
-                Category
-              </span>
-              <p class="text-sm text-primary-400/80">
-                No categories yet — add them from Categories.
-              </p>
-            </div>
-            <div class="flex items-center justify-between pt-2">
-              <%!-- Delete only exists for a saved expense; a spacer keeps Save pinned
-              right when adding, since the row is justify-between. --%>
-              <Bond.button
-                :if={match?({:edit, _}, @editor)}
-                type="button"
-                variant={:destructive}
-                phx-click="request_delete"
-              >
-                Delete
-              </Bond.button>
-              <span :if={match?({:new, _}, @editor)}></span>
-              <Bond.button type="submit">{submit_label(@editor)}</Bond.button>
-            </div>
-          </.form>
+          <.editor_panel
+            editor={@editor}
+            editor_tab={@editor_tab}
+            form={@form}
+            categories={@categories}
+            conflict_summary={@conflict_summary}
+            time_zone={@time_zone}
+          />
         </Bond.side_panel>
       </div>
 
@@ -219,6 +180,124 @@ defmodule LocalCentsWeb.BookLive do
       </Bond.modal>
     </Layouts.app>
     """
+  end
+
+  # The editor body: the Details form, plus a Conflicts tab that appears only while the
+  # open Expense carries an unresolved scalar conflict and vanishes the moment it resolves.
+  # A new (unsaved) Expense never conflicts, so it never shows tabs. Both `@editor` and
+  # `@conflict_summary` are already in the socket, so the tab set is derived here rather
+  # than tracked as its own assign.
+  attr :editor, :any, required: true
+  attr :editor_tab, :atom, required: true
+  attr :form, Phoenix.HTML.Form, required: true
+  attr :categories, :list, required: true
+  attr :conflict_summary, :map, required: true
+  attr :time_zone, :string, required: true
+
+  defp editor_panel(assigns) do
+    conflicts = editor_conflicts(assigns.editor, assigns.conflict_summary)
+
+    assigns =
+      assign(assigns,
+        has_conflicts: conflicts != [],
+        conflict_views: ConflictPresenter.views(conflicts, assigns.time_zone)
+      )
+
+    ~H"""
+    <%!-- Two plain labeled buttons that swap the panel below, not a full ARIA tab widget
+    (no `role="tablist"`): that pattern promises arrow-key navigation this does not implement,
+    and a half-built one reads worse to a screen reader than clear buttons. --%>
+    <div :if={@has_conflicts} class="mb-4 flex gap-5 border-b border-white/10">
+      <button
+        type="button"
+        phx-click="select_editor_tab"
+        phx-value-tab="details"
+        class={tab_class(@editor_tab == :details)}
+      >
+        Details
+      </button>
+      <button
+        type="button"
+        phx-click="select_editor_tab"
+        phx-value-tab="conflicts"
+        class={tab_class(@editor_tab == :conflicts)}
+      >
+        Conflicts
+      </button>
+    </div>
+
+    <.form
+      :if={not @has_conflicts or @editor_tab == :details}
+      for={@form}
+      id="expense-form"
+      phx-submit="save_expense"
+      phx-change="validate_expense"
+      class="space-y-3"
+    >
+      <Bond.input field={@form[:date]} type="date" label="Date" variant="frosted" class="w-full" />
+      <Bond.input field={@form[:description]} label="Description" variant="frosted" class="w-full" />
+      <Bond.input
+        field={@form[:cost]}
+        label="Cost"
+        variant="frosted"
+        class="w-full"
+        placeholder="0.00"
+      />
+      <%!-- Filing is a plain form field (ADR 0018): a blank selection is Uncategorized.
+      With no categories yet, the editor can't create one (that is the Categories view's
+      job), so show a hint instead of a dead select. --%>
+      <Bond.select
+        :if={@categories != []}
+        field={@form[:category_id]}
+        label="Category"
+        variant="frosted"
+        class="w-full"
+        options={category_options(@categories)}
+      />
+      <div :if={@categories == []}>
+        <span class="text-xs font-semibold uppercase tracking-wide block mb-1 text-primary-400">
+          Category
+        </span>
+        <p class="text-sm text-primary-400/80">
+          No categories yet — add them from Categories.
+        </p>
+      </div>
+      <div class="flex items-center justify-between pt-2">
+        <%!-- Delete only exists for a saved expense; a spacer keeps Save pinned right when
+        adding, since the row is justify-between. --%>
+        <Bond.button
+          :if={match?({:edit, _}, @editor)}
+          type="button"
+          variant={:destructive}
+          phx-click="request_delete"
+        >
+          Delete
+        </Bond.button>
+        <span :if={match?({:new, _}, @editor)}></span>
+        <Bond.button type="submit">{submit_label(@editor)}</Bond.button>
+      </div>
+    </.form>
+
+    <Bond.expense_conflicts
+      :if={@has_conflicts and @editor_tab == :conflicts}
+      id="expense-conflicts"
+      conflicts={@conflict_views}
+      on_make_value="make_conflict_value"
+      on_dismiss="dismiss_conflict"
+    />
+    """
+  end
+
+  # Highlights the active tab against the dark editor panel; both share the same padding so
+  # switching never shifts the row.
+  defp tab_class(active?) do
+    base = "px-1 pb-2 text-sm font-semibold -mb-px border-b-2 transition-colors"
+
+    if active? do
+      base <> " border-primary-400 text-white"
+    else
+      base <> " border-transparent text-surface-400 hover:text-white"
+    end
   end
 
   @impl Phoenix.LiveView
@@ -275,31 +354,18 @@ defmodule LocalCentsWeb.BookLive do
     base = %Expense{date: today}
 
     socket
-    |> assign(editor: {:new, base}, form: editor_form(base, today))
+    |> assign(editor: {:new, base}, editor_tab: :details, form: editor_form(base, today))
     |> noreply()
   end
 
   def handle_event("edit_expense", %{"id" => expense_id}, socket) do
-    case find_expense(socket, expense_id) do
-      %Expense{} = expense ->
-        # A row in the Synced changes popup also opens the editor this way, so close the
-        # popup as the editor slides in rather than leave it hanging over the panel.
-        socket
-        |> assign(
-          editor: {:edit, expense},
-          form: editor_form(expense, today(socket.assigns.time_zone)),
-          synced_changes_open: false
-        )
-        |> noreply()
+    open_editor(socket, expense_id, :details)
+  end
 
-      nil ->
-        # The row vanished (edited/deleted elsewhere); resync rather than open a stale
-        # editor, and close the popup too — a Synced changes row can reach here, and it
-        # should not linger over a row that just went away.
-        socket
-        |> assign(expenses: load_expenses(socket.assigns.book.id), synced_changes_open: false)
-        |> noreply()
-    end
+  # A row in the "Synced changes" popup opens straight to that Expense's Conflicts tab, not
+  # the Details form — the row exists because a conflict is waiting there.
+  def handle_event("open_conflict", %{"id" => expense_id}, socket) do
+    open_editor(socket, expense_id, :conflicts)
   end
 
   # A concurrent `:book_updated` resync can close the editor before an in-flight
@@ -340,6 +406,54 @@ defmodule LocalCentsWeb.BookLive do
 
     socket
     |> assign_conflicts(socket.assigns.book.id)
+    |> noreply()
+  end
+
+  # Switch between the editor's Details and Conflicts tabs. An unknown value falls back to
+  # Details, and the render only shows the Conflicts tab while a conflict is unresolved, so
+  # a stale `:conflicts` selection resolves to the form once the conflict clears.
+  def handle_event("select_editor_tab", %{"tab" => "conflicts"}, socket) do
+    socket
+    |> assign(editor_tab: :conflicts)
+    |> noreply()
+  end
+
+  def handle_event("select_editor_tab", _params, socket) do
+    socket
+    |> assign(editor_tab: :details)
+    |> noreply()
+  end
+
+  # Make this the value: override to a chosen alternative, then drop the settled conflict (see
+  # `override_conflict/4`). A vanished expense or index falls back to a resync.
+  def handle_event(
+        "make_conflict_value",
+        %{"expense-id" => expense_id, "field" => field, "index" => index},
+        socket
+      ) do
+    conflicts = socket.assigns.conflict_summary.field_conflicts
+
+    with %Expense{} = expense <- find_expense(socket, expense_id),
+         {:ok, value} <- ConflictPresenter.alternative_value(conflicts, expense_id, field, index) do
+      override_conflict(socket, expense, field, value)
+    else
+      _ -> resolve_conflict_gone(socket, expense_id, field)
+    end
+  end
+
+  # Dismiss conflict: accept what LocalCents kept and clear just this one, leaving the others
+  # for the user to work through. Like Dismiss all it only drops the in-memory summary entry.
+  # Reloads and retires a gone editor on the same terms as the override path, so a concurrent
+  # delete cannot strand the panel over an expense that just vanished.
+  def handle_event("dismiss_conflict", %{"expense-id" => expense_id, "field" => field}, socket) do
+    book_id = socket.assigns.book.id
+    Tracking.dismiss_field_conflict(book_id, expense_id, field)
+
+    socket
+    |> assign(expenses: load_expenses(book_id))
+    |> assign_conflicts(book_id)
+    |> close_editor_if_gone()
+    |> settle_editor_tab()
     |> noreply()
   end
 
@@ -599,6 +713,100 @@ defmodule LocalCentsWeb.BookLive do
   defp find_expense(socket, expense_id) do
     Enum.find(socket.assigns.expenses, &(&1.id == expense_id))
   end
+
+  # Opens the editor for an existing expense on the requested tab. A row in the expenses list
+  # asks for Details; a "Synced changes" popup row asks for Conflicts. Either way the popup
+  # closes as the panel slides in. A vanished row (edited or deleted elsewhere) resyncs rather
+  # than opening a stale editor.
+  defp open_editor(socket, expense_id, requested_tab) do
+    case find_expense(socket, expense_id) do
+      %Expense{} = expense ->
+        editor = {:edit, expense}
+
+        socket
+        |> assign(
+          editor: editor,
+          editor_tab: resolved_tab(requested_tab, editor, socket.assigns.conflict_summary),
+          form: editor_form(expense, today(socket.assigns.time_zone)),
+          synced_changes_open: false
+        )
+        |> noreply()
+
+      nil ->
+        socket
+        |> assign(expenses: load_expenses(socket.assigns.book.id), synced_changes_open: false)
+        |> noreply()
+    end
+  end
+
+  # Only land on the Conflicts tab when the expense actually has a conflict to show; otherwise
+  # (or when Details was asked for) open the form, so a Conflicts request can never open an
+  # empty panel.
+  defp resolved_tab(:conflicts, editor, summary) do
+    if editor_conflicts(editor, summary) == [], do: :details, else: :conflicts
+  end
+
+  defp resolved_tab(_requested, _editor, _summary), do: :details
+
+  # Override to a chosen alternative through the same `edit_expense` Save uses, writing just
+  # the conflicted field (the changeset casts it onto the existing expense, so the rest is
+  # kept). The write collapses the conflicting register — it "wins going forward" — and
+  # dropping the settled summary entry updates the badge and removes the tab at once.
+  defp override_conflict(socket, %Expense{} = expense, field, value) do
+    book_id = socket.assigns.book.id
+    today = today(socket.assigns.time_zone)
+
+    case Tracking.edit_expense(book_id, expense.id, %{field => value}, today: today) do
+      {:ok, updated} ->
+        Tracking.dismiss_field_conflict(book_id, expense.id, field)
+
+        socket
+        |> assign(editor: {:edit, updated}, form: editor_form(updated, today))
+        |> assign(expenses: load_expenses(book_id))
+        |> assign_conflicts(book_id)
+        |> settle_editor_tab()
+        |> noreply()
+
+      {:error, :not_found} ->
+        resolve_conflict_gone(socket, expense.id, field)
+
+      {:error, _reason} ->
+        failed(socket, "Could not update the expense.")
+    end
+  end
+
+  # The expense or its conflict went away between render and click (a concurrent resync).
+  # Drop the stale summary entry, reload, and let `close_editor_if_gone/1` retire the editor
+  # if the expense itself vanished.
+  defp resolve_conflict_gone(socket, expense_id, field) do
+    book_id = socket.assigns.book.id
+    Tracking.dismiss_field_conflict(book_id, expense_id, field)
+
+    socket
+    |> assign(expenses: load_expenses(book_id))
+    |> assign_conflicts(book_id)
+    |> close_editor_if_gone()
+    |> settle_editor_tab()
+    |> noreply()
+  end
+
+  # Fall back to the Details form once the open expense has no conflict left, so a resolved
+  # conflict never strands the editor on a Conflicts tab that is no longer rendered.
+  defp settle_editor_tab(socket) do
+    if editor_conflicts(socket.assigns.editor, socket.assigns.conflict_summary) == [] do
+      assign(socket, editor_tab: :details)
+    else
+      socket
+    end
+  end
+
+  # The scalar conflicts on the open expense (empty for a new or unconflicted one), the set
+  # that decides whether the editor shows tabs at all.
+  defp editor_conflicts({:edit, %Expense{id: id}}, summary) do
+    Enum.filter(summary.field_conflicts, &(&1.expense_id == id))
+  end
+
+  defp editor_conflicts(_editor, _summary), do: []
 
   defp editor_base({_mode, %Expense{} = expense}), do: expense
 

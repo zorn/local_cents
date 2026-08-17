@@ -59,6 +59,7 @@ defmodule LocalCentsWeb.Bond do
   defdelegate book_cell(assigns), to: LocalCentsWeb.Bond.Composites.BookCell
   defdelegate category_row(assigns), to: LocalCentsWeb.Bond.Composites.CategoryRow
   defdelegate expense_cell(assigns), to: LocalCentsWeb.Bond.Composites.ExpenseCell
+  defdelegate expense_conflicts(assigns), to: LocalCentsWeb.Bond.Composites.ExpenseConflicts
   defdelegate report_matrix(assigns), to: LocalCentsWeb.Bond.Composites.ReportMatrix
   defdelegate synced_changes_popup(assigns), to: LocalCentsWeb.Bond.Composites.SyncedChangesPopup
 end

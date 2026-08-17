@@ -189,6 +189,36 @@ defmodule LocalCents.Tracking.SyncTest do
              %{field_conflicts: [], edit_delete_conflicts: []}
   end
 
+  test "dismissing one field conflict clears just that one and leaves the others",
+       ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    coffee = add_expense(book.id, "Coffee")
+    lunch = add_expense(book.id, "Lunch")
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    # Both expenses are retitled on both peers across the suspended link, so the
+    # reconcile surfaces two separate scalar conflicts.
+    edit_description(book.id, coffee.id, "Espresso")
+    edit_description(peer_b, coffee.id, "Latte")
+    edit_description(book.id, lunch.id, "Dinner")
+    edit_description(peer_b, lunch.id, "Supper")
+
+    reconcile(book.id, peer_b)
+
+    assert %{field_conflicts: conflicts} = Tracking.conflict_summary(book.id)
+    assert length(conflicts) == 2
+
+    # Dismissing the coffee conflict leaves the lunch conflict standing — the user
+    # grinds through a batch one at a time.
+    assert :ok = Tracking.dismiss_field_conflict(book.id, coffee.id, "description")
+
+    assert %{field_conflicts: [remaining], edit_delete_conflicts: []} =
+             Tracking.conflict_summary(book.id)
+
+    assert remaining.expense_id == lunch.id
+  end
+
   defp add_expense(id, description) do
     {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})
     expense
