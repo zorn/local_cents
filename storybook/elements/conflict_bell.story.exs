@@ -12,11 +12,6 @@ defmodule Storybook.Elements.ConflictBell do
         attributes: %{count: 1}
       },
       %Variation{
-        id: :several,
-        description: "A handful of synced changes waiting.",
-        attributes: %{count: 5}
-      },
-      %Variation{
         id: :many,
         description: "A large batch of synced changes.",
         attributes: %{count: 42}

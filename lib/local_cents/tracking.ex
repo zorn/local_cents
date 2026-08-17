@@ -582,10 +582,10 @@ defmodule LocalCents.Tracking do
   `t:LocalCents.Tracking.BookDocument.conflict_summary/0`. Returns a `:not_open` error if
   the Book's process is not running.
 
-  The read behind the ambient bell-and-badge signal: a view loads it on mount and after a
-  `:book_updated`, so a conflicting sync lights the badge. Both lists are empty until a
-  reconcile surfaces something; the summary is held in memory, so it starts empty when the
-  Book is opened.
+  Callers read this to learn what conflicts are outstanding on the open Book — typically on
+  mount and after each `:book_updated`, so a conflicting sync becomes observable. Both lists
+  are empty until a reconcile surfaces something; the summary is held in memory, so it starts
+  empty each time the Book is opened.
   """
   @spec conflict_summary(Book.id()) :: BookDocument.conflict_summary() | {:error, :not_open}
   def conflict_summary(id) when is_binary(id) do

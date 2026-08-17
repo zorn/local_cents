@@ -374,9 +374,9 @@ defmodule LocalCents.Tracking.BookServer do
   # starts a fresh exchange (ADR 0025).
   #
   # `conflicts` accumulates what peer reconciles surfaced (see
-  # `BookDocument.accumulate_conflicts/2`), so the ambient bell-and-badge signal has a
-  # source of truth to read. In memory only, like `sync_states`: an ambient session
-  # signal, not persisted state.
+  # `BookDocument.accumulate_conflicts/2`), so callers have a source of truth for the
+  # conflicts outstanding this session. In memory only, like `sync_states`: not persisted
+  # state, dropped on a close or reap.
   @typep state() :: %{
            id: Book.id(),
            doc: binary(),
