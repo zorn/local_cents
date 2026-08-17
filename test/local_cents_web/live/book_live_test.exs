@@ -378,7 +378,7 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> refute_has("#expenses #conflict-bell")
     end
 
-    test "opening the bell shows the Synced changes popup, and a row opens the editor",
+    test "opening the bell shows the Synced changes popup, and a row opens the Conflicts tab",
          ~M{conn, tmp_dir} do
       {:ok, book} = Tracking.create_book("Family Expenses")
       {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
@@ -406,11 +406,11 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> assert_has("#synced-changes-popup", text: "LocalCents kept one")
       |> refute_has("#synced-changes-popup", text: "Automerge")
 
-      # Opening a row closes the popup behind it as the editor slides in.
+      # A popup row opens straight to that Expense's Conflicts tab — where the kept value is
+      # shown — and closes the popup behind it as the editor slides in.
       session
       |> within("#synced-changes-popup", fn popup -> click_button(popup, kept) end)
-      |> assert_has("#expense-editor")
-      |> assert_has("#expense-editor input[value='#{kept}']")
+      |> assert_has("#expense-conflicts", text: kept)
       |> refute_has("#synced-changes-popup")
     end
 
@@ -457,5 +457,201 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> refute_has("#conflict-bell")
       |> refute_has("#synced-changes-popup")
     end
+  end
+
+  describe "editor Conflicts tab" do
+    test "appears only for an expense with an unresolved conflict", ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+      {:ok, _tea} = Tracking.add_expense(book.id, %{description: "Tea", cost: "2.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+
+      kept = seed_scalar_conflict(tmp_dir, book.id, coffee.id, "Espresso", "Latte")
+
+      session = assert_has(session, "#conflict-bell", timeout: 100)
+
+      session
+      |> within("#expenses", fn list -> click_button(list, kept) end)
+      |> assert_has("#expense-editor button", text: "Conflicts")
+
+      # An untouched expense's editor has no tabs at all.
+      session
+      |> within("#expenses", fn list -> click_button(list, "Tea") end)
+      |> refute_has("#expense-editor button", text: "Conflicts")
+    end
+
+    test "shows the kept value and each dropped alternative with provenance",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+      kept = seed_scalar_conflict(tmp_dir, book.id, coffee.id, "Espresso", "Latte")
+      dropped = if kept == "Espresso", do: "Latte", else: "Espresso"
+      year = to_string(Date.utc_today().year)
+
+      session
+      |> assert_has("#conflict-bell", timeout: 100)
+      |> within("#expenses", fn list -> click_button(list, kept) end)
+      |> within("#expense-editor", fn editor -> click_button(editor, "Conflicts") end)
+      |> assert_has("#expense-conflicts", text: "Kept by LocalCents")
+      |> assert_has("#expense-conflicts", text: kept)
+      |> assert_has("#expense-conflicts", text: dropped)
+      # Provenance: which device made the edit (a stable token) and when.
+      |> assert_has("#expense-conflicts", text: "Device")
+      |> assert_has("#expense-conflicts", text: year)
+    end
+
+    test "Make this the value overrides to the alternative and clears the tab and badge",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+      kept = seed_scalar_conflict(tmp_dir, book.id, coffee.id, "Espresso", "Latte")
+      dropped = if kept == "Espresso", do: "Latte", else: "Espresso"
+
+      session =
+        session
+        |> assert_has("#conflict-bell", timeout: 100)
+        |> within("#expenses", fn list -> click_button(list, kept) end)
+        |> within("#expense-editor", fn editor -> click_button(editor, "Conflicts") end)
+        |> within("#expense-conflicts", fn panel ->
+          click_button(panel, "Make this the value")
+        end)
+
+      session
+      |> refute_has("#expense-editor button", text: "Conflicts")
+      |> refute_has("#conflict-bell")
+      |> assert_has("#expenses", text: dropped)
+      |> refute_has("#expenses", text: kept)
+    end
+
+    test "Dismiss conflict clears just that one and leaves the others", ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+      {:ok, lunch} = Tracking.add_expense(book.id, %{description: "Lunch", cost: "9.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+
+      kept =
+        seed_two_conflicts(
+          tmp_dir,
+          book.id,
+          {coffee.id, "Espresso", "Latte"},
+          {lunch.id, "Dinner", "Supper"}
+        )
+
+      session =
+        session
+        |> assert_has("#conflict-bell", text: "2", timeout: 100)
+        |> within("#expenses", fn list -> click_button(list, kept[coffee.id]) end)
+        |> within("#expense-editor", fn editor -> click_button(editor, "Conflicts") end)
+        |> within("#expense-conflicts", fn panel -> click_button(panel, "Dismiss conflict") end)
+
+      # Coffee's tab is gone, but the lunch conflict still lights the badge.
+      session
+      |> refute_has("#expense-editor button", text: "Conflicts")
+      |> assert_has("#conflict-bell", text: "1")
+    end
+
+    test "renders every alternative for a three-or-more-edit conflict, and overrides the chosen one",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+
+      conflict =
+        seed_three_way_conflict(tmp_dir, book.id, coffee.id, ["Espresso", "Latte", "Mocha"])
+
+      # Automerge picks the winner by op id, so which value is kept is not fixed; target the
+      # first alternative by its rendered index rather than assume any particular winner.
+      [first_alternative | _] = conflict.alternatives
+
+      session =
+        session
+        |> assert_has("#conflict-bell", timeout: 100)
+        |> within("#expenses", fn list -> click_button(list, conflict.kept.value) end)
+        |> within("#expense-editor", fn editor -> click_button(editor, "Conflicts") end)
+
+      # All three concurrent values render — the kept one plus both alternatives — proving the
+      # tab is not hardwired to a single pair.
+      session
+      |> assert_has("#expense-conflicts", text: "Espresso")
+      |> assert_has("#expense-conflicts", text: "Latte")
+      |> assert_has("#expense-conflicts", text: "Mocha")
+      |> assert_has("#expense-conflicts button", text: "Make this the value", count: 2)
+
+      # Overriding the first alternative's row makes exactly that value win going forward.
+      session
+      |> within("#expense-conflicts-description-0", fn row ->
+        click_button(row, "Make this the value")
+      end)
+      |> refute_has("#conflict-bell")
+      |> assert_has("#expenses", text: first_alternative.value)
+    end
+
+    test "copy names LocalCents and never the sync internals", ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+      kept = seed_scalar_conflict(tmp_dir, book.id, coffee.id, "Espresso", "Latte")
+
+      session
+      |> assert_has("#conflict-bell", timeout: 100)
+      |> within("#expenses", fn list -> click_button(list, kept) end)
+      |> within("#expense-editor", fn editor -> click_button(editor, "Conflicts") end)
+      |> assert_has("#expense-conflicts", text: "LocalCents")
+      |> refute_has("#expense-conflicts", text: "Automerge")
+      |> refute_has("#expense-conflicts", text: "CRDT")
+    end
+  end
+
+  # Forks a second peer, retitles `expense_id` to a different value on each side across
+  # the suspended link, and reconciles — the scalar conflict LocalCents auto-resolves.
+  # Returns the value LocalCents kept, so a caller can open that Expense's row by text.
+  defp seed_scalar_conflict(tmp_dir, book_id, expense_id, this_value, other_value) do
+    peer_b = fork_peer(tmp_dir, book_id)
+    {:ok, _} = Tracking.edit_expense(book_id, expense_id, %{description: this_value})
+    {:ok, _} = Tracking.edit_expense(peer_b, expense_id, %{description: other_value})
+    reconcile(book_id, peer_b)
+
+    %{field_conflicts: conflicts} = Tracking.conflict_summary(book_id)
+    conflict = Enum.find(conflicts, &(&1.expense_id == expense_id))
+    conflict.kept.value
+  end
+
+  # Two expenses diverge on one peer pair, then a single reconcile — so both scalar conflicts
+  # coexist. They must surface in the same merge: a later per-expense edit reconciles the whole
+  # winner-only state and would collapse the earlier conflict's register. Returns a `%{id => kept}`
+  # map so a caller can open either conflicted row by text.
+  defp seed_two_conflicts(tmp_dir, book_id, {id_a, a_this, a_other}, {id_b, b_this, b_other}) do
+    peer_b = fork_peer(tmp_dir, book_id)
+    {:ok, _} = Tracking.edit_expense(book_id, id_a, %{description: a_this})
+    {:ok, _} = Tracking.edit_expense(book_id, id_b, %{description: b_this})
+    {:ok, _} = Tracking.edit_expense(peer_b, id_a, %{description: a_other})
+    {:ok, _} = Tracking.edit_expense(peer_b, id_b, %{description: b_other})
+    reconcile(book_id, peer_b)
+
+    %{field_conflicts: conflicts} = Tracking.conflict_summary(book_id)
+    Map.new(conflicts, &{&1.expense_id, &1.kept.value})
+  end
+
+  # Three peers retitle the same expense's description while apart, so the reconciled register
+  # holds three concurrent values — one kept plus two alternatives. Returns the field conflict.
+  defp seed_three_way_conflict(tmp_dir, book_id, expense_id, [v0, v1, v2]) do
+    peer_1 = fork_peer(tmp_dir, book_id)
+    peer_2 = fork_peer(tmp_dir, book_id)
+    {:ok, _} = Tracking.edit_expense(book_id, expense_id, %{description: v0})
+    {:ok, _} = Tracking.edit_expense(peer_1, expense_id, %{description: v1})
+    {:ok, _} = Tracking.edit_expense(peer_2, expense_id, %{description: v2})
+    reconcile(book_id, peer_1)
+    reconcile(book_id, peer_2)
+
+    %{field_conflicts: [conflict]} = Tracking.conflict_summary(book_id)
+    conflict
   end
 end

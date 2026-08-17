@@ -176,6 +176,24 @@ defmodule LocalCents.Tracking.BookDocument do
   end
 
   @doc """
+  Drops the scalar conflict on one expense's `field` from a summary, leaving the rest — so a
+  dismissed or overridden conflict stops appearing while the others stand. Matches on both
+  `expense_id` and `field`, keying the drop to a single field.
+  """
+  @spec reject_field_conflict(conflict_summary(), expense_id :: String.t(), field :: String.t()) ::
+          conflict_summary()
+  def reject_field_conflict(summary, expense_id, field) do
+    %{
+      summary
+      | field_conflicts:
+          Enum.reject(
+            summary.field_conflicts,
+            &(&1.expense_id == expense_id and &1.field == field)
+          )
+    }
+  end
+
+  @doc """
   Builds a `BookDocument` from the raw state map produced by
   `LocalCents.Tracking.ExAutomerge.decode/1`, parsing each category into a
   `Category` and each expense's stored `date` string into a `Date` and `cost`

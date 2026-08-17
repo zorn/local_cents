@@ -326,6 +326,18 @@ defmodule LocalCents.Tracking.BookServer do
     GenServer.call(via(id), :dismiss_conflicts)
   end
 
+  @doc """
+  Clears the scalar conflict on one expense's `field`, leaving every other conflict, and
+  broadcasts `:book_updated` so all windows re-read the shrunken signal.
+
+  Like "Dismiss all", it only touches the in-memory summary, never the document.
+  """
+  @spec dismiss_field_conflict(Book.id(), Expense.id(), field :: String.t()) :: :ok
+  def dismiss_field_conflict(id, expense_id, field)
+      when is_binary(id) and is_binary(expense_id) and is_binary(field) do
+    GenServer.call(via(id), {:dismiss_field_conflict, expense_id, field})
+  end
+
   @doc "Stops the process. The document is already persisted after every change."
   @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
@@ -537,6 +549,12 @@ defmodule LocalCents.Tracking.BookServer do
     # quiets every window's bell, not just the one that clicked.
     broadcast(state.id, {:book_updated, state.id})
     {:reply, :ok, %{state | conflicts: BookDocument.empty_conflict_summary()}}
+  end
+
+  def handle_call({:dismiss_field_conflict, expense_id, field}, _from, state) do
+    conflicts = BookDocument.reject_field_conflict(state.conflicts, expense_id, field)
+    broadcast(state.id, {:book_updated, state.id})
+    {:reply, :ok, %{state | conflicts: conflicts}}
   end
 
   def handle_call({:receive_sync_message, peer, message}, _from, state) do
