@@ -73,24 +73,23 @@ defmodule LocalCentsWeb.Bond.Composites.ExpenseConflicts do
           <p class="text-[0.625rem] font-bold uppercase tracking-wide text-surface-400">
             Other edits
           </p>
+          <%!-- Value, provenance, then the action stack vertically so the provenance line gets
+          the row's full width — the same wrapping as the kept card above, rather than a
+          right-floated button that squeezes the date onto three lines. --%>
           <div
             :for={alternative <- conflict.alternatives}
             id={"#{@id}-#{conflict.field}-#{alternative.index}"}
-            class="flex items-center gap-3 rounded-lg border border-white/15 bg-white/5 px-3 py-2.5"
+            class="rounded-lg border border-white/15 bg-white/5 px-3 py-2.5"
           >
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-semibold text-white">
-                {alternative.value}
-              </span>
-              <span class="mt-0.5 block text-[11px] text-surface-300">{alternative.provenance}</span>
-            </span>
+            <p class="truncate text-sm font-semibold text-white">{alternative.value}</p>
+            <p class="mt-0.5 text-[11px] text-surface-300">{alternative.provenance}</p>
             <button
               type="button"
               phx-click={@on_make_value}
               phx-value-expense-id={conflict.expense_id}
               phx-value-field={conflict.field}
               phx-value-index={alternative.index}
-              class="shrink-0 rounded-md border border-primary-400/70 px-2.5 py-1.5 text-[11px] font-semibold text-primary-100 transition-colors hover:bg-primary-400/15"
+              class="mt-2.5 rounded-md border border-primary-400/70 px-2.5 py-1.5 text-[11px] font-semibold text-primary-100 transition-colors hover:bg-primary-400/15"
             >
               Make this the value
             </button>

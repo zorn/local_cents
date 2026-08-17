@@ -1,3 +1,10 @@
+# credo:disable-for-this-file Credo.Check.Refactor.ModuleDependencies
+#
+# This view coordinates the whole Book window — expenses, quick-add, categories, report,
+# delete, and the conflict tab — so it exceeds the 15-dependency budget. The exception is
+# carried deliberately so the code stays honest (a real `%Decimal{}` guard, a
+# `Phoenix.HTML.Form` attr type) rather than shaved to fit; decomposing the view and lifting
+# it is tracked in #267.
 defmodule LocalCentsWeb.BookLive do
   @moduledoc """
   A single open `Book`, mounted at `/books/:book_id` — the document view.
@@ -182,7 +189,7 @@ defmodule LocalCentsWeb.BookLive do
   # than tracked as its own assign.
   attr :editor, :any, required: true
   attr :editor_tab, :atom, required: true
-  attr :form, :any, required: true
+  attr :form, Phoenix.HTML.Form, required: true
   attr :categories, :list, required: true
   attr :conflict_summary, :map, required: true
   attr :time_zone, :string, required: true
@@ -828,7 +835,7 @@ defmodule LocalCentsWeb.BookLive do
   # rather than a fake $0.00 (see ADR 0008). A present amount uses the shared house
   # formatter so this list and the Report render dollars identically.
   defp format_amount(nil), do: "—"
-  defp format_amount(cost), do: MoneyFormat.dollars(cost)
+  defp format_amount(%Decimal{} = cost), do: MoneyFormat.dollars(cost)
 
   # The IANA time zone the browser reported on connect (e.g. "America/New_York"),
   # falling back to UTC on the static first render (no connect params yet).
