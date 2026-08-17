@@ -60,4 +60,5 @@ defmodule LocalCentsWeb.Bond do
   defdelegate category_row(assigns), to: LocalCentsWeb.Bond.Composites.CategoryRow
   defdelegate expense_cell(assigns), to: LocalCentsWeb.Bond.Composites.ExpenseCell
   defdelegate report_matrix(assigns), to: LocalCentsWeb.Bond.Composites.ReportMatrix
+  defdelegate synced_changes_popup(assigns), to: LocalCentsWeb.Bond.Composites.SyncedChangesPopup
 end

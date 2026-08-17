@@ -9,9 +9,9 @@ defmodule LocalCentsWeb.Bond.Elements.ConflictBell do
   conflict UX). The button carries an `sr-only` "Synced changes" label so assistive tech —
   and a text-matching test — can name it.
 
-  The button is the eventual opener for the "Synced changes" popup; that popup, and the
-  `phx-click` that opens it, land in a later slice. Until then the caller passes an `id`
-  and the `count`, and the button is inert.
+  The button opens the "Synced changes" popup (`LocalCentsWeb.Bond.Composites.SyncedChangesPopup`):
+  the caller passes an `id`, the `count`, and the `phx-click` that toggles the popup through
+  the `:rest` attributes.
   """
 
   use Phoenix.Component

@@ -34,9 +34,9 @@ defmodule LocalCentsWeb.BookLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{book: %Book{id: id}}} = socket) do
     socket
-    |> assign(editor: nil, confirm_delete: nil, quick_add_line: "")
+    |> assign(editor: nil, confirm_delete: nil, quick_add_line: "", synced_changes_open: false)
     |> assign(time_zone: connected_time_zone(socket), expenses: load_expenses(id))
-    |> assign(conflict_count: load_conflict_count(id))
+    |> assign_conflicts(id)
     |> assign_categories(load_categories(id))
     |> ok()
   end
@@ -56,9 +56,21 @@ defmodule LocalCentsWeb.BookLive do
         <%!-- The expenses header's conflict signal: an ambient bell shown only once a
         sync surfaces a conflict, never as a per-row marker on the list below. Absent
         while the Book is quiet, so the header takes no space until it has something to
-        say. --%>
-        <div :if={@conflict_count > 0} class="flex justify-end pt-2 pr-2">
-          <Bond.conflict_bell id="conflict-bell" count={@conflict_count} />
+        say. The bell toggles the "Synced changes" popup, which is anchored to this
+        `relative` header so it hangs beneath the bell. --%>
+        <div :if={@conflict_count > 0} class="relative flex justify-end pt-2 pr-2">
+          <Bond.conflict_bell
+            id="conflict-bell"
+            count={@conflict_count}
+            phx-click="toggle_synced_changes"
+          />
+          <Bond.synced_changes_popup
+            :if={@synced_changes_open}
+            id="synced-changes-popup"
+            field_conflicts={@conflict_summary.field_conflicts}
+            on_open_conflict="edit_expense"
+            on_dismiss_all="dismiss_all"
+          />
         </div>
 
         <%!-- Quick-add sits at the top so a long expense list never scrolls it out
@@ -270,18 +282,22 @@ defmodule LocalCentsWeb.BookLive do
   def handle_event("edit_expense", %{"id" => expense_id}, socket) do
     case find_expense(socket, expense_id) do
       %Expense{} = expense ->
+        # A row in the Synced changes popup also opens the editor this way, so close the
+        # popup as the editor slides in rather than leave it hanging over the panel.
         socket
         |> assign(
           editor: {:edit, expense},
-          form: editor_form(expense, today(socket.assigns.time_zone))
+          form: editor_form(expense, today(socket.assigns.time_zone)),
+          synced_changes_open: false
         )
         |> noreply()
 
       nil ->
-        # The row vanished (edited/deleted elsewhere); resync rather than open a
-        # stale editor.
+        # The row vanished (edited/deleted elsewhere); resync rather than open a stale
+        # editor, and close the popup too — a Synced changes row can reach here, and it
+        # should not linger over a row that just went away.
         socket
-        |> assign(expenses: load_expenses(socket.assigns.book.id))
+        |> assign(expenses: load_expenses(socket.assigns.book.id), synced_changes_open: false)
         |> noreply()
     end
   end
@@ -307,6 +323,24 @@ defmodule LocalCentsWeb.BookLive do
 
   def handle_event("save_expense", %{"expense" => expense_params}, socket) do
     save_expense(socket, socket.assigns.editor, expense_params)
+  end
+
+  # The bell opens and closes the "Synced changes" popup; it is only rendered while a
+  # conflict signal is showing, so a toggle can never strand it over an empty header.
+  def handle_event("toggle_synced_changes", _params, socket) do
+    socket
+    |> assign(synced_changes_open: not socket.assigns.synced_changes_open)
+    |> noreply()
+  end
+
+  # Dismiss all clears the whole signal at once: the context drops the in-memory
+  # conflicts and broadcasts, so `assign_conflicts/2` closes the popup and hides the bell.
+  def handle_event("dismiss_all", _params, socket) do
+    Tracking.dismiss_conflicts(socket.assigns.book.id)
+
+    socket
+    |> assign_conflicts(socket.assigns.book.id)
+    |> noreply()
   end
 
   def handle_event("close_editor", _params, socket) do
@@ -442,7 +476,7 @@ defmodule LocalCentsWeb.BookLive do
 
         socket
         |> assign(book: book, expenses: load_expenses(id))
-        |> assign(conflict_count: load_conflict_count(id))
+        |> assign_conflicts(id)
         |> put_title(book.name)
         |> close_editor_if_gone()
         |> noreply()
@@ -491,13 +525,25 @@ defmodule LocalCentsWeb.BookLive do
     end
   end
 
-  # How many synced changes the bell should badge: every surfaced conflict, scalar
-  # (field) and edit-vs-delete alike, counts as one item needing attention. Zero hides
-  # the bell entirely, so a quiet Book carries no signal.
-  defp load_conflict_count(id) do
+  # The badge count is every surfaced conflict — scalar and edit-vs-delete alike — since
+  # each is one item needing attention; the full summary feeds the popup. A zero count
+  # hides the bell, so a dismiss (or any drop to zero) also closes the popup rather than
+  # strand it over an empty header.
+  defp assign_conflicts(socket, id) do
+    summary = load_conflict_summary(id)
+    count = length(summary.field_conflicts) + length(summary.edit_delete_conflicts)
+
+    socket
+    |> assign(conflict_summary: summary, conflict_count: count)
+    |> then(fn socket ->
+      if count == 0, do: assign(socket, synced_changes_open: false), else: socket
+    end)
+  end
+
+  defp load_conflict_summary(id) do
     case Tracking.conflict_summary(id) do
-      {:error, :not_open} -> 0
-      %{field_conflicts: field, edit_delete_conflicts: deletes} -> length(field) + length(deletes)
+      {:error, :not_open} -> %{field_conflicts: [], edit_delete_conflicts: []}
+      summary -> summary
     end
   end
 
