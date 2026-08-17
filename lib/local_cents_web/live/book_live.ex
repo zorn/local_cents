@@ -197,7 +197,10 @@ defmodule LocalCentsWeb.BookLive do
       )
 
     ~H"""
-    <div :if={@has_conflicts} class="mb-3 flex gap-4 border-b border-primary-200/60" role="tablist">
+    <%!-- Two plain labeled buttons that swap the panel below, not a full ARIA tab widget
+    (no `role="tablist"`): that pattern promises arrow-key navigation this does not implement,
+    and a half-built one reads worse to a screen reader than clear buttons. --%>
+    <div :if={@has_conflicts} class="mb-3 flex gap-4 border-b border-primary-200/60">
       <button
         type="button"
         phx-click="select_editor_tab"
@@ -423,8 +426,7 @@ defmodule LocalCentsWeb.BookLive do
     conflicts = socket.assigns.conflict_summary.field_conflicts
 
     with %Expense{} = expense <- find_expense(socket, expense_id),
-         value when is_binary(value) <-
-           ConflictPresenter.alternative_value(conflicts, expense_id, field, index) do
+         {:ok, value} <- ConflictPresenter.alternative_value(conflicts, expense_id, field, index) do
       override_conflict(socket, expense, field, value)
     else
       _ -> resolve_conflict_gone(socket, expense_id, field)
@@ -433,11 +435,16 @@ defmodule LocalCentsWeb.BookLive do
 
   # Dismiss conflict: accept what LocalCents kept and clear just this one, leaving the others
   # for the user to work through. Like Dismiss all it only drops the in-memory summary entry.
+  # Reloads and retires a gone editor on the same terms as the override path, so a concurrent
+  # delete cannot strand the panel over an expense that just vanished.
   def handle_event("dismiss_conflict", %{"expense-id" => expense_id, "field" => field}, socket) do
-    Tracking.dismiss_field_conflict(socket.assigns.book.id, expense_id, field)
+    book_id = socket.assigns.book.id
+    Tracking.dismiss_field_conflict(book_id, expense_id, field)
 
     socket
-    |> assign_conflicts(socket.assigns.book.id)
+    |> assign(expenses: load_expenses(book_id))
+    |> assign_conflicts(book_id)
+    |> close_editor_if_gone()
     |> settle_editor_tab()
     |> noreply()
   end

@@ -39,23 +39,27 @@ defmodule LocalCentsWeb.ConflictPresenter do
   end
 
   @doc """
-  The value of the `index`-th alternative of the conflict on `expense_id`'s `field`, or `nil`
-  when the conflict or index no longer resolves (a resync dropped it out from under a click).
-  `index` arrives as the string a `phx-value` carries.
+  The value of the `index`-th alternative of the conflict on `expense_id`'s `field` as
+  `{:ok, value}`, or `:error` when the conflict or index no longer resolves (a resync dropped
+  it out from under a click). `value` may itself be `nil` — the register allows it — which is
+  why an `:error` tuple, not a bare `nil`, signals the lookup miss. `index` arrives as the
+  string a `phx-value` carries.
   """
   @spec alternative_value(
           field_conflicts :: [map()],
           expense_id :: String.t(),
           field :: String.t(),
           index :: String.t()
-        ) :: String.t() | nil
+        ) :: {:ok, String.t() | nil} | :error
   def alternative_value(field_conflicts, expense_id, field, index) do
+    # `i >= 0` guards `Enum.at/2`'s negative-index wraparound: a crafted `phx-value-index` of
+    # "-1" would otherwise select the last alternative instead of missing.
     with %{alternatives: alternatives} <- find(field_conflicts, expense_id, field),
-         {i, ""} <- Integer.parse(index),
+         {i, ""} when i >= 0 <- Integer.parse(index),
          %{value: value} <- Enum.at(alternatives, i) do
-      value
+      {:ok, value}
     else
-      _ -> nil
+      _ -> :error
     end
   end
 
