@@ -200,7 +200,7 @@ defmodule LocalCentsWeb.BookLive do
     <%!-- Two plain labeled buttons that swap the panel below, not a full ARIA tab widget
     (no `role="tablist"`): that pattern promises arrow-key navigation this does not implement,
     and a half-built one reads worse to a screen reader than clear buttons. --%>
-    <div :if={@has_conflicts} class="mb-3 flex gap-4 border-b border-primary-200/60">
+    <div :if={@has_conflicts} class="mb-4 flex gap-5 border-b border-white/10">
       <button
         type="button"
         phx-click="select_editor_tab"
@@ -281,14 +281,15 @@ defmodule LocalCentsWeb.BookLive do
     """
   end
 
-  # Highlights the active tab; both share the same padding so switching never shifts the row.
+  # Highlights the active tab against the dark editor panel; both share the same padding so
+  # switching never shifts the row.
   defp tab_class(active?) do
-    base = "px-1 pb-2 text-sm font-medium -mb-px border-b-2"
+    base = "px-1 pb-2 text-sm font-semibold -mb-px border-b-2 transition-colors"
 
     if active? do
-      base <> " border-primary-700 text-primary-800"
+      base <> " border-primary-400 text-white"
     else
-      base <> " border-transparent text-surface-500 hover:text-primary-800"
+      base <> " border-transparent text-surface-400 hover:text-white"
     end
   end
 
