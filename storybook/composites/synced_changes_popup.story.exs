@@ -15,11 +15,19 @@ defmodule Storybook.Composites.SyncedChangesPopup do
     }
   end
 
+  # The popup positions itself `absolute` beneath the bell, so in the app it anchors to the
+  # `relative` expenses header. The catalog gives it the same relative box (tall enough to
+  # hold it) — otherwise it escapes to the page's top-right corner and the preview reads empty.
+  defp anchored(inner) do
+    ~s|<div class="relative" style="min-height: 340px;">#{inner}</div>|
+  end
+
   def variations do
     [
       %Variation{
         id: :single,
         description: "One auto-resolved scalar conflict.",
+        template: anchored("<.psb-variation/>"),
         attributes: %{
           id: "synced-changes-single",
           on_open_conflict: "open_conflict",
@@ -30,6 +38,7 @@ defmodule Storybook.Composites.SyncedChangesPopup do
       %Variation{
         id: :several,
         description: "Several auto-resolved conflicts stacked in the group.",
+        template: anchored("<.psb-variation/>"),
         attributes: %{
           id: "synced-changes-several",
           on_open_conflict: "open_conflict",
