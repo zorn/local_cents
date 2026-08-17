@@ -313,6 +313,19 @@ defmodule LocalCents.Tracking.BookServer do
     GenServer.call(via(id), :conflict_summary)
   end
 
+  @doc """
+  Clears every conflict this session surfaced, returning the summary to empty, and
+  broadcasts `:book_updated` so all windows re-read the now-quiet signal.
+
+  The write behind the popup's "Dismiss all". Conflicts are in-memory session state, so
+  this drops them without touching the document — nothing is persisted and no change time
+  is recorded.
+  """
+  @spec dismiss_conflicts(Book.id()) :: :ok
+  def dismiss_conflicts(id) when is_binary(id) do
+    GenServer.call(via(id), :dismiss_conflicts)
+  end
+
   @doc "Stops the process. The document is already persisted after every change."
   @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
@@ -517,6 +530,13 @@ defmodule LocalCents.Tracking.BookServer do
 
   def handle_call(:conflict_summary, _from, state) do
     {:reply, state.conflicts, state}
+  end
+
+  def handle_call(:dismiss_conflicts, _from, state) do
+    # The summary is shared across a Book's windows, so broadcast: one window's dismiss
+    # quiets every window's bell, not just the one that clicked.
+    broadcast(state.id, {:book_updated, state.id})
+    {:reply, :ok, %{state | conflicts: BookDocument.empty_conflict_summary()}}
   end
 
   def handle_call({:receive_sync_message, peer, message}, _from, state) do

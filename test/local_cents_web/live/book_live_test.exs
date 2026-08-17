@@ -377,5 +377,85 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> assert_has("#expense-#{coffee.id}")
       |> refute_has("#expenses #conflict-bell")
     end
+
+    test "opening the bell shows the Synced changes popup, and a row opens the editor",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+
+      peer_b = fork_peer(tmp_dir, book.id)
+      {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
+      {:ok, _} = Tracking.edit_expense(peer_b, coffee.id, %{description: "Latte"})
+      reconcile(book.id, peer_b)
+
+      # Automerge picks the winner; the popup row names whichever value it kept.
+      %{field_conflicts: [conflict]} = Tracking.conflict_summary(book.id)
+      kept = conflict.kept.value
+
+      # The popup's copy must name LocalCents and never the sync internals (#237).
+      session =
+        session
+        |> assert_has("#conflict-bell", timeout: 100)
+        |> refute_has("#synced-changes-popup")
+        |> click_button("Synced changes")
+
+      session
+      |> assert_has("#synced-changes-popup", text: "Auto-resolved")
+      |> assert_has("#synced-changes-popup", text: "LocalCents kept one")
+      |> refute_has("#synced-changes-popup", text: "Automerge")
+
+      # Opening a row closes the popup behind it as the editor slides in.
+      session
+      |> within("#synced-changes-popup", fn popup -> click_button(popup, kept) end)
+      |> assert_has("#expense-editor")
+      |> assert_has("#expense-editor input[value='#{kept}']")
+      |> refute_has("#synced-changes-popup")
+    end
+
+    test "an edit-vs-delete-only signal opens a popup with no empty Auto-resolved group",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+
+      # One peer deletes the expense while this side edits it: the delete wins, but this
+      # side's dropped edit surfaces as an edit-vs-delete conflict with no scalar conflict.
+      peer_b = fork_peer(tmp_dir, book.id)
+      {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
+      :ok = Tracking.delete_expense(peer_b, coffee.id)
+      reconcile(book.id, peer_b)
+
+      # The badge counts the dropped edit, but the popup shows no "Auto-resolved" group —
+      # its label would otherwise head an empty list. Dismiss all still clears the signal.
+      session
+      |> assert_has("#conflict-bell", text: "1", timeout: 100)
+      |> click_button("Synced changes")
+      |> assert_has("#synced-changes-popup")
+      |> refute_has("#synced-changes-popup", text: "Auto-resolved")
+      |> within("#synced-changes-popup", fn popup -> click_button(popup, "Dismiss all") end)
+      |> refute_has("#conflict-bell")
+    end
+
+    test "Dismiss all clears the signal and the badge", ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+
+      peer_b = fork_peer(tmp_dir, book.id)
+      {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
+      {:ok, _} = Tracking.edit_expense(peer_b, coffee.id, %{description: "Latte"})
+      reconcile(book.id, peer_b)
+
+      session
+      |> assert_has("#conflict-bell", timeout: 100)
+      |> click_button("Synced changes")
+      |> within("#synced-changes-popup", fn popup -> click_button(popup, "Dismiss all") end)
+      |> refute_has("#conflict-bell")
+      |> refute_has("#synced-changes-popup")
+    end
   end
 end

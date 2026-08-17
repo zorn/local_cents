@@ -595,6 +595,21 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
+  Clears every conflict surfaced on the open Book `id`, returning the signal to quiet, and
+  broadcasts `:book_updated` so open windows re-read the count. Returns a `:not_open` error
+  if the Book's process is not running.
+
+  The write behind the "Synced changes" popup's "Dismiss all". Conflicts are held in memory
+  only, so a dismiss does not persist.
+  """
+  @spec dismiss_conflicts(Book.id()) :: :ok | {:error, :not_open}
+  def dismiss_conflicts(id) when is_binary(id) do
+    BookServer.dismiss_conflicts(id)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
   Subscribes the calling process to a Book's change broadcasts.
 
   After subscribing, the caller receives `{:book_updated, id}` messages whenever
