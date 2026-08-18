@@ -1,14 +1,6 @@
 defmodule LocalCentsWeb.BookLive.Editor do
   @moduledoc """
-  The `LocalCentsWeb.BookLive` slide-in editor — its render, its form, and its save,
-  validate, and conflict-resolution logic in one place.
-
-  Extracted from `BookLive` so the editor's dependencies (`Ecto.Changeset` for the
-  save-error branches, `Phoenix.HTML.Form` for the form, `LocalCentsWeb.ConflictPresenter`
-  for the Conflicts tab) live where they are used rather than crowding the parent view's
-  module-dependency budget (see [#267](https://github.com/zorn/local_cents/issues/267)).
-  It stays a plain helper module rather than a `Phoenix.LiveComponent`: the debts it clears
-  do not warrant the editor owning a hard state boundary of its own.
+  Provides functions for the `LocalCentsWeb.BookLive` slide-in editor.
 
   Its functions transform `BookLive`'s socket — they build the editor assigns (`editor`,
   `form`, `editor_tab`) and write through `LocalCents.Tracking` — and leave the Book-view
