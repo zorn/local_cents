@@ -32,11 +32,14 @@ defmodule Storybook.Composites.SyncedChangesPopup do
     }
   end
 
-  # The popup positions itself `absolute` beneath the bell, so in the app it anchors to the
-  # `relative` expenses header. The catalog gives it the same relative box (tall enough to
-  # hold it) — otherwise it escapes to the page's top-right corner and the preview reads empty.
+  # The popup positions itself `absolute` (`right-2 top-12`) beneath the bell, so in the app it
+  # anchors to the `relative` expenses header. The catalog needs the same relative box, but it
+  # must carry an explicit width: the popup is the box's only child and is out of flow, so an
+  # auto-width box collapses to zero and the popup drifts a different amount per variation. A
+  # fixed-width box centered in the preview frames the popup the same way every time, so the
+  # variations line up. Height holds the tallest variation without overlapping the next.
   defp anchored(inner) do
-    ~s|<div class="relative" style="min-height: 340px;">#{inner}</div>|
+    ~s|<div class="relative mx-auto" style="width: 21rem; min-height: 340px;">#{inner}</div>|
   end
 
   # The event handlers every variation shares — the popup pushes these on click, inert in the

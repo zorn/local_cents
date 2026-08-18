@@ -342,8 +342,8 @@ defmodule LocalCents.Tracking.BookServer do
   Clears one edit-vs-delete decision, matched by `expense_id`, leaving every other conflict,
   and broadcasts `:book_updated` so all windows re-read the shrunken signal.
 
-  The write behind the popup's "Keep deleted": it acknowledges the drop without reviving the
-  expense, so like the other dismiss paths it only touches the in-memory summary, never the
+  Acknowledges the drop without reviving the expense: the delete stands and the dropped edit
+  is discarded. Like the other dismiss paths it only touches the in-memory summary, never the
   document.
   """
   @spec dismiss_edit_delete_conflict(Book.id(), Expense.id()) :: :ok
@@ -357,10 +357,9 @@ defmodule LocalCents.Tracking.BookServer do
   this server surfaced as an edit-vs-delete conflict — then clears that decision. Persists and
   broadcasts, returning the revived Expense.
 
-  The write behind the popup's "Restore". Unlike the dismiss paths it is a real document
-  change, so `time` (unix seconds) stamps it and the Book's `updated_at` advances. Returns a
-  `:not_found` error when no edit-vs-delete conflict is outstanding for `expense_id`, or
-  another error if the write fails.
+  Unlike the dismiss paths it is a real document change, so `time` (unix seconds) stamps it and
+  the Book's `updated_at` advances. Returns a `:not_found` error when no edit-vs-delete conflict
+  is outstanding for `expense_id`, or another error if the write fails.
   """
   @spec restore_expense(Book.id(), Expense.id(), time :: integer()) ::
           {:ok, Expense.t()} | {:error, term()}

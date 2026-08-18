@@ -220,7 +220,7 @@ defmodule LocalCents.Tracking.BookDocument do
   Revives an Expense a concurrent delete dropped, from the raw fields an edit-vs-delete
   conflict preserved (see `t:LocalCents.Tracking.ExAutomerge.edit_delete_conflict/0`). The
   dropped edit is restored verbatim — original `id` and all — so it is the edit the user
-  made that returns, not a fresh Expense. Backs the "Synced changes" popup's Restore.
+  made that returns, not a fresh Expense.
 
   A fresh document object carries the revived `id`; the delete's tombstone is on the object
   the merge dropped, so the restored Expense propagates cleanly as an add on the next sync.
@@ -247,8 +247,9 @@ defmodule LocalCents.Tracking.BookDocument do
     end
   end
 
-  # Nulls a revived Expense's `category_id` when its Category no longer exists, so a restore
-  # never reintroduces a filed id the Book cannot resolve. A nil id is already Uncategorized.
+  # Sets a revived Expense's `category_id` to `nil` when its Category no longer exists, so a
+  # restore never reintroduces a filed id the Book cannot resolve. A `nil` id is already
+  # Uncategorized.
   defp unfile_missing_category(%Expense{category_id: nil} = expense, _document), do: expense
 
   defp unfile_missing_category(%Expense{category_id: category_id} = expense, document) do
