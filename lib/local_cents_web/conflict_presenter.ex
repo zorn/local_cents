@@ -39,14 +39,14 @@ defmodule LocalCentsWeb.ConflictPresenter do
   end
 
   @doc """
-  The display label for a stored scalar-field name. Most read well capitalized, but
-  `category_id` names a stored column, so it maps to "Category" rather than leaking
-  "Category_id" into user-facing copy. Public so the Synced changes popup labels a field
-  the same way the Conflicts tab does, from one map.
+  The display label for a stored scalar-field name, via `Phoenix.Naming.humanize/1`: it
+  drops a trailing `_id`, spaces out underscores, and capitalizes — so `category_id` reads
+  "Category" rather than leaking the column name as "Category_id", and `description` reads
+  "Description". Public so the Synced changes popup labels a field the same way the
+  Conflicts tab does.
   """
   @spec field_label(field :: String.t()) :: String.t()
-  def field_label("category_id"), do: "Category"
-  def field_label(field), do: String.capitalize(field)
+  def field_label(field), do: Phoenix.Naming.humanize(field)
 
   @doc """
   The value of the `index`-th alternative of the conflict on `expense_id`'s `field` as
