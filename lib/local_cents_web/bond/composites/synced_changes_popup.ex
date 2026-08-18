@@ -98,8 +98,9 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
     """
   end
 
-  # A stored field name ("description") to its display label ("Description"). Only
-  # `description` is a scalar today; capitalizing keeps the copy right as more fields
-  # gain conflict handling.
+  # A stored field name ("description") to its display label ("Description"). Any of an
+  # `Expense`'s scalar fields can conflict — `description`, `date`, `cost`, `category_id` —
+  # and capitalizing suits the single-word ones; `category_id` would read "Category_id"
+  # and needs a real label map (see https://github.com/zorn/local_cents/issues/268).
   defp field_label(field), do: String.capitalize(field)
 end
