@@ -623,10 +623,11 @@ defmodule LocalCentsWeb.BookLiveTest do
       session = assert_has(session, "#conflict-bell", timeout: 100)
 
       # The Synced changes popup names the field for the reader, not its stored column.
-      session
-      |> click_button("Synced changes")
-      |> assert_has("#synced-changes-popup", text: "Synced edits to Category")
-      |> refute_has("#synced-changes-popup", text: "Category_id")
+      session =
+        session
+        |> click_button("Synced changes")
+        |> assert_has("#synced-changes-popup", text: "Synced edits to Category")
+        |> refute_has("#synced-changes-popup", text: "Category_id")
 
       # The editor's Conflicts tab heads the same conflict with the same label.
       session
