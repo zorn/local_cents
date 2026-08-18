@@ -28,6 +28,7 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
 
   import LocalCentsWeb.CoreComponents, only: [icon: 1]
 
+  alias LocalCentsWeb.ConflictPresenter
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
@@ -88,7 +89,7 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
               {conflict.kept.value}
             </span>
             <span class="block text-[11px] text-surface-500">
-              Synced edits to {field_label(conflict.field)} — LocalCents kept one.
+              Synced edits to {ConflictPresenter.field_label(conflict.field)} — LocalCents kept one.
             </span>
           </span>
           <.icon name="hero-chevron-right" class="size-4 text-surface-300" />
@@ -97,10 +98,4 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
     </div>
     """
   end
-
-  # A stored field name ("description") to its display label ("Description"). Any of an
-  # `Expense`'s scalar fields can conflict — `description`, `date`, `cost`, `category_id` —
-  # and capitalizing suits the single-word ones; `category_id` would read "Category_id"
-  # and needs a real label map (see https://github.com/zorn/local_cents/issues/268).
-  defp field_label(field), do: String.capitalize(field)
 end

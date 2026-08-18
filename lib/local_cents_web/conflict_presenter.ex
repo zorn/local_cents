@@ -39,6 +39,16 @@ defmodule LocalCentsWeb.ConflictPresenter do
   end
 
   @doc """
+  The display label for a stored scalar-field name, via `Phoenix.Naming.humanize/1`: it
+  drops a trailing `_id`, spaces out underscores, and capitalizes — so `category_id` reads
+  "Category" rather than leaking the column name as "Category_id", and `description` reads
+  "Description". Public so the Synced changes popup labels a field the same way the
+  Conflicts tab does.
+  """
+  @spec field_label(field :: String.t()) :: String.t()
+  def field_label(field), do: Phoenix.Naming.humanize(field)
+
+  @doc """
   The value of the `index`-th alternative of the conflict on `expense_id`'s `field` as
   `{:ok, value}`, or `:error` when the conflict or index no longer resolves (a resync dropped
   it out from under a click). `value` may itself be `nil` — the register allows it — which is
@@ -71,7 +81,7 @@ defmodule LocalCentsWeb.ConflictPresenter do
     %{
       expense_id: conflict.expense_id,
       field: conflict.field,
-      field_label: String.capitalize(conflict.field),
+      field_label: field_label(conflict.field),
       kept: value_view(conflict.kept, time_zone),
       alternatives:
         conflict.alternatives
