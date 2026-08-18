@@ -232,9 +232,8 @@ struct ProvenanceIndex {
 }
 
 impl ProvenanceIndex {
-    fn build(doc: &mut AutoCommit) -> Self {
-        let changes = doc
-            .get_changes(&[])
+    fn build(changes: &[Change]) -> Self {
+        let changes = changes
             .iter()
             .map(|change| ChangeStamp {
                 device: change.actor_id().to_hex_string(),
@@ -386,15 +385,16 @@ fn latest_write(
 // the merged history carries that this side never had (`merged_changes` minus `side`). The
 // deps of those changes that land back in this side's history are the heads at the last
 // state both sides shared, so forking there yields every edit the deleter had already seen.
-// When the two share no history (no such dep), the frontier is empty and the ancestor is a
-// bare document — a conservative fallback that surfaces every drop rather than assume one
-// was a plain delete.
+// The frontier is empty only when the sides share no history, and `fork_at` then returns a
+// bare document; `dropped_edits` reads that as an empty ancestor and surfaces every drop. A
+// real cross-delete shares the deleted expense's creating change, so in practice the
+// frontier is never empty.
 fn fork_point(
     side: &mut AutoCommit,
+    side_changes: &[Change],
     merged_changes: &[Change],
 ) -> Result<AutoCommit, rustler::Error> {
-    let side_hashes: BTreeSet<ChangeHash> =
-        side.get_changes(&[]).iter().map(Change::hash).collect();
+    let side_hashes: BTreeSet<ChangeHash> = side_changes.iter().map(Change::hash).collect();
 
     let other_hashes: BTreeSet<ChangeHash> = merged_changes
         .iter()
@@ -430,12 +430,11 @@ fn dropped_edits(
     merged_changes: &[Change],
 ) -> Result<Vec<EditDeleteConflict>, rustler::Error> {
     let mut doc = AutoCommit::load(side_bytes).map_err(to_badarg)?;
-    let provenance = ProvenanceIndex::build(&mut doc);
     let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
 
-    // The expenses this side still holds that the merge dropped. When none dropped there
-    // is nothing to weigh, and reconstructing the fork point would be wasted — a linear
-    // descendant leaves an empty frontier that forks to a bare, unhydratable document.
+    // The expenses this side still holds that the merge dropped. When none dropped there is
+    // nothing to weigh, so we return before touching the change history — a book with a long
+    // history reconciles an ordinary edit without paying for the fork-point reconstruction.
     let dropped: Vec<(String, ObjId)> = expense_objects(&doc)?
         .into_iter()
         .filter(|(id, _)| !merged_ids.contains(id))
@@ -445,8 +444,15 @@ fn dropped_edits(
         return Ok(Vec::new());
     }
 
-    let ancestor = fork_point(&mut doc, merged_changes)?;
-    let ancestor_state: BookDoc = hydrate(&ancestor).map_err(to_badarg)?;
+    let side_changes = doc.get_changes(&[]);
+    let provenance = ProvenanceIndex::build(&side_changes);
+
+    // A bare ancestor (the sides shared no history) hydrates to nothing, so every drop below
+    // is surfaced — the conservative reading when the common ancestor cannot prove a plain
+    // delete. In practice a real cross-delete shares history, so this fork is never bare.
+    let ancestor = fork_point(&mut doc, &side_changes, merged_changes)?;
+    let ancestor_state: BookDoc =
+        hydrate(&ancestor).unwrap_or_else(|_| BookDoc::empty(String::new()));
 
     let mut conflicts = Vec::new();
 
@@ -488,8 +494,8 @@ fn summarize_conflicts(
     merged: &mut AutoCommit,
     sides: &[&[u8]],
 ) -> Result<ConflictSummary, rustler::Error> {
-    let provenance = ProvenanceIndex::build(merged);
     let merged_changes = merged.get_changes(&[]);
+    let provenance = ProvenanceIndex::build(&merged_changes);
 
     let merged_objects = expense_objects(merged)?;
     let merged_ids: BTreeSet<String> = merged_objects.iter().map(|(id, _)| id.clone()).collect();
