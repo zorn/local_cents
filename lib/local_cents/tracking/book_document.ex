@@ -225,6 +225,12 @@ defmodule LocalCents.Tracking.BookDocument do
   A fresh document object carries the revived `id`; the delete's tombstone is on the object
   the merge dropped, so the restored Expense propagates cleanly as an add on the next sync.
 
+  A concurrent delete may also have removed the Category this edit was filed under while the
+  Expense was gone. Reviving that `category_id` would leave it dangling — a filed id with no
+  Category — so restore un-files it, and the Expense returns Uncategorized, exactly as
+  `delete_category/2` would have left it had the Expense been present (see
+  [ADR 0005](0005-categories-not-tags.html)).
+
   On success returns the updated document and the revived Expense. Returns an
   `:already_present` error if an Expense with that `id` is already in the document (a restore
   that raced another).
@@ -232,12 +238,24 @@ defmodule LocalCents.Tracking.BookDocument do
   @spec restore_expense(t(), ExAutomerge.raw_expense()) ::
           {:ok, t(), Expense.t()} | {:error, :already_present}
   def restore_expense(%__MODULE__{} = document, raw_expense) do
-    expense = expense_from_raw(raw_expense)
+    expense = raw_expense |> expense_from_raw() |> unfile_missing_category(document)
 
     if Enum.any?(document.expenses, &(&1.id == expense.id)) do
       {:error, :already_present}
     else
       {:ok, %{document | expenses: List.insert_at(document.expenses, -1, expense)}, expense}
+    end
+  end
+
+  # Nulls a revived Expense's `category_id` when its Category no longer exists, so a restore
+  # never reintroduces a filed id the Book cannot resolve. A nil id is already Uncategorized.
+  defp unfile_missing_category(%Expense{category_id: nil} = expense, _document), do: expense
+
+  defp unfile_missing_category(%Expense{category_id: category_id} = expense, document) do
+    if Enum.any?(document.categories, &(&1.id == category_id)) do
+      expense
+    else
+      %{expense | category_id: nil}
     end
   end
 

@@ -292,8 +292,16 @@ defmodule LocalCentsWeb.BookLive do
 
       # The decision went away between render and click (a concurrent resync already resolved
       # it); re-read to settle the signal rather than surface an error for a no-op.
+      {:error, :not_found} ->
+        socket
+        |> assign_conflicts(book_id)
+        |> noreply()
+
+      # A real failure — the write did not land — so say so and leave the decision standing
+      # for a retry rather than swallow it as if the restore had happened.
       {:error, _reason} ->
         socket
+        |> put_flash(:error, "Could not restore the expense.")
         |> assign_conflicts(book_id)
         |> noreply()
     end

@@ -295,6 +295,27 @@ defmodule LocalCents.Tracking.SyncTest do
              %{field_conflicts: [], edit_delete_conflicts: []}
   end
 
+  test "restoring an expense whose category was deleted meanwhile revives it Uncategorized",
+       ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
+    coffee = add_expense(book.id, "Coffee")
+    {:ok, _} = Tracking.assign_category(book.id, coffee.id, groceries.id)
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    # This side edits the filed expense; the other deletes it. Then the category it was filed
+    # under is deleted here too, so reviving its old category_id would leave a dangling id.
+    edit_description(book.id, coffee.id, "Espresso")
+    :ok = Tracking.delete_expense(peer_b, coffee.id)
+    reconcile(book.id, peer_b)
+    :ok = Tracking.delete_category(book.id, groceries.id)
+
+    assert {:ok, restored} = Tracking.restore_expense(book.id, coffee.id)
+    assert restored.description == "Espresso"
+    assert restored.category_id == nil
+  end
+
   defp add_expense(id, description) do
     {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})
     expense
