@@ -608,6 +608,33 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> refute_has("#expense-conflicts", text: "Automerge")
       |> refute_has("#expense-conflicts", text: "CRDT")
     end
+
+    # A Category conflict arrives as the stored field `category_id`; the copy must name the
+    # Category, not leak the column name as "Category_id" (#268).
+    test "a Category conflict labels the field Category, not category_id", ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+      {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
+      {:ok, transit} = Tracking.add_category(book.id, %{name: "Transit"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+      seed_category_conflict(tmp_dir, book.id, coffee.id, groceries.id, transit.id)
+
+      session = assert_has(session, "#conflict-bell", timeout: 100)
+
+      # The Synced changes popup names the field for the reader, not its stored column.
+      session
+      |> click_button("Synced changes")
+      |> assert_has("#synced-changes-popup", text: "Synced edits to Category")
+      |> refute_has("#synced-changes-popup", text: "Category_id")
+
+      # The editor's Conflicts tab heads the same conflict with the same label.
+      session
+      |> within("#expenses", fn list -> click_button(list, "Coffee") end)
+      |> within("#expense-editor", fn editor -> click_button(editor, "Conflicts") end)
+      |> assert_has("#expense-conflicts", text: "Category")
+      |> refute_has("#expense-conflicts", text: "Category_id")
+    end
   end
 
   # Forks a second peer, retitles `expense_id` to a different value on each side across
@@ -622,6 +649,16 @@ defmodule LocalCentsWeb.BookLiveTest do
     %{field_conflicts: conflicts} = Tracking.conflict_summary(book_id)
     conflict = Enum.find(conflicts, &(&1.expense_id == expense_id))
     conflict.kept.value
+  end
+
+  # Files `expense_id` under a different Category on each of two peers across a suspended
+  # link, then reconciles — producing the auto-resolved `category_id` scalar conflict whose
+  # label must read "Category", not the stored column name.
+  defp seed_category_conflict(tmp_dir, book_id, expense_id, this_category, other_category) do
+    peer_b = fork_peer(tmp_dir, book_id)
+    {:ok, _} = Tracking.assign_category(book_id, expense_id, this_category)
+    {:ok, _} = Tracking.assign_category(peer_b, expense_id, other_category)
+    reconcile(book_id, peer_b)
   end
 
   # Two expenses diverge on one peer pair, then a single reconcile — so both scalar conflicts
