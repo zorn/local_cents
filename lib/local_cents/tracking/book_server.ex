@@ -338,6 +338,35 @@ defmodule LocalCents.Tracking.BookServer do
     GenServer.call(via(id), {:dismiss_field_conflict, expense_id, field})
   end
 
+  @doc """
+  Clears one edit-vs-delete decision, matched by `expense_id`, leaving every other conflict,
+  and broadcasts `:book_updated` so all windows re-read the shrunken signal.
+
+  Acknowledges the drop without reviving the expense: the delete stands and the dropped edit
+  is discarded. Like the other dismiss paths it only touches the in-memory summary, never the
+  document.
+  """
+  @spec dismiss_edit_delete_conflict(Book.id(), Expense.id()) :: :ok
+  def dismiss_edit_delete_conflict(id, expense_id)
+      when is_binary(id) and is_binary(expense_id) do
+    GenServer.call(via(id), {:dismiss_edit_delete_conflict, expense_id})
+  end
+
+  @doc """
+  Revives the Expense a concurrent delete dropped, identified by `expense_id`, from the edit
+  this server surfaced as an edit-vs-delete conflict — then clears that decision. Persists and
+  broadcasts, returning the revived Expense.
+
+  Unlike the dismiss paths it is a real document change, so `time` (unix seconds) stamps it and
+  the Book's `updated_at` advances. Returns a `:not_found` error when no edit-vs-delete conflict
+  is outstanding for `expense_id`, or another error if the write fails.
+  """
+  @spec restore_expense(Book.id(), Expense.id(), time :: integer()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def restore_expense(id, expense_id, time) when is_binary(id) and is_binary(expense_id) do
+    GenServer.call(via(id), {:restore_expense, expense_id, time})
+  end
+
   @doc "Stops the process. The document is already persisted after every change."
   @spec close(Book.id()) :: :ok
   def close(id), do: GenServer.stop(via(id))
@@ -557,6 +586,26 @@ defmodule LocalCents.Tracking.BookServer do
     {:reply, :ok, %{state | conflicts: conflicts}}
   end
 
+  def handle_call({:dismiss_edit_delete_conflict, expense_id}, _from, state) do
+    conflicts = BookDocument.reject_edit_delete_conflict(state.conflicts, expense_id)
+    broadcast(state.id, {:book_updated, state.id})
+    {:reply, :ok, %{state | conflicts: conflicts}}
+  end
+
+  # Restore reads the dropped edit from this server's own accumulated summary — the one
+  # source of truth for what a reconcile dropped — so the caller sends only the expense id
+  # and no stale raw fields can slip in. The document write (re-adding the expense) and the
+  # decision drop are committed together, so the badge never falls out of step with the bytes.
+  def handle_call({:restore_expense, expense_id, time}, _from, state) do
+    case Enum.find(state.conflicts.edit_delete_conflicts, &(&1.expense_id == expense_id)) do
+      nil ->
+        {:reply, {:error, :not_found}, state}
+
+      conflict ->
+        restore(state, conflict, time)
+    end
+  end
+
   def handle_call({:receive_sync_message, peer, message}, _from, state) do
     {sync_state, state} = ensure_sync_state(state, peer)
     new_doc = BookDocument.receive_sync_message(state.doc, sync_state, message)
@@ -683,6 +732,30 @@ defmodule LocalCents.Tracking.BookServer do
   defp commit(state, document, time, reply, extra_signals) do
     new_doc = BookDocument.to_bytes(document, state.doc, time)
     persist_and_commit(state, new_doc, reply, extra_signals)
+  end
+
+  # Restore's own commit: re-add the dropped expense to the document and clear its decision
+  # from the accumulated summary in one write. Unlike `run/4`, it both writes the document
+  # and shrinks the conflict summary, so it carries the new summary through
+  # `persist_and_commit/5` rather than leaving it untouched.
+  @spec restore(state(), BookDocument.edit_delete_conflict(), time :: integer()) ::
+          {:reply, reply(), state()}
+  defp restore(state, conflict, time) do
+    case BookDocument.restore_expense(decode(state), conflict.expense) do
+      {:ok, document, expense} ->
+        conflicts = BookDocument.reject_edit_delete_conflict(state.conflicts, conflict.expense_id)
+        new_doc = BookDocument.to_bytes(document, state.doc, time)
+        persist_and_commit(state, new_doc, {:ok, expense}, [], conflicts)
+
+      # In practice only a persist failure lands here, which a retry can clear: this server is
+      # the sole writer, and a decision exists only because the delete already won, so the
+      # expense is absent and `restore_expense`'s duplicate guard (`:already_present`) is
+      # unreachable. The decision is left standing so the caller can retry.
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  rescue
+    e in ArgumentError -> {:reply, {:error, e}, state}
   end
 
   # The persist-then-commit tail shared by a domain command (`commit/5`, which encodes

@@ -134,6 +134,13 @@ defmodule LocalCents.Tracking.BookDocument do
   """
   @type conflict_summary() :: ExAutomerge.conflict_summary()
 
+  @typedoc """
+  One edit-vs-delete conflict from a `t:conflict_summary/0`, re-exported from
+  `t:LocalCents.Tracking.ExAutomerge.edit_delete_conflict/0` so the process shell names it
+  through this bridge rather than the codec module.
+  """
+  @type edit_delete_conflict() :: ExAutomerge.edit_delete_conflict()
+
   @doc """
   Reports what conflicted when `merged_bytes` folded a sync message into `prior_bytes`.
 
@@ -191,6 +198,66 @@ defmodule LocalCents.Tracking.BookDocument do
             &(&1.expense_id == expense_id and &1.field == field)
           )
     }
+  end
+
+  @doc """
+  Drops one edit-vs-delete conflict, matched by `expense_id`, from a summary — so a kept or
+  restored delete stops appearing while the rest stand. The edit-vs-delete counterpart to
+  `reject_field_conflict/3`; there is one dropped edit per expense, so `expense_id` alone
+  keys it.
+  """
+  @spec reject_edit_delete_conflict(conflict_summary(), expense_id :: String.t()) ::
+          conflict_summary()
+  def reject_edit_delete_conflict(summary, expense_id) do
+    %{
+      summary
+      | edit_delete_conflicts:
+          Enum.reject(summary.edit_delete_conflicts, &(&1.expense_id == expense_id))
+    }
+  end
+
+  @doc """
+  Revives an Expense a concurrent delete dropped, from the raw fields an edit-vs-delete
+  conflict preserved (see `t:LocalCents.Tracking.ExAutomerge.edit_delete_conflict/0`). The
+  dropped edit is restored verbatim — original `id` and all — so it is the edit the user
+  made that returns, not a fresh Expense.
+
+  A fresh document object carries the revived `id`; the delete's tombstone is on the object
+  the merge dropped, so the restored Expense propagates cleanly as an add on the next sync.
+
+  A concurrent delete may also have removed the Category this edit was filed under while the
+  Expense was gone. Reviving that `category_id` would leave it dangling — a filed id with no
+  Category — so restore un-files it, and the Expense returns Uncategorized, exactly as
+  `delete_category/2` would have left it had the Expense been present (see
+  [ADR 0005](0005-categories-not-tags.html)).
+
+  On success returns the updated document and the revived Expense. Returns an
+  `:already_present` error if an Expense with that `id` is already in the document (a restore
+  that raced another).
+  """
+  @spec restore_expense(t(), ExAutomerge.raw_expense()) ::
+          {:ok, t(), Expense.t()} | {:error, :already_present}
+  def restore_expense(%__MODULE__{} = document, raw_expense) do
+    expense = raw_expense |> expense_from_raw() |> unfile_missing_category(document)
+
+    if Enum.any?(document.expenses, &(&1.id == expense.id)) do
+      {:error, :already_present}
+    else
+      {:ok, %{document | expenses: List.insert_at(document.expenses, -1, expense)}, expense}
+    end
+  end
+
+  # Sets a revived Expense's `category_id` to `nil` when its Category no longer exists, so a
+  # restore never reintroduces a filed id the Book cannot resolve. A `nil` id is already
+  # Uncategorized.
+  defp unfile_missing_category(%Expense{category_id: nil} = expense, _document), do: expense
+
+  defp unfile_missing_category(%Expense{category_id: category_id} = expense, document) do
+    if Enum.any?(document.categories, &(&1.id == category_id)) do
+      expense
+    else
+      %{expense | category_id: nil}
+    end
   end
 
   @doc """

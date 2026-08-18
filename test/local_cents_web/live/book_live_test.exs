@@ -414,29 +414,68 @@ defmodule LocalCentsWeb.BookLiveTest do
       |> refute_has("#synced-changes-popup")
     end
 
-    test "an edit-vs-delete-only signal opens a popup with no empty Auto-resolved group",
+    test "an edit-vs-delete conflict opens a Needs your decision group, not an Auto-resolved one",
          ~M{conn, tmp_dir} do
       {:ok, book} = Tracking.create_book("Family Expenses")
       {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
 
       session = visit(conn, ~p"/books/#{book.id}")
+      seed_edit_delete_conflict(tmp_dir, book.id, coffee.id, "Espresso")
 
-      # One peer deletes the expense while this side edits it: the delete wins, but this
-      # side's dropped edit surfaces as an edit-vs-delete conflict with no scalar conflict.
-      peer_b = fork_peer(tmp_dir, book.id)
-      {:ok, _} = Tracking.edit_expense(book.id, coffee.id, %{description: "Espresso"})
-      :ok = Tracking.delete_expense(peer_b, coffee.id)
-      reconcile(book.id, peer_b)
+      # The dropped edit surfaces in the second group with its description, and no
+      # "Auto-resolved" label heads an empty scalar list. The copy names LocalCents only.
+      session =
+        session
+        |> assert_has("#conflict-bell", text: "1", timeout: 100)
+        |> click_button("Synced changes")
+        |> assert_has("#synced-changes-popup", text: "Needs your decision")
+        |> assert_has("#synced-changes-popup", text: "Espresso")
+        |> refute_has("#synced-changes-popup", text: "Auto-resolved")
+        |> refute_has("#synced-changes-popup", text: "Automerge")
 
-      # The badge counts the dropped edit, but the popup shows no "Auto-resolved" group —
-      # its label would otherwise head an empty list. Dismiss all still clears the signal.
+      # Dismiss all clears an edit-delete-only signal too, not just a scalar one — it drops
+      # both groups of the summary, so the bell disappears.
       session
-      |> assert_has("#conflict-bell", text: "1", timeout: 100)
-      |> click_button("Synced changes")
-      |> assert_has("#synced-changes-popup")
-      |> refute_has("#synced-changes-popup", text: "Auto-resolved")
       |> within("#synced-changes-popup", fn popup -> click_button(popup, "Dismiss all") end)
       |> refute_has("#conflict-bell")
+    end
+
+    test "Keep deleted acknowledges just that dropped edit and updates the badge",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+      {:ok, lunch} = Tracking.add_expense(book.id, %{description: "Lunch", cost: "9.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+      seed_edit_delete_conflict(tmp_dir, book.id, [{coffee.id, "Espresso"}, {lunch.id, "Dinner"}])
+
+      # Keeping the coffee delete clears its row and drops the badge to the lunch one.
+      session
+      |> assert_has("#conflict-bell", text: "2", timeout: 100)
+      |> click_button("Synced changes")
+      |> within("#needs-decision-#{coffee.id}", fn row -> click_button(row, "Keep deleted") end)
+      |> assert_has("#conflict-bell", text: "1")
+      |> refute_has("#synced-changes-popup", text: "Espresso")
+      |> assert_has("#synced-changes-popup", text: "Dinner")
+    end
+
+    test "Restore revives the expense with its dropped edit and clears the signal",
+         ~M{conn, tmp_dir} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+      {:ok, coffee} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.00"})
+
+      session = visit(conn, ~p"/books/#{book.id}")
+      seed_edit_delete_conflict(tmp_dir, book.id, coffee.id, "Espresso")
+
+      # The reconcile removed Coffee; Restore brings it back carrying the dropped edit, and
+      # the last decision resolved so the bell disappears.
+      session
+      |> assert_has("#conflict-bell", text: "1", timeout: 100)
+      |> refute_has("#expenses", text: "Coffee")
+      |> click_button("Synced changes")
+      |> within("#needs-decision-#{coffee.id}", fn row -> click_button(row, "Restore") end)
+      |> refute_has("#conflict-bell")
+      |> assert_has("#expenses", text: "Espresso")
     end
 
     test "Dismiss all clears the signal and the badge", ~M{conn, tmp_dir} do
@@ -676,6 +715,25 @@ defmodule LocalCentsWeb.BookLiveTest do
 
     %{field_conflicts: conflicts} = Tracking.conflict_summary(book_id)
     Map.new(conflicts, &{&1.expense_id, &1.kept.value})
+  end
+
+  # Edits each expense here while a forked peer deletes it across the suspended link, then
+  # reconciles — so each surfaces as an edit-vs-delete conflict whose dropped edit the popup's
+  # "Needs your decision" group offers to restore or keep deleted. Takes one `{id, edit}` pair
+  # or a list of them.
+  defp seed_edit_delete_conflict(tmp_dir, book_id, expense_id, edit) when is_binary(expense_id) do
+    seed_edit_delete_conflict(tmp_dir, book_id, [{expense_id, edit}])
+  end
+
+  defp seed_edit_delete_conflict(tmp_dir, book_id, pairs) when is_list(pairs) do
+    peer_b = fork_peer(tmp_dir, book_id)
+
+    for {expense_id, edit} <- pairs do
+      {:ok, _} = Tracking.edit_expense(book_id, expense_id, %{description: edit})
+      :ok = Tracking.delete_expense(peer_b, expense_id)
+    end
+
+    reconcile(book_id, peer_b)
   end
 
   # Three peers retitle the same expense's description while apart, so the reconciled register

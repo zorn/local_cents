@@ -627,6 +627,43 @@ defmodule LocalCents.Tracking do
   end
 
   @doc """
+  Keeps the delete for the edit-vs-delete conflict on `expense_id`, clearing just that
+  decision from the open Book `id` and broadcasting `:book_updated` so open windows re-read
+  the count. Returns a `:not_open` error if the Book's process is not running.
+
+  Acknowledges that the delete stands, so the dropped edit is discarded. In memory only —
+  nothing is revived and the document is untouched.
+  """
+  @spec keep_deleted(Book.id(), Expense.id()) :: :ok | {:error, :not_open}
+  def keep_deleted(id, expense_id) when is_binary(id) and is_binary(expense_id) do
+    BookServer.dismiss_edit_delete_conflict(id, expense_id)
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
+  Restores the Expense a concurrent delete dropped, reviving it in the open Book `id` from the
+  edit an edit-vs-delete conflict preserved, and clearing that decision. Returns the revived
+  `Expense`.
+
+  Unlike `keep_deleted/2` it is a real document change, so it advances the Book's `updated_at`.
+  Returns a `:not_found` error when no edit-vs-delete conflict is outstanding for `expense_id`,
+  a `:not_open` error if the Book's process is not running, or another error if persisting
+  fails.
+
+  Options: `:now` (see the moduledoc), which advances `updated_at`.
+  """
+  @spec restore_expense(Book.id(), Expense.id(), opts :: keyword()) ::
+          {:ok, Expense.t()} | {:error, term()}
+  def restore_expense(id, expense_id, opts \\ [])
+      when is_binary(id) and is_binary(expense_id) do
+    opts = NimbleOptions.validate!(opts, @now_schema)
+    BookServer.restore_expense(id, expense_id, unix_seconds(opt_now(opts)))
+  catch
+    :exit, {:noproc, _} -> {:error, :not_open}
+  end
+
+  @doc """
   Subscribes the calling process to a Book's change broadcasts.
 
   After subscribing, the caller receives `{:book_updated, id}` messages whenever
