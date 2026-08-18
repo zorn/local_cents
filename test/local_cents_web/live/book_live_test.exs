@@ -424,13 +424,20 @@ defmodule LocalCentsWeb.BookLiveTest do
 
       # The dropped edit surfaces in the second group with its description, and no
       # "Auto-resolved" label heads an empty scalar list. The copy names LocalCents only.
+      session =
+        session
+        |> assert_has("#conflict-bell", text: "1", timeout: 100)
+        |> click_button("Synced changes")
+        |> assert_has("#synced-changes-popup", text: "Needs your decision")
+        |> assert_has("#synced-changes-popup", text: "Espresso")
+        |> refute_has("#synced-changes-popup", text: "Auto-resolved")
+        |> refute_has("#synced-changes-popup", text: "Automerge")
+
+      # Dismiss all clears an edit-delete-only signal too, not just a scalar one — it drops
+      # both groups of the summary, so the bell disappears.
       session
-      |> assert_has("#conflict-bell", text: "1", timeout: 100)
-      |> click_button("Synced changes")
-      |> assert_has("#synced-changes-popup", text: "Needs your decision")
-      |> assert_has("#synced-changes-popup", text: "Espresso")
-      |> refute_has("#synced-changes-popup", text: "Auto-resolved")
-      |> refute_has("#synced-changes-popup", text: "Automerge")
+      |> within("#synced-changes-popup", fn popup -> click_button(popup, "Dismiss all") end)
+      |> refute_has("#conflict-bell")
     end
 
     test "Keep deleted acknowledges just that dropped edit and updates the badge",

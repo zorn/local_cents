@@ -748,6 +748,10 @@ defmodule LocalCents.Tracking.BookServer do
         new_doc = BookDocument.to_bytes(document, state.doc, time)
         persist_and_commit(state, new_doc, {:ok, expense}, [], conflicts)
 
+      # In practice only a persist failure lands here, which a retry can clear: this server is
+      # the sole writer, and a decision exists only because the delete already won, so the
+      # expense is absent and `restore_expense`'s duplicate guard (`:already_present`) is
+      # unreachable. The decision is left standing so the caller can retry.
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
