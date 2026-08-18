@@ -242,6 +242,24 @@ defmodule LocalCents.Tracking.SyncTest do
     assert expense(book.id, coffee.id) == nil
   end
 
+  test "a delete on the other peer with no edit here reconciles silently", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    coffee = add_expense(book.id, "Coffee")
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    # The link is suspended: the other peer deletes the expense while this side
+    # leaves it untouched. There is no lost edit, so nothing to decide.
+    :ok = Tracking.delete_expense(peer_b, coffee.id)
+
+    reconcile(book.id, peer_b)
+
+    assert expense(book.id, coffee.id) == nil
+
+    assert Tracking.conflict_summary(book.id) ==
+             %{field_conflicts: [], edit_delete_conflicts: []}
+  end
+
   test "keeping a delete acknowledges just that dropped edit and leaves the others",
        ~M{tmp_dir} do
     {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)

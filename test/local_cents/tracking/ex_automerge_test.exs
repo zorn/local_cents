@@ -548,6 +548,36 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       assert conflict.time == 1_700_000_100
       assert is_binary(conflict.device) and conflict.device != ""
     end
+
+    test "a one-sided delete with the surviving side untouched surfaces no edit-vs-delete conflict" do
+      # The surviving side branched but never touched x, so without the common ancestor the
+      # merge-time diff would flag x's drop as a lost edit when it is a plain delete.
+      base = ExAutomerge.new_document("Book", @earlier)
+
+      base =
+        ExAutomerge.reconcile(
+          base,
+          with_expenses(ExAutomerge.decode(base), [
+            expense("x", "2026-07-11", "Coffee", nil),
+            expense("y", "2026-07-11", "Lunch", nil)
+          ]),
+          @earlier
+        )
+
+      deleted =
+        ExAutomerge.reconcile(
+          base,
+          with_expenses(ExAutomerge.decode(base), [expense("y", "2026-07-11", "Lunch", nil)]),
+          1_700_000_200
+        )
+
+      survivor = edit_description(base, "y", "Dinner", 1_700_000_100)
+
+      {merged, summary} = ExAutomerge.merge(survivor, deleted)
+
+      assert Enum.map(ExAutomerge.decode(merged).expenses, & &1.id) == ["y"]
+      assert summary == %{field_conflicts: [], edit_delete_conflicts: []}
+    end
   end
 
   describe "conflict_summary/2" do
@@ -600,6 +630,18 @@ defmodule LocalCents.Tracking.ExAutomergeTest do
       assert conflict.expense_id == "x"
       assert conflict.expense.description == "Edited here"
       assert conflict.time == 1_700_000_100
+    end
+
+    test "an incoming delete of an expense untouched here surfaces no edit-vs-delete conflict" do
+      base = base_with_one_expense()
+
+      deleted =
+        ExAutomerge.reconcile(base, with_expenses(ExAutomerge.decode(base), []), 1_700_000_200)
+
+      {merged, _} = ExAutomerge.merge(base, deleted)
+
+      assert ExAutomerge.conflict_summary(base, merged) ==
+               %{field_conflicts: [], edit_delete_conflicts: []}
     end
   end
 end
