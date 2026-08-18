@@ -78,7 +78,10 @@ defmodule LocalCentsWeb.BookLive do
             :if={@synced_changes_open}
             id="synced-changes-popup"
             field_conflicts={@conflict_summary.field_conflicts}
+            edit_delete_conflicts={@conflict_summary.edit_delete_conflicts}
             on_open_conflict="open_conflict"
+            on_restore="restore_expense"
+            on_keep_deleted="keep_deleted"
             on_dismiss_all="dismiss_all"
           />
         </div>
@@ -268,6 +271,39 @@ defmodule LocalCentsWeb.BookLive do
   # conflicts and broadcasts, so `assign_conflicts/2` closes the popup and hides the bell.
   def handle_event("dismiss_all", _params, socket) do
     Tracking.dismiss_conflicts(socket.assigns.book.id)
+
+    socket
+    |> assign_conflicts(socket.assigns.book.id)
+    |> noreply()
+  end
+
+  # Restore revives a deleted Expense from the dropped edit and clears that decision. It
+  # changes the document, so the expense list reloads alongside the conflict count; the last
+  # decision resolving drops the count to zero, which closes the popup and hides the bell.
+  def handle_event("restore_expense", %{"id" => expense_id}, socket) do
+    book_id = socket.assigns.book.id
+
+    case Tracking.restore_expense(book_id, expense_id) do
+      {:ok, _expense} ->
+        socket
+        |> assign(expenses: load_expenses(book_id))
+        |> assign_conflicts(book_id)
+        |> noreply()
+
+      # The decision went away between render and click (a concurrent resync already resolved
+      # it); re-read to settle the signal rather than surface an error for a no-op.
+      {:error, _reason} ->
+        socket
+        |> assign_conflicts(book_id)
+        |> noreply()
+    end
+  end
+
+  # Keep deleted acknowledges the delete and drops just that decision. Nothing is revived and
+  # the document is untouched, so only the conflict count re-reads — shrinking the badge, or
+  # closing the popup when it was the last decision.
+  def handle_event("keep_deleted", %{"id" => expense_id}, socket) do
+    Tracking.keep_deleted(socket.assigns.book.id, expense_id)
 
     socket
     |> assign_conflicts(socket.assigns.book.id)

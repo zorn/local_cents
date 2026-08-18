@@ -9,15 +9,18 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
   [#220 conflict UX](https://github.com/zorn/local_cents/issues/220), over an activity
   feed or a flat list).
 
-  This slice carries the **Auto-resolved** group only: the scalar conflicts LocalCents
-  merged on its own, one row each. A row names the value LocalCents kept and, clicked,
-  opens that Expense's editor (`on_open_conflict`, pushed with the Expense's id in
-  `phx-value-id`). **Dismiss all** clears the whole signal at once (`on_dismiss_all`).
-  The second group — deletes that need a Restore / Keep-deleted decision — lands in a
-  later slice, so `edit_delete_conflicts` are not rendered here yet.
+  Changes group by the action each needs. The **Auto-resolved** group carries the scalar
+  conflicts LocalCents merged on its own, one row each: a row names the value LocalCents
+  kept and, clicked, opens that Expense's editor (`on_open_conflict`, pushed with the
+  Expense's id in `phx-value-id`). The **Needs your decision** group carries the dropped
+  edits — an Expense edited here that the other peer deleted: each row names the dropped
+  edit and offers **Restore** (revive the Expense — `on_restore`) or **Keep deleted** (accept
+  the delete — `on_keep_deleted`), both pushed with the Expense's id. **Dismiss all** clears
+  the whole signal at once (`on_dismiss_all`). Each group's label is hidden when it has no
+  rows, so a summary that holds only one kind never heads an empty section.
 
   No copy names Automerge or CRDTs, and none assumes exactly two conflicting edits: the
-  register can hold more than two, so a row says only that LocalCents kept one.
+  register can hold more than two, so a scalar row says only that LocalCents kept one.
 
   The caller renders this while it should be shown (typically an `@…_open` assign toggled
   by the bell) and removes it to dismiss, the same open/closed-by-the-caller contract as
@@ -39,9 +42,23 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
     doc:
       "The auto-resolved scalar conflicts, each a `t:LocalCents.Tracking.BookDocument.conflict_summary/0` `field_conflict` (`expense_id`, `field`, `kept`, `alternatives`)"
 
+  attr :edit_delete_conflicts, :list,
+    required: true,
+    doc:
+      "The edit-vs-delete conflicts, each a `t:LocalCents.Tracking.BookDocument.conflict_summary/0` `edit_delete_conflict` (`expense_id`, `expense`, `device`, `time`)"
+
   attr :on_open_conflict, :string,
     required: true,
     doc: "LiveView event pushed with the Expense's id in `phx-value-id` when a row is clicked"
+
+  attr :on_restore, :string,
+    required: true,
+    doc: "LiveView event pushed with the Expense's id in `phx-value-id` when Restore is clicked"
+
+  attr :on_keep_deleted, :string,
+    required: true,
+    doc:
+      "LiveView event pushed with the Expense's id in `phx-value-id` when Keep deleted is clicked"
 
   attr :on_dismiss_all, :string,
     required: true,
@@ -66,9 +83,6 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
       </div>
 
       <div class="max-h-[60vh] divide-y divide-surface-100 overflow-y-auto">
-        <%!-- The badge counts every surfaced conflict, but this slice renders only the
-        auto-resolved ones — so hide the group label when it would head an empty list
-        (e.g. a summary holding only the deletes the next slice will show). --%>
         <div :if={@field_conflicts != []} class="px-3 pt-2.5 pb-1">
           <p class="text-[0.625rem] font-bold uppercase tracking-wide text-surface-400">
             Auto-resolved
@@ -94,6 +108,49 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
           </span>
           <.icon name="hero-chevron-right" class="size-4 text-surface-300" />
         </button>
+
+        <div :if={@edit_delete_conflicts != []} class="px-3 pt-2.5 pb-1">
+          <p class="text-[0.625rem] font-bold uppercase tracking-wide text-surface-400">
+            Needs your decision
+          </p>
+        </div>
+        <%!-- A deleted Expense has no row in the list to mark, so its dropped edit is handled
+        here: the row names the edit LocalCents held on to and offers to revive it or accept
+        the delete. Restore is the emphasized recovery action; Keep deleted is the quieter
+        accept. --%>
+        <div
+          :for={conflict <- @edit_delete_conflicts}
+          id={"needs-decision-#{conflict.expense_id}"}
+          class="flex items-start gap-2.5 px-3 py-2.5"
+        >
+          <.icon name="hero-trash" class="mt-0.5 size-4 shrink-0 text-error-600" />
+          <div class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-surface-800">
+              {conflict.expense.description}
+            </span>
+            <span class="block text-[11px] text-surface-500">
+              Deleted on another device — your edit is still here.
+            </span>
+            <div class="mt-1.5 flex gap-3">
+              <button
+                type="button"
+                phx-click={@on_restore}
+                phx-value-id={conflict.expense_id}
+                class="text-[11px] font-semibold text-primary-700 hover:underline"
+              >
+                Restore
+              </button>
+              <button
+                type="button"
+                phx-click={@on_keep_deleted}
+                phx-value-id={conflict.expense_id}
+                class="text-[11px] font-medium text-surface-500 hover:underline"
+              >
+                Keep deleted
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """

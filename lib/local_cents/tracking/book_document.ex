@@ -134,6 +134,13 @@ defmodule LocalCents.Tracking.BookDocument do
   """
   @type conflict_summary() :: ExAutomerge.conflict_summary()
 
+  @typedoc """
+  One edit-vs-delete conflict from a `t:conflict_summary/0`, re-exported from
+  `t:LocalCents.Tracking.ExAutomerge.edit_delete_conflict/0` so the process shell names it
+  through this bridge rather than the codec module.
+  """
+  @type edit_delete_conflict() :: ExAutomerge.edit_delete_conflict()
+
   @doc """
   Reports what conflicted when `merged_bytes` folded a sync message into `prior_bytes`.
 
@@ -191,6 +198,47 @@ defmodule LocalCents.Tracking.BookDocument do
             &(&1.expense_id == expense_id and &1.field == field)
           )
     }
+  end
+
+  @doc """
+  Drops one edit-vs-delete conflict, matched by `expense_id`, from a summary — so a kept or
+  restored delete stops appearing while the rest stand. The edit-vs-delete counterpart to
+  `reject_field_conflict/3`; there is one dropped edit per expense, so `expense_id` alone
+  keys it.
+  """
+  @spec reject_edit_delete_conflict(conflict_summary(), expense_id :: String.t()) ::
+          conflict_summary()
+  def reject_edit_delete_conflict(summary, expense_id) do
+    %{
+      summary
+      | edit_delete_conflicts:
+          Enum.reject(summary.edit_delete_conflicts, &(&1.expense_id == expense_id))
+    }
+  end
+
+  @doc """
+  Revives an Expense a concurrent delete dropped, from the raw fields an edit-vs-delete
+  conflict preserved (see `t:LocalCents.Tracking.ExAutomerge.edit_delete_conflict/0`). The
+  dropped edit is restored verbatim — original `id` and all — so it is the edit the user
+  made that returns, not a fresh Expense. Backs the "Synced changes" popup's Restore.
+
+  A fresh document object carries the revived `id`; the delete's tombstone is on the object
+  the merge dropped, so the restored Expense propagates cleanly as an add on the next sync.
+
+  On success returns the updated document and the revived Expense. Returns an
+  `:already_present` error if an Expense with that `id` is already in the document (a restore
+  that raced another).
+  """
+  @spec restore_expense(t(), ExAutomerge.raw_expense()) ::
+          {:ok, t(), Expense.t()} | {:error, :already_present}
+  def restore_expense(%__MODULE__{} = document, raw_expense) do
+    expense = expense_from_raw(raw_expense)
+
+    if Enum.any?(document.expenses, &(&1.id == expense.id)) do
+      {:error, :already_present}
+    else
+      {:ok, %{document | expenses: List.insert_at(document.expenses, -1, expense)}, expense}
+    end
   end
 
   @doc """

@@ -219,6 +219,82 @@ defmodule LocalCents.Tracking.SyncTest do
     assert remaining.expense_id == lunch.id
   end
 
+  test "an expense edited here and deleted on the other peer surfaces as an edit-vs-delete conflict",
+       ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    coffee = add_expense(book.id, "Coffee")
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    # The link is suspended: this side edits the expense while the other deletes it.
+    edit_description(book.id, coffee.id, "Espresso")
+    :ok = Tracking.delete_expense(peer_b, coffee.id)
+
+    reconcile(book.id, peer_b)
+
+    # The delete wins, so the expense is gone from both peers, but this side's dropped
+    # edit surfaces so the user can restore it rather than lose the work silently.
+    assert %{field_conflicts: [], edit_delete_conflicts: [conflict]} =
+             Tracking.conflict_summary(book.id)
+
+    assert conflict.expense_id == coffee.id
+    assert conflict.expense.description == "Espresso"
+    assert expense(book.id, coffee.id) == nil
+  end
+
+  test "keeping a delete acknowledges just that dropped edit and leaves the others",
+       ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    coffee = add_expense(book.id, "Coffee")
+    lunch = add_expense(book.id, "Lunch")
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    # Both expenses are edited here and deleted on the other peer, so the reconcile
+    # surfaces two separate edit-vs-delete conflicts.
+    edit_description(book.id, coffee.id, "Espresso")
+    edit_description(book.id, lunch.id, "Dinner")
+    :ok = Tracking.delete_expense(peer_b, coffee.id)
+    :ok = Tracking.delete_expense(peer_b, lunch.id)
+
+    reconcile(book.id, peer_b)
+
+    assert %{edit_delete_conflicts: conflicts} = Tracking.conflict_summary(book.id)
+    assert length(conflicts) == 2
+
+    # Keeping the coffee delete clears just that decision, leaving the lunch one standing.
+    assert :ok = Tracking.keep_deleted(book.id, coffee.id)
+
+    assert %{field_conflicts: [], edit_delete_conflicts: [remaining]} =
+             Tracking.conflict_summary(book.id)
+
+    assert remaining.expense_id == lunch.id
+  end
+
+  test "restoring a dropped edit revives the expense and clears its decision", ~M{tmp_dir} do
+    {:ok, book} = Tracking.create_book("Family", books_dir: tmp_dir)
+    coffee = add_expense(book.id, "Coffee")
+
+    peer_b = fork_peer(tmp_dir, book.id)
+
+    edit_description(book.id, coffee.id, "Espresso")
+    :ok = Tracking.delete_expense(peer_b, coffee.id)
+
+    reconcile(book.id, peer_b)
+
+    assert %{edit_delete_conflicts: [_conflict]} = Tracking.conflict_summary(book.id)
+
+    # Restore brings the expense back with the edit that was dropped, and the decision clears.
+    assert {:ok, restored} = Tracking.restore_expense(book.id, coffee.id)
+    assert restored.id == coffee.id
+    assert restored.description == "Espresso"
+
+    assert expense(book.id, coffee.id).description == "Espresso"
+
+    assert Tracking.conflict_summary(book.id) ==
+             %{field_conflicts: [], edit_delete_conflicts: []}
+  end
+
   defp add_expense(id, description) do
     {:ok, expense} = Tracking.add_expense(id, %{description: description, cost: "1.00"})
     expense
