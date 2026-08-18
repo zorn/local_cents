@@ -83,29 +83,34 @@ jobs:
       # `libgtk-3-dev` arrives transitively via `libwebkit2gtk-4.1-dev`, and
       # `libssl-dev` is preinstalled on the Ubuntu runner, so neither is listed.
       #
-      # The step timeout and retry loop guard against a flaky apt mirror: a hung
-      # fetch fails in minutes instead of riding the job to its full budget, and a
-      # transient failure self-heals on retry. `Acquire::Retries` handles a
-      # per-file blip underneath both.
+      # Guardrails against a flaky apt mirror. Each attempt runs under a `timeout`,
+      # so a hung fetch is killed and retried on a fresh mirror rather than riding
+      # the job to its budget. The cap is per-attempt, not whole-step — a
+      # whole-step cap would let the first hang consume the budget before any retry
+      # runs. 5 minutes clears a slow-but-healthy WebKitGTK download (25 MB+ of
+      # `-dev` packages) while still catching a real hang; the job's own
+      # `timeout-minutes: 20` is the outer backstop. `Acquire::Retries` handles a
+      # per-file blip underneath.
       - name: Install Tauri system dependencies
-        timeout-minutes: 2
         run: |
           install_deps() {
-            sudo apt-get update -o Acquire::Retries=3
-            sudo apt-get install -y -o Acquire::Retries=3 \
-              libwebkit2gtk-4.1-dev \
-              libayatana-appindicator3-dev \
-              librsvg2-dev \
-              libxdo-dev
+            sudo timeout 300 apt-get update -o Acquire::Retries=3 \
+              && sudo timeout 300 apt-get install -y -o Acquire::Retries=3 \
+                libwebkit2gtk-4.1-dev \
+                libayatana-appindicator3-dev \
+                librsvg2-dev \
+                libxdo-dev
           }
-          for attempt in 1 2 3; do
+          for attempt in 1 2; do
             if install_deps; then
               exit 0
             fi
-            echo "::warning::apt install attempt ${attempt} failed; retrying in 5s" >&2
-            sleep 5
+            if [ "$attempt" -lt 2 ]; then
+              echo "::warning::apt install attempt ${attempt} failed or timed out; retrying in 5s" >&2
+              sleep 5
+            fi
           done
-          echo "::error::apt install failed after 3 attempts" >&2
+          echo "::error::apt install failed after 2 attempts" >&2
           exit 1
 
       # Fetch Mix deps so the `elixirkit_rs` path dependency resolves. We skip
