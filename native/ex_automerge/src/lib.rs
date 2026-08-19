@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use automerge::sync::{Message as SyncMessage, State as SyncState, SyncDoc};
 use automerge::transaction::CommitOptions;
-use automerge::{AutoCommit, ObjId, ObjType, ReadDoc, Value, ROOT};
+use automerge::{AutoCommit, Change, ChangeHash, ObjId, ObjType, ReadDoc, Value, ROOT};
 use autosurgeon::{hydrate, Hydrate, Reconcile};
 use rustler::{Binary, Env, NewBinary, NifMap, Resource, ResourceArc};
 
@@ -37,7 +37,7 @@ use rustler::{Binary, Env, NewBinary, NifMap, Resource, ResourceArc};
 // rename leave expenses untouched and a delete un-file them by nulling this field.
 // All domain rules live in Elixir's `BookDocument`; this struct is a dumb data
 // carrier.
-#[derive(Reconcile, Hydrate, Clone, Debug, NifMap)]
+#[derive(Reconcile, Hydrate, Clone, Debug, PartialEq, NifMap)]
 pub struct Expense {
     #[key]
     pub id: String,
@@ -232,9 +232,8 @@ struct ProvenanceIndex {
 }
 
 impl ProvenanceIndex {
-    fn build(doc: &mut AutoCommit) -> Self {
-        let changes = doc
-            .get_changes(&[])
+    fn build(changes: &[Change]) -> Self {
+        let changes = changes
             .iter()
             .map(|change| ChangeStamp {
                 device: change.actor_id().to_hex_string(),
@@ -381,28 +380,94 @@ fn latest_write(
     }
 }
 
+// Rebuilds the document as it stood at the fork point this side shares with the other
+// participants in the merge — the common ancestor. The other side's changes are the ones
+// the merged history carries that this side never had (`merged_changes` minus `side`). The
+// deps of those changes that land back in this side's history are the heads at the last
+// state both sides shared, so forking there yields every edit the deleter had already seen.
+// The frontier is empty only when the sides share no history, and `fork_at` then returns a
+// bare document; `dropped_edits` reads that as an empty ancestor and surfaces every drop. A
+// real cross-delete shares the deleted expense's creating change, so in practice the
+// frontier is never empty.
+fn fork_point(
+    side: &mut AutoCommit,
+    side_changes: &[Change],
+    merged_changes: &[Change],
+) -> Result<AutoCommit, rustler::Error> {
+    let side_hashes: BTreeSet<ChangeHash> = side_changes.iter().map(Change::hash).collect();
+
+    let other_hashes: BTreeSet<ChangeHash> = merged_changes
+        .iter()
+        .map(Change::hash)
+        .filter(|hash| !side_hashes.contains(hash))
+        .collect();
+
+    let mut fork_heads: BTreeSet<ChangeHash> = BTreeSet::new();
+    for change in merged_changes {
+        if other_hashes.contains(&change.hash()) {
+            for dep in change.deps() {
+                if !other_hashes.contains(dep) {
+                    fork_heads.insert(*dep);
+                }
+            }
+        }
+    }
+
+    let fork_heads: Vec<ChangeHash> = fork_heads.into_iter().collect();
+    side.fork_at(&fork_heads).map_err(to_badarg)
+}
+
 // The dropped edits contributed by one pre-merge side: expenses it still holds that are
 // absent from the merged result (`merged_ids`), meaning the other side deleted them and
-// the delete won. Loads its own document so the side stays pristine — the merged doc has
-// already collapsed these expenses away.
+// the delete won. A drop counts as an edit-vs-delete conflict only when this side edited
+// the expense concurrently with the delete — its fields differ from the shared ancestor
+// (`fork_point`). An expense the delete dropped that this side left untouched since the
+// fork is a plain one-sided delete and reconciles silently. Loads its own document so the
+// side stays pristine — the merged doc has already collapsed these expenses away.
 fn dropped_edits(
-    doc_bytes: &[u8],
+    side_bytes: &[u8],
     merged_ids: &BTreeSet<String>,
+    merged_changes: &[Change],
 ) -> Result<Vec<EditDeleteConflict>, rustler::Error> {
-    let mut doc = AutoCommit::load(doc_bytes).map_err(to_badarg)?;
-    let provenance = ProvenanceIndex::build(&mut doc);
+    let mut doc = AutoCommit::load(side_bytes).map_err(to_badarg)?;
     let state: BookDoc = hydrate(&doc).map_err(to_badarg)?;
+
+    // The expenses this side still holds that the merge dropped. When none dropped there is
+    // nothing to weigh, so we return before touching the change history — a book with a long
+    // history reconciles an ordinary edit without paying for the fork-point reconstruction.
+    let dropped: Vec<(String, ObjId)> = expense_objects(&doc)?
+        .into_iter()
+        .filter(|(id, _)| !merged_ids.contains(id))
+        .collect();
+
+    if dropped.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let side_changes = doc.get_changes(&[]);
+    let provenance = ProvenanceIndex::build(&side_changes);
+
+    // A bare ancestor (the sides shared no history) hydrates to nothing, so every drop below
+    // is surfaced — the conservative reading when the common ancestor cannot prove a plain
+    // delete. In practice a real cross-delete shares history, so this fork is never bare.
+    let ancestor = fork_point(&mut doc, &side_changes, merged_changes)?;
+    let ancestor_state: BookDoc =
+        hydrate(&ancestor).unwrap_or_else(|_| BookDoc::empty(String::new()));
 
     let mut conflicts = Vec::new();
 
-    for (expense_id, expense) in expense_objects(&doc)? {
-        if merged_ids.contains(&expense_id) {
-            continue;
-        }
-
+    for (expense_id, expense) in dropped {
         let Some(hydrated) = state.expenses.iter().find(|e| e.id == expense_id) else {
             continue;
         };
+
+        // Untouched since the fork: the other side simply deleted it, nothing was lost.
+        if let Some(ancestor_expense) = ancestor_state.expenses.iter().find(|e| e.id == expense_id)
+        {
+            if ancestor_expense == hydrated {
+                continue;
+            }
+        }
 
         let (device, time) = latest_write(&doc, &provenance, &expense)?;
 
@@ -429,7 +494,8 @@ fn summarize_conflicts(
     merged: &mut AutoCommit,
     sides: &[&[u8]],
 ) -> Result<ConflictSummary, rustler::Error> {
-    let provenance = ProvenanceIndex::build(merged);
+    let merged_changes = merged.get_changes(&[]);
+    let provenance = ProvenanceIndex::build(&merged_changes);
 
     let merged_objects = expense_objects(merged)?;
     let merged_ids: BTreeSet<String> = merged_objects.iter().map(|(id, _)| id.clone()).collect();
@@ -446,12 +512,11 @@ fn summarize_conflicts(
     }
 
     // Edit-vs-delete: an expense a side still holds but gone from the merged result — the
-    // other side deleted it and the delete won. The merge-time diff cannot tell a
-    // concurrent edit here from a plain delete (that would need the common ancestor), so
-    // every such drop is surfaced to the side that still holds the expense.
+    // other side deleted it and the delete won. `dropped_edits` surfaces one only when the
+    // holding side edited it concurrently with the delete, not on a plain one-sided delete.
     let mut edit_delete_conflicts = Vec::new();
     for side in sides {
-        edit_delete_conflicts.extend(dropped_edits(side, &merged_ids)?);
+        edit_delete_conflicts.extend(dropped_edits(side, &merged_ids, &merged_changes)?);
     }
 
     Ok(ConflictSummary {
