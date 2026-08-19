@@ -96,12 +96,39 @@ echo "==> Seeding a demo Book into peer A…"
 # listener, so this never collides with the servers booted below. The Book is
 # created through the ordinary public API and closed so its bytes are flushed to
 # disk before the fork. It prints its id on a marked line we parse back out.
+#
+# The seed is a small, realistic mix so the recorded Book does not read as a
+# stub. Its shape is deliberate: Utilities is created but never assigned, so an
+# unused Category shows on screen, and Coffee and Parking stay Uncategorized.
+# Descending dates keep Coffee first in the date-sorted list, so the conflict
+# beat has one obvious Description-edit target. Categories are backdrop only —
+# the beat stays a Description scalar conflict and nothing edits a category while
+# offline (issue #281).
 SEED_OUTPUT="$(
   LOCAL_CENTS_BOOKS_DIR="$PEER_A_DIR" mix run -e '
     alias LocalCents.Tracking
     {:ok, book} = Tracking.create_book("Sync Demo")
-    {:ok, _} = Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.50"})
-    {:ok, _} = Tracking.add_expense(book.id, %{description: "Lunch", cost: "12.00"})
+    today = Date.utc_today()
+
+    {:ok, groceries} = Tracking.add_category(book.id, %{name: "Groceries"})
+    {:ok, transportation} = Tracking.add_category(book.id, %{name: "Transportation"})
+    {:ok, _utilities} = Tracking.add_category(book.id, %{name: "Utilities"})
+
+    {:ok, _coffee} =
+      Tracking.add_expense(book.id, %{description: "Coffee", cost: "4.50", date: today})
+    {:ok, groceries_run} =
+      Tracking.add_expense(book.id, %{description: "Groceries run", cost: "63.20", date: Date.add(today, -1)})
+    {:ok, gas} =
+      Tracking.add_expense(book.id, %{description: "Gas fill-up", cost: "48.00", date: Date.add(today, -2)})
+    {:ok, farmers_market} =
+      Tracking.add_expense(book.id, %{description: "Farmers market", cost: "24.00", date: Date.add(today, -3)})
+    {:ok, _parking} =
+      Tracking.add_expense(book.id, %{description: "Parking", cost: "12.00", date: Date.add(today, -4)})
+
+    {:ok, _} = Tracking.assign_category(book.id, groceries_run.id, groceries.id)
+    {:ok, _} = Tracking.assign_category(book.id, gas.id, transportation.id)
+    {:ok, _} = Tracking.assign_category(book.id, farmers_market.id, groceries.id)
+
     :ok = Tracking.close_book(book.id)
     IO.puts("LC_BOOK_ID=" <> book.id)
   '
