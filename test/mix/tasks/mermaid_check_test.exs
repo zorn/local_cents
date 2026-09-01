@@ -15,9 +15,9 @@ defmodule Mix.Tasks.Mermaid.CheckTest do
   describe "run/1" do
     test "skips a tracked file deleted from the working tree", %{tmp_dir: tmp_dir} do
       File.cd!(tmp_dir, fn ->
-        {_, 0} = System.cmd("git", ["init", "-q"])
+        {_, 0} = System.cmd("git", ["init", "-q"], env: [])
         File.write!("notes.md", "# Notes\n\nNo diagrams here.\n")
-        {_, 0} = System.cmd("git", ["add", "notes.md"])
+        {_, 0} = System.cmd("git", ["add", "notes.md"], env: [])
         # `git ls-files` still reports the file from the index, but the working
         # tree copy is gone — the exact state #188 crashed on.
         File.rm!("notes.md")
