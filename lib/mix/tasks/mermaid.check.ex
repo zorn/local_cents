@@ -64,7 +64,17 @@ defmodule Mix.Tasks.Mermaid.Check do
     end
   end
 
-  defp extract(path), do: Mermaid.extract_blocks(path, File.read!(path))
+  # `git ls-files` reports the index, so a file deleted from the working tree but
+  # not yet staged is still listed — a deleted file has no diagrams, so a missing
+  # path is skipped. Any other read error stays loud rather than passing as zero
+  # diagrams.
+  defp extract(path) do
+    case File.read(path) do
+      {:ok, contents} -> Mermaid.extract_blocks(path, contents)
+      {:error, :enoent} -> []
+      {:error, reason} -> raise File.Error, reason: reason, action: "read file", path: path
+    end
+  end
 
   # Defaults to what git tracks, which keeps the walk out of `deps/`, `_build/`,
   # and the Rust `target/` directories without maintaining an ignore list that
