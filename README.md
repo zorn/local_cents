@@ -92,3 +92,7 @@ open -W --stderr (tty) --stdout (tty) tauri/target/release/bundle/macos/local-ce
 ```
 
 This project has not been configured to create notarized / deployable app bundles yet.
+
+## License
+
+LocalCents is released under the [MIT License](https://github.com/zorn/local_cents/blob/main/LICENSE). Copyright (c) 2026 Mike Zornek.
