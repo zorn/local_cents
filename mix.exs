@@ -368,7 +368,7 @@ defmodule LocalCents.MixProject do
       {:decimal, "~> 2.0 or ~> 3.0"},
 
       # For clustering nodes via DNS.
-      {:dns_cluster, "~> 0.2.0"},
+      {:dns_cluster, "~> 0.3.0"},
 
       # The HTTP server that runs the Phoenix endpoint.
       {:bandit, "~> 1.5"},
