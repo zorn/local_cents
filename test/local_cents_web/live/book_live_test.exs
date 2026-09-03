@@ -3,6 +3,8 @@ defmodule LocalCentsWeb.BookLiveTest do
 
   import LocalCents.BooksDirHelper
   import LocalCents.SyncTestHelper
+  import Phoenix.LiveViewTest
+  import Phoenix.ConnTest, only: [get: 2]
 
   alias LocalCents.Tracking
 
@@ -122,6 +124,29 @@ defmodule LocalCentsWeb.BookLiveTest do
   end
 
   describe "full editor" do
+    # The same flow written against raw `Phoenix.LiveViewTest`, kept beside the
+    # PhoenixTest version below for a side-by-side readability comparison. It submits
+    # the form by its DOM id with a hand-built `expense` param map, rather than
+    # clicking the "Create" button a user sees and filling fields by label.
+    test "(alt) adding an expense through the editor lists it", %{conn: conn} do
+      {:ok, book} = Tracking.create_book("Family Expenses")
+
+      {:ok, view, _html} = live(conn, ~p"/books/#{book.id}")
+
+      view
+      |> element("button", "New Expense")
+      |> render_click()
+
+      view
+      |> form("#expense-form",
+        expense: %{date: "2026-06-10", description: "Coffee", cost: "4.75"}
+      )
+      |> render_submit()
+
+      assert has_element?(view, "#expenses", "missing")
+      assert has_element?(view, "#expenses", "$4.75")
+    end
+
     test "adding an expense through the editor lists it", ~M{conn} do
       {:ok, book} = Tracking.create_book("Family Expenses")
 
@@ -135,7 +160,7 @@ defmodule LocalCentsWeb.BookLiveTest do
         |> fill_in("Cost", with: "4.75")
         |> click_button("Create")
       end)
-      |> assert_has("#expenses", text: "Coffee")
+      |> assert_has("#expenses", text: "missing")
       |> assert_has("#expenses", text: "$4.75")
     end
 
