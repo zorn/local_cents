@@ -1,12 +1,13 @@
 defmodule Mix.Tasks.Guardrail.Review do
-  @shortdoc "Fails when a change weakens our Credo/Sobelow guardrails"
+  @shortdoc "Flags a change touching our Credo/Sobelow guardrails, for admin review"
 
   @moduledoc """
-  Reads the diff against a base ref and fails if the change would quietly weaken
-  our static-analysis guardrails — an added `credo:disable`/`sobelow_skip` comment
-  (a brand-new suppression, or the new side of an edited one), or an edit to
-  `.credo.exs`, `.sobelow-conf`, or a `.github/workflows/*` file. The detection
-  lives in `LocalCents.Guardrail`; this task is only the git plumbing around it.
+  Reads the diff against a base ref and fails if the change touches one of our
+  static-analysis surfaces — an added `credo:disable`/`sobelow_skip` comment (a
+  brand-new suppression, or the new side of an edited one), or an edit to
+  `.credo.exs`, `.sobelow-conf`, or a `.github/workflows/*` file — so an admin
+  reviews it before merge. The detection lives in `LocalCents.Guardrail`; this
+  task is only the git plumbing around it.
 
       $ mix guardrail.review                 # diff HEAD against origin/main
       $ mix guardrail.review --base origin/develop
@@ -14,9 +15,9 @@ defmodule Mix.Tasks.Guardrail.Review do
   CI passes the pull request's base branch so the diff is exactly what the PR
   proposes; see [Coding Standards](https://github.com/zorn/local_cents/blob/main/CODING_STANDARDS.md).
 
-  A red result here is not a bug to route around — it is the gate working. The
-  fix is to merge with an admin override (a conscious "I reviewed this guardrail
-  change"), not to delete the skip the task points at.
+  A red result here is the gate working, not a bug to route around: an admin
+  reviews the flagged change and merges past the check. The fix is never to delete
+  the skip the task points at just to get green.
 
   ## Options
 

@@ -1,15 +1,19 @@
 defmodule LocalCents.Guardrail do
   @moduledoc """
-  The pure half of the guardrail check that stops a change from quietly weakening
-  our static-analysis teeth.
+  The pure half of the guardrail check that flags a change touching our
+  static-analysis surfaces so an admin reviews it before it merges.
 
   Credo and Sobelow enforce our coding and security standards in CI, and both can
   be silenced locally — a `credo:disable` comment, a Sobelow skip comment, an edit
-  to `.credo.exs` or `.sobelow-conf`, or an edit to a workflow file that deletes
-  the step outright. This module reads a `git diff` and the list of changed paths
-  and reports every one of those moves, so the check that wraps it
-  (`mix guardrail.review`) can force a conscious admin override rather than let the
-  suppression land unseen.
+  to `.credo.exs` or `.sobelow-conf`, or an edit to a workflow file. None of those
+  is wrong on its own; each is *sensitive*, and the point of the check is to make
+  the change a conscious decision rather than let it land unseen. This module reads
+  a `git diff` and the list of changed paths and reports every such move.
+
+  The expected flow: a PR that touches one of these surfaces fails this check on
+  purpose, an admin merges it knowing the red mark is the deliberate "I reviewed
+  this" sign-off, and a later PR that touches none of them passes clean. The check
+  runs on pull requests only, so a merge to `main` is never held by it.
 
   Nothing here touches git, a disk, or a network: `Mix.Tasks.Guardrail.Review`
   gathers the diff and the path list and hands them in as strings.
@@ -25,9 +29,9 @@ defmodule LocalCents.Guardrail do
 
   A skip counts whenever it is on an *added* line, so editing an existing skip —
   which the diff shows as a removed line and an added one — trips the check on its
-  new side. That is deliberate: broadening a suppression, or pointing it at a
-  different check, weakens the guardrail as much as a brand-new skip. Only removing
-  a skip, or leaving one untouched in a file edited elsewhere, stays silent.
+  new side. That is deliberate: an edit can broaden a suppression or point it at a
+  different check, so it gets the same look as a brand-new skip. Only removing a
+  skip, or leaving one untouched in a file edited elsewhere, stays silent.
   """
 
   defmodule Violation do

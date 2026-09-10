@@ -100,10 +100,11 @@ jobs:
         run: mix hex.audit
         if: always()
 
-  # Its own job so it reports a distinct required status check for branch
-  # protection to gate on. What it catches and why merging past it takes an admin
-  # override live in `LocalCents.Guardrail` and CODING_STANDARDS.md. Runs only on a
-  # pull request, the one place a base branch exists to diff against.
+  # Fail CI — and so require admin approval to merge — when a PR edits Credo,
+  # Sobelow, or the other static-analysis guardrails. Its own job so the required
+  # status check is distinct; what it catches lives in `LocalCents.Guardrail` and
+  # CODING_STANDARDS.md. Runs on pull requests only, the one place a base branch
+  # exists to diff against, so a merge to main is never held by it.
   guardrail-review:
     name: Guardrail Review
     if: github.event_name == 'pull_request'
@@ -129,7 +130,7 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
 
-      - name: Check for weakened guardrails
+      - name: Check for changed guardrails
         env:
           BASE_REF: ${{ github.base_ref }}
         run: mix guardrail.review --base "origin/${BASE_REF}"

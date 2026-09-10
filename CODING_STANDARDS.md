@@ -248,16 +248,18 @@ gets its own guide or ADR.
   `.github/workflows/*` file. The **Guardrail Review** check goes red when a PR
   adds any of those, so the suppression is seen rather than slipped in. The check
   is diff-aware: it trips on a skip the PR *adds* — a brand-new one, or the new
-  side of an edited skip line, since broadening a suppression weakens the guardrail
-  too — and never on a skip already in the tree that the PR leaves in place or
-  removes. `mix guardrail.review` runs the same scan locally; the logic is
+  side of an edited skip line, since an edit changes what is suppressed — and never
+  on a skip already in the tree that the PR leaves in place or removes.
+  `mix guardrail.review` runs the same scan locally; the logic is
   [`LocalCents.Guardrail`](lib/local_cents/guardrail.ex).
 
 - **Merging past a red mark is the intended override.** Guardrail Review is a
   required status check on `main`, so a normal contributor cannot merge while it
   is red — only an admin can, and that merge *is* the deliberate, logged "I
-  reviewed this guardrail change and approve it." Making it required is a
-  branch-protection setting an admin applies; the check itself lives in
+  reviewed this guardrail change and approve it." The check runs on pull requests
+  only, so a merge to `main` never trips it, and a later PR that touches no
+  guardrail passes clean. Making it required is a branch-protection setting an
+  admin applies; the check itself lives in
   [`code-quality.yaml`](.github/workflows/code-quality.yaml).
 
 ## Commits & PRs
