@@ -93,8 +93,8 @@ defmodule LocalCents.Guardrail do
 
   def format(violations) do
     """
-    This change weakens our static-analysis guardrails. Each item below needs a \
-    deliberate admin override to merge:
+    This change modifies our static-analysis guardrails. Each item below needs an \
+    admin to review and approve the merge:
 
     #{Enum.map_join(violations, "\n", &("  " <> describe(&1)))}
     """
