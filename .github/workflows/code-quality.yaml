@@ -99,3 +99,37 @@ jobs:
       - name: Check dependencies for retired packages
         run: mix hex.audit
         if: always()
+
+  # Its own job so it reports a distinct required status check for branch
+  # protection to gate on. What it catches and why merging past it takes an admin
+  # override live in `LocalCents.Guardrail` and CODING_STANDARDS.md. Runs only on a
+  # pull request, the one place a base branch exists to diff against.
+  guardrail-review:
+    name: Guardrail Review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # `fetch-depth: 0` brings the full history so the merge-base with the PR
+      # base resolves; the explicit fetch then guarantees the base as a
+      # remote-tracking ref to diff against.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Elixir Project
+        uses: ./.github/actions/elixir-setup
+        with:
+          build-app: false
+
+      - name: Fetch PR base branch
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+
+      - name: Check for weakened guardrails
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: mix guardrail.review --base "origin/${BASE_REF}"

@@ -239,6 +239,25 @@ gets its own guide or ADR.
   decision behind the shell is
   [ADR 0006](docs/adr/0006-multi-window-desktop-shell.md).
 
+## Static-analysis guardrails
+
+- **A guardrail change is gated, not blocked.** Credo (`mix credo --strict`) and
+  Sobelow (`mix sobelow --config`) are the teeth behind our coding and security
+  standards, and both can be silenced locally — a `credo:disable` comment, a
+  `sobelow_skip` comment, or an edit to `.credo.exs`, `.sobelow-conf`, or a
+  `.github/workflows/*` file. The **Guardrail Review** check goes red when a PR
+  adds any of those, so the suppression is seen rather than slipped in. The check
+  is diff-aware: it trips only on what a PR *adds*, never on the skips already in
+  the tree. `mix guardrail.review` runs the same scan locally; the logic is
+  [`LocalCents.Guardrail`](lib/local_cents/guardrail.ex).
+
+- **Merging past a red mark is the intended override.** Guardrail Review is a
+  required status check on `main`, so a normal contributor cannot merge while it
+  is red — only an admin can, and that merge *is* the deliberate, logged "I
+  reviewed this guardrail change and approve it." Making it required is a
+  branch-protection setting an admin applies; the check itself lives in
+  [`code-quality.yaml`](.github/workflows/code-quality.yaml).
+
 ## Commits & PRs
 
 - Commits and PRs carry **no AI attribution or co-authorship trailers** — attribution
