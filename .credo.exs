@@ -242,7 +242,6 @@
           {Jump.CredoChecks.UnusedLiveViewAssign, []},
           {Jump.CredoChecks.VacuousTest, []},
           {Jump.CredoChecks.WeakAssertion, []},
-
           {PhoenixTest.Credo.NoOpenBrowser, [files: %{included: ["test/"]}]},
 
           #
