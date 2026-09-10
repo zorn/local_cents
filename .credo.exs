@@ -231,6 +231,21 @@
               "Use Plug.Crypto.non_executable_binary_to_term/2 instead."}
            ]},
           {Jump.CredoChecks.LiveViewFormCanBeRehydrated, []},
+          # We never call `Phoenix.PubSub.subscribe/{2,3}` from a view directly;
+          # every subscription goes through a wrapper, so the check's default
+          # (bare `Phoenix.PubSub.subscribe`) would never fire here. List our two
+          # wrappers as custom functions so the check guards the pattern we
+          # actually write — an unguarded subscribe in a `mount/3` body.
+          {Jump.CredoChecks.LiveViewPubSubRequiresConnected,
+           custom_pubsub_functions: [
+             {LocalCents.Tracking, :subscribe},
+             {LocalCentsWeb.Sync.PeerClient, :subscribe}
+           ]},
+          # We serve no file downloads, so this fires on nothing today. It is a
+          # cheap guardrail: when a download is added, it steers the code toward
+          # `send_download/3` — which sanitizes the filename — over a hand-rolled
+          # `content-disposition` header.
+          {Jump.CredoChecks.NoManualContentDisposition, []},
           {Jump.CredoChecks.SafeBinaryToTerm, []},
           {Jump.CredoChecks.TestHasNoAssertions, []},
           {Jump.CredoChecks.TooManyAssertions, max_assertions: 20},
