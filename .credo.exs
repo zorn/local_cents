@@ -231,6 +231,12 @@
               "Use Plug.Crypto.non_executable_binary_to_term/2 instead."}
            ]},
           {Jump.CredoChecks.LiveViewFormCanBeRehydrated, []},
+          {Jump.CredoChecks.LiveViewPubSubRequiresConnected,
+           custom_pubsub_functions: [
+             {LocalCents.Tracking, :subscribe},
+             {LocalCentsWeb.Sync.PeerClient, :subscribe}
+           ]},
+          {Jump.CredoChecks.NoManualContentDisposition, []},
           {Jump.CredoChecks.SafeBinaryToTerm, []},
           {Jump.CredoChecks.TestHasNoAssertions, []},
           {Jump.CredoChecks.TooManyAssertions, max_assertions: 20},
