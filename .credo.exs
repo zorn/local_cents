@@ -234,8 +234,11 @@
           # We never call `Phoenix.PubSub.subscribe/{2,3}` from a view directly;
           # every subscription goes through a wrapper, so the check's default
           # (bare `Phoenix.PubSub.subscribe`) would never fire here. List our two
-          # wrappers as custom functions so the check guards the pattern we
-          # actually write — an unguarded subscribe in a `mount/3` body.
+          # wrappers as custom functions so it catches an unguarded wrapper
+          # subscribe written straight into a `mount/3` body. The check inspects
+          # only the `mount/3` body — not `on_mount/4` hooks or helper functions,
+          # where our current subscriptions live — so it guards the shape a new
+          # view is most likely to reach for, not every subscribe path.
           {Jump.CredoChecks.LiveViewPubSubRequiresConnected,
            custom_pubsub_functions: [
              {LocalCents.Tracking, :subscribe},
