@@ -26,4 +26,12 @@
   font-family: var(--font-sans);
 }
 
+/* Phoenix Storybook 1.4 flattened the sidebar tree: nested lists indent only
+   0.75rem (`psb:ml-3`), so a folder's children sit nearly flush under its
+   title. Deepen the indent per level. Scoped to #psb-sidebar (the library's
+   stable sidebar id), which out-specifies the library's `psb:ml-3` utility. */
+#psb-sidebar nav ul ul {
+  margin-left: 1.5rem;
+}
+
 @import "../../lib/local_cents_web/bond/bond.css";
