@@ -243,11 +243,6 @@
           {Jump.CredoChecks.VacuousTest, []},
           {Jump.CredoChecks.WeakAssertion, []},
 
-          # Bans any call or reference named `open_browser` in committed tests.
-          # The debugging aid pops the rendered page in a real browser mid-test,
-          # which hangs or fails CI. Scoped to `test/` so a real browser-opening
-          # feature in `lib/` can't false-fail. Ships inside `phoenix_test` but
-          # isn't compiled into the app, so it is `require`d by path above.
           {PhoenixTest.Credo.NoOpenBrowser, [files: %{included: ["test/"]}]},
 
           #
