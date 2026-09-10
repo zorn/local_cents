@@ -48,15 +48,23 @@ defmodule Mix.Tasks.Guardrail.Review do
     Mix.raise(Guardrail.format(violations))
   end
 
-  # `System.cmd/3` raises rather than returning a status when git is absent, so
-  # both a missing binary and a non-zero exit surface as a loud failure — the
-  # check must never pass by silently reading an empty diff.
+  # A non-zero exit is a loud failure — the check must never pass by silently
+  # reading an empty diff. stderr is left unmerged so a git warning on a
+  # successful run (line-ending advice, ownership notes) can't slip into the diff
+  # or the `--name-only` file list we parse; it prints to the console instead.
   defp git!(args) do
-    case System.cmd("git", args, env: [], stderr_to_stdout: true) do
+    case System.cmd("git", args, env: []) do
       {output, 0} -> output
-      {output, status} -> Mix.raise("git #{Enum.join(args, " ")} failed (#{status}):\n#{output}")
+      {_output, status} -> Mix.raise("git #{Enum.join(args, " ")} failed (exit #{status}).")
     end
   rescue
-    ErlangError -> Mix.raise("git is not available on this machine.")
+    # `System.cmd/3` raises only when the binary itself is missing; any other
+    # ErlangError is a real fault and should keep its own message.
+    e in ErlangError ->
+      if e.original == :enoent do
+        Mix.raise("git is not available on this machine.")
+      else
+        reraise e, __STACKTRACE__
+      end
   end
 end

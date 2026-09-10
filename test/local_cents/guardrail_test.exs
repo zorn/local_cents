@@ -79,6 +79,37 @@ defmodule LocalCents.GuardrailTest do
              ] = Guardrail.review(diff, ["lib/foo.ex"])
     end
 
+    test "flags the disable-for-previous-line and disable-for-lines Credo forms" do
+      diff = """
+      diff --git a/lib/foo.ex b/lib/foo.ex
+      --- a/lib/foo.ex
+      +++ b/lib/foo.ex
+      @@ -5,0 +6 @@
+      +  # credo:disable-for-previous-line Credo.Check.Readability.Specs
+      @@ -20,0 +21 @@
+      +  # credo:disable-for-lines:2 Credo.Check.Readability.Specs
+      """
+
+      assert [
+               %Violation{kind: :credo_skip, line: 6},
+               %Violation{kind: :credo_skip, line: 21}
+             ] = Guardrail.review(diff, ["lib/foo.ex"])
+    end
+
+    test "does not misread an added `++ ...` line as a file header" do
+      diff = """
+      diff --git a/lib/foo.ex b/lib/foo.ex
+      --- a/lib/foo.ex
+      +++ b/lib/foo.ex
+      @@ -5,0 +6,2 @@
+      +++ list_tail
+      +  # credo:disable-for-next-line Credo.Check.Readability.Specs
+      """
+
+      assert [%Violation{kind: :credo_skip, file: "lib/foo.ex", line: 7}] =
+               Guardrail.review(diff, ["lib/foo.ex"])
+    end
+
     test "does not flag a removed skip line" do
       diff = """
       diff --git a/lib/foo.ex b/lib/foo.ex
@@ -151,6 +182,11 @@ defmodule LocalCents.GuardrailTest do
     test "flags a change to .sobelow-conf" do
       assert [%Violation{kind: :config, file: ".sobelow-conf"}] =
                Guardrail.review("", [".sobelow-conf"])
+    end
+
+    test "flags a .credo.exs in a config subdirectory" do
+      assert [%Violation{kind: :config, file: "config/.credo.exs"}] =
+               Guardrail.review("", ["config/.credo.exs"])
     end
 
     test "flags a change to a workflow file" do

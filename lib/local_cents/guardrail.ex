@@ -55,16 +55,20 @@ defmodule LocalCents.Guardrail do
   end
 
   # `\A` anchors each pattern to the start of the trimmed line — see the moduledoc
-  # for why a directive only counts as its own comment line. The attribute for the
-  # Sobelow directive is deliberately not named `@sobelow_skip`: Sobelow reads any
-  # `@sobelow_skip` module attribute as a real skip directive and crashes trying
-  # to parse this regex as its argument list.
-  @credo_directive ~r/\A#\s*credo:disable-for-(?:this-file|next-line)\b/
+  # for why a directive only counts as its own comment line. The Credo pattern
+  # matches every `disable-for-*` form (this-file, next-line, previous-line,
+  # lines:N) rather than an enumerated pair, so a form we forget still trips.
+  #
+  # The attribute for the Sobelow directive is deliberately not named
+  # `@sobelow_skip`: Sobelow reads any `@sobelow_skip` module attribute as a real
+  # skip directive and crashes trying to parse this regex as its argument list.
+  @credo_directive ~r/\A#\s*credo:disable-for-\S/
   @sobelow_directive ~r/\A#\s*sobelow_skip\b/
 
-  # The two global tool configs. Any edit to either can loosen a rule for the
-  # whole tree, so a touch is enough to warrant review.
-  @config_files [".credo.exs", ".sobelow-conf"]
+  # Config filenames matched by basename, not path: Credo reads a `.credo.exs`
+  # from any config dir (e.g. `config/.credo.exs`), so gating only the root copy
+  # would leave a subdir copy as an escape hatch.
+  @config_filenames [".credo.exs", ".sobelow-conf"]
 
   # Matches both extensions GitHub Actions honors: guarding only `.yaml` would
   # leave renaming the Credo step into a new `.yml` workflow as an escape hatch.
@@ -131,7 +135,7 @@ defmodule LocalCents.Guardrail do
   defp guarded_file_changes(changed_files) do
     Enum.flat_map(changed_files, fn file ->
       cond do
-        file in @config_files -> [%Violation{kind: :config, file: file}]
+        Path.basename(file) in @config_filenames -> [%Violation{kind: :config, file: file}]
         Regex.match?(@workflow_file, file) -> [%Violation{kind: :workflow, file: file}]
         true -> []
       end
@@ -153,9 +157,13 @@ defmodule LocalCents.Guardrail do
     |> Enum.reverse()
   end
 
+  # Only the two real new-side headers git emits with default prefixes reset the
+  # file. A looser `"+++ "` match would also catch an added source line whose
+  # content is `++ …`, which prints as `+++ …` in the diff — that line must fall
+  # through to the `"+"` clause and be read as content, not a header.
   defp scan_line("+++ b/" <> path, {_file, line, acc}), do: {path, line, acc}
-  defp scan_line("+++ " <> path, {_file, line, acc}), do: {path, line, acc}
-  defp scan_line("---" <> _, {file, line, acc}), do: {file, line, acc}
+  defp scan_line("+++ /dev/null" <> _, {_file, line, acc}), do: {nil, line, acc}
+  defp scan_line("--- " <> _, {file, line, acc}), do: {file, line, acc}
 
   defp scan_line("@@" <> _ = header, {file, _line, acc}),
     do: {file, hunk_start(header), acc}
