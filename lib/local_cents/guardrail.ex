@@ -36,8 +36,8 @@ defmodule LocalCents.Guardrail do
 
   defmodule Violation do
     @moduledoc """
-    One guardrail-weakening change found in a diff, located well enough to point a
-    reviewer at it.
+    One change to a guardrail surface, found in a diff and located well enough to
+    point a reviewer at it.
 
     `line` is the new-side line number for a skip, and `nil` for a whole-file
     change (a config or workflow edit) where the path is the unit of review.
@@ -79,11 +79,11 @@ defmodule LocalCents.Guardrail do
   @workflow_file ~r{\A\.github/workflows/[^/]+\.ya?ml\z}
 
   @doc """
-  Every guardrail-weakening change in `diff` (a `git diff --unified=0` body) and
+  Every change to a guardrail surface in `diff` (a `git diff --unified=0` body) and
   `changed_files` (the `git diff --name-only` list), most useful first: the
   added skips, then the config and workflow edits.
   """
-  @spec review(String.t(), [String.t()]) :: [Violation.t()]
+  @spec review(diff :: String.t(), changed_files :: [String.t()]) :: [Violation.t()]
   def review(diff, changed_files) do
     added_skips(diff) ++ guarded_file_changes(changed_files)
   end
@@ -92,7 +92,7 @@ defmodule LocalCents.Guardrail do
   Renders `violations` as a reviewer-facing message naming each offending file
   (and line, for a skip), or `nil` when the list is empty.
   """
-  @spec format([Violation.t()]) :: String.t() | nil
+  @spec format(violations :: [Violation.t()]) :: String.t() | nil
   def format([]), do: nil
 
   def format(violations) do
