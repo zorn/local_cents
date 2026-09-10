@@ -22,6 +22,12 @@ defmodule LocalCents.Guardrail do
       module's own tests carry the patterns as fixture data) never trips it.
     * Skips are read only from `.ex`/`.exs` files, the only place a Credo or
       Sobelow directive means anything.
+
+  A skip counts whenever it is on an *added* line, so editing an existing skip —
+  which the diff shows as a removed line and an added one — trips the check on its
+  new side. That is deliberate: broadening a suppression, or pointing it at a
+  different check, weakens the guardrail as much as a brand-new skip. Only removing
+  a skip, or leaving one untouched in a file edited elsewhere, stays silent.
   """
 
   defmodule Violation do
@@ -67,7 +73,7 @@ defmodule LocalCents.Guardrail do
   @doc """
   Every guardrail-weakening change in `diff` (a `git diff --unified=0` body) and
   `changed_files` (the `git diff --name-only` list), most useful first: the
-  net-new skips, then the config and workflow edits.
+  added skips, then the config and workflow edits.
   """
   @spec review(String.t(), [String.t()]) :: [Violation.t()]
   def review(diff, changed_files) do

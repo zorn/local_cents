@@ -91,6 +91,20 @@ defmodule LocalCents.GuardrailTest do
       assert Guardrail.review(diff, ["lib/foo.ex"]) == []
     end
 
+    test "flags an edited skip line on its new side" do
+      diff = """
+      diff --git a/lib/foo.ex b/lib/foo.ex
+      --- a/lib/foo.ex
+      +++ b/lib/foo.ex
+      @@ -10 +10 @@
+      -  # credo:disable-for-this-file Credo.Check.Readability.Specs
+      +  # credo:disable-for-this-file Credo.Check.Readability.Specs, Credo.Check.Design.AliasUsage
+      """
+
+      assert [%Violation{kind: :credo_skip, file: "lib/foo.ex", line: 10}] =
+               Guardrail.review(diff, ["lib/foo.ex"])
+    end
+
     test "does not flag edits to a file that leave its existing skips untouched" do
       diff = """
       diff --git a/lib/foo.ex b/lib/foo.ex

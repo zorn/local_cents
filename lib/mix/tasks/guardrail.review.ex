@@ -3,10 +3,10 @@ defmodule Mix.Tasks.Guardrail.Review do
 
   @moduledoc """
   Reads the diff against a base ref and fails if the change would quietly weaken
-  our static-analysis guardrails — a net-new `credo:disable`/`sobelow_skip`
-  comment, or an edit to `.credo.exs`, `.sobelow-conf`, or a
-  `.github/workflows/*` file. The detection lives in `LocalCents.Guardrail`; this
-  task is only the git plumbing around it.
+  our static-analysis guardrails — an added `credo:disable`/`sobelow_skip` comment
+  (a brand-new suppression, or the new side of an edited one), or an edit to
+  `.credo.exs`, `.sobelow-conf`, or a `.github/workflows/*` file. The detection
+  lives in `LocalCents.Guardrail`; this task is only the git plumbing around it.
 
       $ mix guardrail.review                 # diff HEAD against origin/main
       $ mix guardrail.review --base origin/develop
