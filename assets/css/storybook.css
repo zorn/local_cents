@@ -26,4 +26,19 @@
   font-family: var(--font-sans);
 }
 
+/* Phoenix Storybook 1.4 flattened the sidebar tree: nested lists indent only
+   0.75rem (`psb:ml-3`), so a folder's children sit nearly flush under its
+   title. Deepen the indent per level, scoped to #psb-sidebar (the library's
+   stable sidebar id).
+
+   `!important` is required, not specificity. 1.4 imports this whole file into
+   the `app` cascade layer (`@import "…" layer(app)`), and the library declares
+   its layers `properties, reset, theme, app, utilities` — so its `psb:ml-3`
+   sits in `utilities`, a higher layer than `app`. Layer order beats selector
+   specificity, so a normal rule here loses no matter how specific; an important
+   declaration beats a normal one across all layers. */
+#psb-sidebar nav ul ul {
+  margin-left: 1.5rem !important;
+}
+
 @import "../../lib/local_cents_web/bond/bond.css";
