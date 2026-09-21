@@ -1,55 +1,21 @@
 # LocalCents
 
-(Brand new project, lots of stuff missing -- but happy to [chat](https://mikezornek.com/contact/) about it.)
+LocalCents is an open-source research project, a place to tinker and explore [Automerge](https://automerge.org/) and CRDTs. Its domain is an expense-tracking application built for [local-first](https://mikezornek.com/posts/2025/2/what-is-local-first-software/), offline collaboration across multiple devices. The app can currently be run as a desktop application on macOS, but could be expanded to Windows, Linux, and the web in the future.
 
-LocalCents is an open-source expense-tracking application built for [local-first](https://mikezornek.com/posts/2025/2/what-is-local-first-software/), offline collaboration across multiple devices. The app can be run as a desktop application on macOS, Windows, and Linux, as well as on the web.
+The initial discovery deliverable on this project is complete. It is [documented on my blog](https://mikezornek.com/posts/2026/8/local-cents/) and [tagged](https://github.com/zorn/local_cents/releases/tag/v0.1.0-blog-demo) in git.
 
-## The Job to be Done
+The rest of the repo is conjecture. I am considering moving forward on a more full small-business accounting solution but that is still very much up in the air. I'm doing personal research, interviewing target customers and generally trying to get my head around what I would build if I decided to do so. You will likely continue to see work done on this repo but it may start to diverge from what I originally delivered in [my demo](https://mikezornek.com/posts/2026/8/local-cents/).
 
-Having an accurate, informed understanding of how you and your family spend money empowers you to make thoughtful, long-term decisions that enable a successful, happy life.
-
-To track these expenses reliably, software needs to be readily available and collaborative; this includes support for multiple devices, multiple participants, and offline capabilities.
+If you are interested in chatting about the project, I'd love to [hear from you](https://mikezornek.com/contact/).
 
 ## Project Values
 
 - This project is open source, empowering people to trust the software with their time and data, knowing they will be able to continue to modify and run the software long into the future.
 - This project is designed explicitly so that all core features can operate without a centralized server, honoring your privacy without compromising multiple device syncing.
 
-## About the Developer / Project Goals
-
-Hello! My name is Mike Zornek. I describe myself as both a developer and teacher, and I've been building digital products for over 25 years.
-
-From the suburbs of Philadelphia, I code in [Elixir](https://elixir-lang.org). When I am not coding, I enjoy watching [Phillies](https://www.mlb.com/phillies) baseball and playing video games (mostly laid-back simulations and RPGs).
-
-In addition to providing an end product (which I myself am interested in using), this project is primarily an educational endeavor. It is a space for me to explore and refine my skills with various technologies, some of which I have extensive experience with (Elixir, Phoenix) and others that will be learning opportunities for me (Rust, Automerge).
-
-## AI Disclosure
-
-AI coding is a complex and heavily debated tool for modern developers. For those looking to avoid products and libraries that utilize AI, I want to share a notice here explaining my own use to help people make a more informed decision if they want to use this work.
-
-> This note originally read: "I do not use AI coding to generate large swaths of code. This is not a vibe-coded project. I tend to use AI to check my work, offer typeahead suggestions (honoring the patterns I've chosen with intent), and explore ideas. At the end of the day, I am responsible for the code I ship." See the update below for how my use has since evolved.
-
-For more on my thoughts on AI see [my blog](https://mikezornek.com/posts/2026/5/moral-struggles-of-ai-coding/).
-
-**Update July 2026:** Since kicking off this project, I've used this space to more heavily experiment with larger AI code generation, primarily utilizing the workflow of [Matt Pocock](https://github.com/mattpocock/skills). I still do see myself as personally responsible for this code. You can see some of that via PR conversation artifacts but there is also a lot of stuff done locally as well. Things are continuing to evolve at a rapid pace. I'll try to do some snapshot updates on how I use AI on my blog, but wanted to update this inline note sooner since things have changed since it was originally composed.
-
 ## Tech Stack
 
-Since the end goal is a cross-platform binary along with the ability to run the app in a web browser, this application utilizes both the [Tauri](https://tauri.app/) (written in [Rust](https://rust-lang.org/)) and [Phoenix LiveView](https://www.phoenixframework.org/) (written in [Elixir](https://elixir-lang.org/)). The underlying document data format is powered by [Automerge](https://automerge.org/). For more on Local-first software and Conflict-free Replicated Data Types, see [What is Local-first Software?](https://mikezornek.com/posts/2025/2/what-is-local-first-software/) on my blog.
-
-### Phase One Goals
-
-> **Note:** This section describes the broader Phase One *vision*. The **MVP** described below is the deliberately narrower first slice.
-
-The **MVP** — the first buildable slice — is deliberately narrower: **macOS-only, single-device, no synchronization yet** (sync is the next milestone, and the web mirror follows after). See the original [MVP proposal](docs/proposals/mvp.md) and [epic issue](https://github.com/zorn/local_cents/issues/58) for the exact in-scope build and what is deferred.
-
-**Phase One scope.** The initial scope of this project is to have a self-contained desktop app running on macOS (with other platforms to follow later) and a mirror of the application running on a web server. We are not building a native mobile app in this first phase, but we will ensure the website functions well within a mobile device's viewport.
-
-Aside: Deploying a [Tauri iOS app](https://tauri.app/start/prerequisites/#ios) requires CocoaPods, and since that is [a dead technology](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), I am not going to use it.
-
-Data synchronization in phase one will have some hard-coded assumptions. We expect a desktop app to be running with a document, the ability to push that document to the web server, and a web version of the app that can edit the document using (mostly) the same UI experience. Automerge will be responsible for keeping the documents in sync and resolving conflicts. When a conflict needs to be manually resolved, the UI will need to address this job to be done, presenting an intuitive, easy-to-use user experience. Designing a good experience here will be one of the main challenges to solve.
-
-The core domain of phase one is expense tracking. I envision the ability to manually create/edit and delete expenses. I'd like each expense to have a single category so we can group by category and total each group without double-counting. Visualizing how money is spent over time is planned for a later phase. Longer term, I think there is some value in letting people drag and drop in their credit card statements to do more automated creation and reconciliation, but we will keep things basic to get started. Much later, I could see the app evolving to provide some level of budgeting and goal tracking, but again -- that will come in time.
+Since the goal is a cross-platform binary along with the ability to run the app in a web browser, this application utilizes both the [Tauri](https://tauri.app/) (written in [Rust](https://rust-lang.org/)) and [Phoenix LiveView](https://www.phoenixframework.org/) (written in [Elixir](https://elixir-lang.org/)). The underlying document data format is powered by [Automerge](https://automerge.org/). For more on local-first software and Conflict-free Replicated Data Types, see [What is Local-first Software?](https://mikezornek.com/posts/2025/2/what-is-local-first-software/) on my blog.
 
 ## How to launch the project for local development
 
