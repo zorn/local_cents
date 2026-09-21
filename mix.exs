@@ -291,7 +291,7 @@ defmodule LocalCents.MixProject do
 
       # For enforcing domain-context isolation at compile time — each context
       # exposes a public API boundary and keeps its internals private.
-      {:boundary, "~> 0.10.4", runtime: false},
+      {:boundary, "~> 0.11.0", runtime: false},
 
       # For security scans.
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
