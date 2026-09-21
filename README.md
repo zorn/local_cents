@@ -2,9 +2,9 @@
 
 LocalCents is an open-source research project, a place to tinker and explore [Automerge](https://automerge.org/) and CRDTs. Its domain is an expense-tracking application built for [local-first](https://mikezornek.com/posts/2025/2/what-is-local-first-software/), offline collaboration across multiple devices. The app can currently be run as a desktop application on macOS, but could be expanded to Windows, Linux, and the web in the future.
 
-The initial discovery deliverable on this project is complete. It is [documented on my blog](https://mikezornek.com/posts/2026/8/local-cents/) and [tagged](https://github.com/zorn/local_cents/releases/tag/v0.1.0-blog-demo) in git.
+The initial discovery deliverable on this project is complete. It is [documented on my blog](https://mikezornek.com/posts/2026/8/local-cents/) and tagged as [`v0.1.0-blog-demo`](https://github.com/zorn/local_cents/releases/tag/v0.1.0-blog-demo) in Git.
 
-The rest of the repo is conjecture. I am considering moving forward on a more full small-business accounting solution but that is still very much up in the air. I'm doing personal research, interviewing target customers and generally trying to get my head around what I would build if I decided to do so. You will likely continue to see work done on this repo but it may start to diverge from what I originally delivered in [my demo](https://mikezornek.com/posts/2026/8/local-cents/).
+The rest of the repo is conjecture. I am considering moving forward on a fuller small-business accounting solution, but that is still very much up in the air. I'm doing personal research, interviewing target customers and generally trying to get my head around what I would build if I decided to do so. You will likely continue to see work done on this repo, but it may start to diverge from what I originally delivered in [my demo](https://mikezornek.com/posts/2026/8/local-cents/).
 
 If you are interested in chatting about the project, I'd love to [hear from you](https://mikezornek.com/contact/).
 
