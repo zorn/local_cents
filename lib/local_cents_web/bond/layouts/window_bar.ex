@@ -34,7 +34,7 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -67,7 +67,7 @@ defmodule LocalCentsWeb.Bond.Layouts.WindowBar do
         navigate={@back_path}
         class="absolute left-2 inline-flex items-center gap-0.5 text-xs font-semibold text-white/80 transition-colors hover:text-white"
       >
-        <.icon name="hero-chevron-left" class="h-3 w-3" />Library
+        <Bond.icon name="hero-chevron-left" class="h-3 w-3" />Library
       </.link>
 
       <span

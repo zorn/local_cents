@@ -14,7 +14,7 @@ defmodule LocalCentsWeb.Bond.Elements.LoadingState do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -34,7 +34,7 @@ defmodule LocalCentsWeb.Bond.Elements.LoadingState do
       role="status"
       aria-live="polite"
     >
-      <.icon name="hero-arrow-path" class="size-6 text-surface-500 motion-safe:animate-spin" />
+      <Bond.icon name="hero-arrow-path" class="size-6 text-surface-500 motion-safe:animate-spin" />
       <div>
         <p class="text-sm font-medium text-surface-700">{@message}</p>
         <p :if={@hint} class="mt-1 text-sm text-surface-500">{@hint}</p>

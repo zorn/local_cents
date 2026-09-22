@@ -46,7 +46,7 @@ defmodule Storybook.Elements.Menu do
     <Bond.menu id={@id}>
       <:trigger>
         <Bond.button variant={:square}>
-          <LocalCentsWeb.CoreComponents.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
+          <LocalCentsWeb.Bond.Elements.Icon.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
           <span class="sr-only">Open menu</span>
         </Bond.button>
       </:trigger>

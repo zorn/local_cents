@@ -20,7 +20,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1, translate_error: 1]
+  import LocalCentsWeb.CoreComponents, only: [translate_error: 1]
 
   alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
@@ -106,7 +106,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
           phx-click={@on_cancel}
           class="shrink-0 text-surface-500 hover:text-primary-800 transition-colors"
         >
-          <.icon name="hero-x-mark" class="w-5 h-5" />
+          <Bond.icon name="hero-x-mark" class="w-5 h-5" />
           <span class="sr-only">Cancel</span>
         </button>
       </div>
@@ -151,7 +151,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
           phx-value-id={@category_id}
           class="shrink-0 rounded p-1 text-surface-500 hover:text-primary-800 transition-colors cursor-pointer"
         >
-          <.icon name="hero-pencil" class="w-4 h-4" />
+          <Bond.icon name="hero-pencil" class="w-4 h-4" />
           <span class="sr-only">Rename {@name}</span>
         </button>
         <button
@@ -160,7 +160,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
           phx-value-id={@category_id}
           class="shrink-0 rounded p-1 text-surface-500 hover:text-error-600 transition-colors cursor-pointer"
         >
-          <.icon name="hero-trash" class="w-4 h-4" />
+          <Bond.icon name="hero-trash" class="w-4 h-4" />
           <span class="sr-only">Delete {@name}</span>
         </button>
       </div>

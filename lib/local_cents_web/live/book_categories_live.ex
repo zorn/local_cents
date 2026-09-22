@@ -44,7 +44,7 @@ defmodule LocalCentsWeb.BookCategoriesLive do
             navigate={~p"/books/#{@book.id}"}
             class="inline-flex items-center gap-1 text-sm text-surface-600 transition-colors hover:text-primary-800"
           >
-            <.icon name="hero-chevron-left" class="h-4 w-4" /> Expenses
+            <Bond.icon name="hero-chevron-left" class="h-4 w-4" /> Expenses
           </.link>
           <h1 class="text-sm font-semibold text-surface-800">Categories</h1>
         </div>

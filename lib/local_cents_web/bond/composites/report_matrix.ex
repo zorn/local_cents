@@ -22,7 +22,7 @@ defmodule LocalCentsWeb.Bond.Composites.ReportMatrix do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias LocalCentsWeb.ReportPresenter
   alias Phoenix.LiveView.Rendered
@@ -143,7 +143,7 @@ defmodule LocalCentsWeb.Bond.Composites.ReportMatrix do
       class="group/needs relative inline-flex cursor-default items-center gap-0.5 text-amber-600"
       aria-label={@note}
     >
-      <.icon name="hero-exclamation-circle" class="size-3.5" />
+      <Bond.icon name="hero-exclamation-circle" class="size-3.5" />
       <span class="text-xs font-semibold">{@count}</span>
       <span class="pointer-events-none absolute bottom-full right-0 z-50 mb-1 hidden w-max max-w-xs whitespace-normal rounded-md bg-surface-900 px-2.5 py-1.5 text-left text-xs font-normal leading-snug text-white shadow-lg group-hover/needs:block">
         {@note}

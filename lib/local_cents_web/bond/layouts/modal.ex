@@ -29,7 +29,7 @@ defmodule LocalCentsWeb.Bond.Layouts.Modal do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -81,7 +81,7 @@ defmodule LocalCentsWeb.Bond.Layouts.Modal do
             aria-label="Close"
             class="text-surface-500 hover:text-primary-800 transition-colors"
           >
-            <.icon name="hero-x-mark" class="w-5 h-5" />
+            <Bond.icon name="hero-x-mark" class="w-5 h-5" />
           </button>
         </div>
         <div class="px-5 py-4">

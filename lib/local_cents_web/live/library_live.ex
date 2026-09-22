@@ -139,7 +139,7 @@ defmodule LocalCentsWeb.LibraryLive do
                   <Bond.menu id={"menu-#{book.id}"}>
                     <:trigger>
                       <Bond.button variant={:square}>
-                        <.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
+                        <Bond.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
                         <span class="sr-only">Book actions</span>
                       </Bond.button>
                     </:trigger>

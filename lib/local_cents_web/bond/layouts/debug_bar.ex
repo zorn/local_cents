@@ -19,7 +19,7 @@ defmodule LocalCentsWeb.Bond.Layouts.DebugBar do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -42,7 +42,7 @@ defmodule LocalCentsWeb.Bond.Layouts.DebugBar do
         class="bond-marble bond-stamp flex h-8 w-8 cursor-pointer items-center justify-center rounded text-white/90 transition-colors hover:text-white"
         style="--bond-stamp-shadow: var(--color-surface-950)"
       >
-        <.icon name="hero-wrench-screwdriver" class="h-4 w-4" />
+        <Bond.icon name="hero-wrench-screwdriver" class="h-4 w-4" />
         <span class="sr-only">Developer links</span>
       </summary>
 

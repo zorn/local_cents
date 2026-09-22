@@ -51,7 +51,7 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -108,7 +108,7 @@ defmodule LocalCentsWeb.Bond.Layouts.SidePanel do
               if(@locked, do: "text-surface-600", else: "text-primary-400")
             ]}
           >
-            <.icon name="hero-x-mark" class="w-5 h-5" />
+            <Bond.icon name="hero-x-mark" class="w-5 h-5" />
           </button>
         </div>
         <%!-- Body --%>
