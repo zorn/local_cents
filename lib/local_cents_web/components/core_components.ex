@@ -1,7 +1,8 @@
 # credo:disable-for-this-file Credo.Check.Readability.Specs
 #
-# Since we plan to replace these components, we are not adding new specs yet,
-# but we plan to add specs as part of that future work.
+# The functions left here are survivors on their way out of this module: each
+# is rehomed (with specs, in the house style) as its follow-on ticket lands,
+# so we do not add specs to them here.
 defmodule LocalCentsWeb.CoreComponents do
   @moduledoc """
   Provides core UI components.
