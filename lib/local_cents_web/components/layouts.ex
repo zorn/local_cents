@@ -4,9 +4,9 @@ defmodule LocalCentsWeb.Layouts do
 
   `app/1` is the outer wrapper every LiveView template begins with; it renders
   the shared chrome and the flash group around the page's `inner_block`. Because
-  it owns flash rendering, `flash_group/1` lives here too — it is **not** called
-  from anywhere else. The `layouts/*` templates embedded here (`root`, `app`)
-  provide the surrounding HTML document.
+  it owns flash rendering, `flash_group/1` and the `flash/1` component it renders
+  both live here — neither is called from anywhere else. The `layouts/*` templates
+  embedded here (`root`, `app`) provide the surrounding HTML document.
   """
   use LocalCentsWeb, :html
 
@@ -165,5 +165,77 @@ defmodule LocalCentsWeb.Layouts do
       </.flash>
     </div>
     """
+  end
+
+  @doc """
+  Renders flash notices.
+
+  ## Examples
+
+      <.flash kind={:info} flash={@flash} />
+  """
+  attr :id, :string, doc: "the optional id of flash container"
+  attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
+  attr :title, :string, default: nil
+  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
+
+  slot :inner_block, doc: "the optional inner block that renders the flash message"
+
+  @spec flash(Socket.assigns()) :: Rendered.t()
+  def flash(assigns) do
+    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
+
+    ~H"""
+    <div
+      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
+      id={@id}
+      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      role="alert"
+      class="toast toast-top toast-end z-50"
+      {@rest}
+    >
+      <div class={[
+        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
+        @kind == :info && "alert-info",
+        @kind == :error && "alert-error"
+      ]}>
+        <Bond.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
+        <Bond.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
+        <div>
+          <p :if={@title} class="font-semibold">{@title}</p>
+          <p>{msg}</p>
+        </div>
+        <div class="flex-1" />
+        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
+          <Bond.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  # Private to Layouts: the connection banners and flash toasts above are the only
+  # callers. No @spec — `Phoenix.LiveView.JS.t()` is opaque, and threading a
+  # constructed `%JS{}` through here violates that contract under Dialyzer.
+  defp show(js \\ %JS{}, selector) do
+    JS.show(js,
+      to: selector,
+      time: 300,
+      transition:
+        {"transition-all ease-out duration-300",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95",
+         "opacity-100 translate-y-0 sm:scale-100"}
+    )
+  end
+
+  defp hide(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 200,
+      transition:
+        {"transition-all ease-in duration-200", "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+    )
   end
 end

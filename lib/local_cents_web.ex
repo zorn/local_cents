@@ -119,8 +119,6 @@ defmodule LocalCentsWeb do
 
       # HTML escaping functionality
       import Phoenix.HTML
-      # Core UI components
-      import LocalCentsWeb.CoreComponents
 
       # Common modules used in templates
       alias LocalCentsWeb.Bond

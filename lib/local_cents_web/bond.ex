@@ -7,14 +7,13 @@ defmodule LocalCentsWeb.Bond do
   The front door to Bond, LocalCents' hand-authored component library.
 
   Bond is the set of function components we build our screens from, written to
-  replace the generic `phx.new` defaults in `LocalCentsWeb.CoreComponents` with
-  a cohesive, on-brand look (see
+  replace the generic `phx.new` defaults with a cohesive, on-brand look (see
   [ADR 0004](0004-remove-daisyui-hand-authored-components.html)). This module is
   the single entry point: it `defdelegate`s one function per component to its
   home module, so callers write `Bond.button/1` without needing to know or
   import the deeper module path.
 
-  Prefer these over `CoreComponents` for new UI. Every component here has a
+  Reach for a Bond component for all new UI. Every component here has a
   matching Storybook story; browse the running catalog to see them rendered.
 
   ## Tiers
