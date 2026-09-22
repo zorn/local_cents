@@ -7,7 +7,7 @@ defmodule Storybook.Composites.BookCell do
   @actions """
   <:actions>
     <LocalCentsWeb.Bond.Elements.Button.button variant={:square}>
-      <LocalCentsWeb.CoreComponents.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
+      <LocalCentsWeb.Bond.Elements.Icon.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
     </LocalCentsWeb.Bond.Elements.Button.button>
     <LocalCentsWeb.Bond.Elements.Button.button variant={:outline}>Open</LocalCentsWeb.Bond.Elements.Button.button>
   </:actions>

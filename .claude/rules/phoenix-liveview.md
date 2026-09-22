@@ -17,6 +17,6 @@ shape, Bond components, LiveView event naming — live in
   - You failed to follow the Authenticated Routes guidelines, or you failed to pass `current_scope` to `<Layouts.app>`
   - **Always** fix the `current_scope` error by moving your routes to the proper `live_session` and ensure you pass `current_scope` as needed
 - Phoenix v1.8 moved the `<.flash_group>` component to the `Layouts` module. You are **forbidden** from calling `<.flash_group>` outside of the `layouts.ex` module
-- Out of the box, `core_components.ex` imports an `<.icon name="hero-x-mark" class="w-5 h-5"/>` component for hero icons. **Always** use the `<.icon>` component for icons, **never** use `Heroicons` modules or similar
+- **Always** use Bond's icon component for hero icons — `<Bond.icon name="hero-x-mark" class="w-5 h-5" />` (see `lib/local_cents_web/bond/elements/icon.ex`), **never** `Heroicons` modules or similar. It replaced the `phx.new` `<.icon>` from `core_components.ex`
 - **Always** use Bond's input component for form inputs — `<Bond.input>` (see `lib/local_cents_web/bond/elements/input.ex`). The `phx.new` `<.input>` from `core_components.ex` has been removed in favor of Bond
 - If you override the default input classes with your own values, no default classes are inherited, so your custom classes must fully style the input

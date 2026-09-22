@@ -16,7 +16,7 @@ defmodule LocalCentsWeb.Bond.Elements.ConflictBell do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -34,7 +34,7 @@ defmodule LocalCentsWeb.Bond.Elements.ConflictBell do
       class="relative inline-flex h-8 w-8 items-center justify-center rounded text-surface-700 hover:bg-surface-50"
       {@rest}
     >
-      <.icon name="hero-bell" class="size-5" />
+      <Bond.icon name="hero-bell" class="size-5" />
       <span class="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-error-600 px-1 text-[0.625rem] font-bold leading-none text-white">
         {@count}
       </span>

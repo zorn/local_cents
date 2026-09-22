@@ -69,7 +69,7 @@ defmodule LocalCentsWeb.BookReportLive do
             navigate={~p"/books/#{@book.id}"}
             class="inline-flex items-center gap-1 text-sm text-surface-600 transition-colors hover:text-primary-800"
           >
-            <.icon name="hero-chevron-left" class="h-4 w-4" /> Expenses
+            <Bond.icon name="hero-chevron-left" class="h-4 w-4" /> Expenses
           </.link>
           <h1 class="text-sm font-semibold text-surface-800">Report</h1>
           <form id="report-range-form" phx-change="change_range" class="ml-auto">
@@ -88,7 +88,7 @@ defmodule LocalCentsWeb.BookReportLive do
           :if={@stale?}
           class="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800"
         >
-          <.icon name="hero-exclamation-triangle" class="h-4 w-4 shrink-0" />
+          <Bond.icon name="hero-exclamation-triangle" class="h-4 w-4 shrink-0" />
           <span class="flex-1">This report may be out of date.</span>
           <Bond.button variant={:outline} phx-click="refresh">Refresh</Bond.button>
         </div>
@@ -99,7 +99,7 @@ defmodule LocalCentsWeb.BookReportLive do
           </:loading>
           <:failed :let={failure}>
             <div class="m-4 flex flex-col items-center gap-3 rounded-lg px-6 py-12 text-center">
-              <.icon name="hero-exclamation-circle" class="size-6 text-surface-400" />
+              <Bond.icon name="hero-exclamation-circle" class="size-6 text-surface-400" />
               <p class="text-sm font-medium text-surface-700">Couldn't build the report.</p>
               <p class="max-w-md font-mono text-xs break-words text-surface-500">
                 {failure_detail(failure)}

@@ -29,7 +29,7 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias LocalCentsWeb.ConflictPresenter
   alias Phoenix.LiveView.Rendered
@@ -97,7 +97,7 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
           phx-value-id={conflict.expense_id}
           class="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-surface-100"
         >
-          <.icon name="hero-arrows-pointing-in" class="size-4 shrink-0 text-warning-600" />
+          <Bond.icon name="hero-arrows-pointing-in" class="size-4 shrink-0 text-warning-600" />
           <span class="min-w-0 flex-1">
             <span class="block truncate text-sm font-medium text-surface-800">
               {conflict.kept.value}
@@ -106,7 +106,7 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
               Synced edits to {ConflictPresenter.field_label(conflict.field)} — LocalCents kept one.
             </span>
           </span>
-          <.icon name="hero-chevron-right" class="size-4 text-surface-300" />
+          <Bond.icon name="hero-chevron-right" class="size-4 text-surface-300" />
         </button>
 
         <div :if={@edit_delete_conflicts != []} class="px-3 pt-2.5 pb-1">
@@ -123,7 +123,7 @@ defmodule LocalCentsWeb.Bond.Composites.SyncedChangesPopup do
           id={"needs-decision-#{conflict.expense_id}"}
           class="flex items-start gap-2.5 px-3 py-2.5"
         >
-          <.icon name="hero-trash" class="mt-0.5 size-4 shrink-0 text-error-600" />
+          <Bond.icon name="hero-trash" class="mt-0.5 size-4 shrink-0 text-error-600" />
           <div class="min-w-0 flex-1">
             <span class="block truncate text-sm font-medium text-surface-800">
               {conflict.expense.description}

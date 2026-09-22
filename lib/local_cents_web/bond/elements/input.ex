@@ -69,7 +69,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [icon: 1]
+  alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
@@ -152,7 +152,7 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
       <.input_label label={@label} id={@id} variant={@variant} />
       <div class="relative w-full">
         <div class="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-surface-600">
-          <.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
+          <Bond.icon name="hero-magnifying-glass" class="w-3.5 h-3.5" />
         </div>
         <input
           type="search"
