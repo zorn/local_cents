@@ -69,6 +69,8 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
 
   use Phoenix.Component
 
+  import LocalCentsWeb.Gettext, only: [translate_error: 1]
+
   alias LocalCentsWeb.Bond
 
   alias Phoenix.LiveView.Rendered
@@ -241,11 +243,4 @@ defmodule LocalCentsWeb.Bond.Elements.Input do
   # given (nil), so an intentional falsy value (false, "") still overrides.
   defp override_or_field(nil, from_field), do: from_field
   defp override_or_field(override, _from_field), do: override
-
-  defp translate_error({msg, opts}) do
-    case opts[:count] do
-      nil -> Gettext.dgettext(LocalCentsWeb.Gettext, "errors", msg, opts)
-      count -> Gettext.dngettext(LocalCentsWeb.Gettext, "errors", msg, msg, count, opts)
-    end
-  end
 end

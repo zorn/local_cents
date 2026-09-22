@@ -20,7 +20,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
 
   use Phoenix.Component
 
-  import LocalCentsWeb.CoreComponents, only: [translate_error: 1]
+  import LocalCentsWeb.Gettext, only: [translate_error: 1]
 
   alias LocalCentsWeb.Bond
   alias Phoenix.LiveView.Rendered
@@ -171,7 +171,7 @@ defmodule LocalCentsWeb.Bond.Composites.CategoryRow do
   # The first validation error for the name, gated on interaction like
   # `Bond.Elements.Input` does — a pristine required field shows no error. Rendered
   # below the row (not inside the input) to keep the edit line's height constant;
-  # translation goes through the shared `CoreComponents.translate_error/1`.
+  # translation goes through the shared `LocalCentsWeb.Gettext.translate_error/1`.
   defp name_error(form) do
     field = form[:name]
 
