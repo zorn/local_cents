@@ -216,8 +216,9 @@ defmodule LocalCentsWeb.Layouts do
   end
 
   # Private to Layouts: the connection banners and flash toasts above are the only
-  # callers. No @spec — `Phoenix.LiveView.JS.t()` is opaque, and threading a
-  # constructed `%JS{}` through here violates that contract under Dialyzer.
+  # callers. No @spec — `Phoenix.LiveView.JS.t()` carries an opaque `ops` field
+  # (`internal()`), so threading a constructed `%JS{}` through here trips Dialyzer's
+  # opaque-contract check.
   defp show(js \\ %JS{}, selector) do
     JS.show(js,
       to: selector,
