@@ -28,10 +28,7 @@ defmodule Storybook.Demos.LibraryWindow do
             <Bond.book_cell :for={book <- @books} name={book.name}>
               <:actions>
                 <Bond.button variant={:square}>
-                  <LocalCentsWeb.Bond.Elements.Icon.icon
-                    name="hero-ellipsis-horizontal"
-                    class="w-4 h-4"
-                  />
+                  <Bond.icon name="hero-ellipsis-horizontal" class="w-4 h-4" />
                 </Bond.button>
                 <Bond.button variant={:outline}>Open</Bond.button>
               </:actions>
