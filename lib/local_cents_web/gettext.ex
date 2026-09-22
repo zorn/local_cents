@@ -22,4 +22,21 @@ defmodule LocalCentsWeb.Gettext do
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
   use Gettext.Backend, otp_app: :local_cents
+
+  @doc """
+  Translates a form or API error message into a display string.
+
+  Form and API error messages are generated dynamically, so we translate them at
+  render time by calling Gettext with this backend and the "errors" domain (whose
+  translations live in the `errors.po` file). A `:count` option selects the plural
+  form.
+  """
+  @spec translate_error({msg :: String.t(), opts :: keyword()}) :: String.t()
+  def translate_error({msg, opts}) do
+    if count = opts[:count] do
+      Gettext.dngettext(__MODULE__, "errors", msg, msg, count, opts)
+    else
+      Gettext.dgettext(__MODULE__, "errors", msg, opts)
+    end
+  end
 end

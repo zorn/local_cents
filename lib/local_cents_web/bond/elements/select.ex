@@ -33,6 +33,8 @@ defmodule LocalCentsWeb.Bond.Elements.Select do
 
   use Phoenix.Component
 
+  import LocalCentsWeb.Gettext, only: [translate_error: 1]
+
   alias Phoenix.LiveView.Rendered
   alias Phoenix.LiveView.Socket
 
@@ -159,11 +161,4 @@ defmodule LocalCentsWeb.Bond.Elements.Select do
 
   defp override_or_field(nil, from_field), do: from_field
   defp override_or_field(override, _from_field), do: override
-
-  defp translate_error({msg, opts}) do
-    case opts[:count] do
-      nil -> Gettext.dgettext(LocalCentsWeb.Gettext, "errors", msg, opts)
-      count -> Gettext.dngettext(LocalCentsWeb.Gettext, "errors", msg, msg, count, opts)
-    end
-  end
 end
