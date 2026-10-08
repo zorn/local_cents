@@ -17,8 +17,12 @@ defmodule LocalCentsWeb.Router do
     plug :put_root_layout, html: {LocalCentsWeb.Layouts, :root}
     plug :protect_from_forgery
 
+    # This is the app's whole CSP; the plug below only adds a per-request nonce to
+    # `script-src`. It stays a string literal because Sobelow reads the policy from this
+    # plug call statically and reports any computed value as a missing CSP.
     plug :put_secure_browser_headers, %{
-      "content-security-policy" => LocalCentsWeb.Plugs.ContentSecurityPolicy.fallback_csp()
+      "content-security-policy" =>
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     }
 
     plug LocalCentsWeb.Plugs.ContentSecurityPolicy
