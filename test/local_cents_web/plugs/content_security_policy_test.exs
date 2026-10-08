@@ -6,32 +6,41 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
   # opt out of Jump.CredoChecks.AvoidSocketAssignsInTest
   @moduletag :plug_test
 
+  @base_policy "default-src 'self'; script-src 'self'; frame-ancestors 'none'"
+
   describe "call/2" do
-    test "sets the content-security-policy response header" do
-      conn = ContentSecurityPolicy.call(build_conn(), [])
-      assert get_resp_header(conn, "content-security-policy") != []
+    test "adds the nonce to script-src and keeps the rest of the policy" do
+      conn = ContentSecurityPolicy.call(policy_conn(), [])
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      assert csp ==
+               "default-src 'self'; script-src 'self' 'nonce-#{conn.assigns.csp_nonce}'; frame-ancestors 'none'"
+    end
+
+    test "raises when no policy was set before it" do
+      assert_raise ArgumentError, fn -> ContentSecurityPolicy.call(build_conn(), []) end
     end
 
     test "includes a nonce in the CSP header" do
-      conn = ContentSecurityPolicy.call(build_conn(), [])
+      conn = ContentSecurityPolicy.call(policy_conn(), [])
       [csp] = get_resp_header(conn, "content-security-policy")
       assert csp =~ ~r/nonce-[A-Za-z0-9+\/=]+/
     end
 
     test "assigns csp_nonce to the conn" do
-      conn = ContentSecurityPolicy.call(build_conn(), [])
+      conn = ContentSecurityPolicy.call(policy_conn(), [])
       assert byte_size(conn.assigns.csp_nonce) > 0
     end
 
     test "nonce in CSP header matches the csp_nonce assign" do
-      conn = ContentSecurityPolicy.call(build_conn(), [])
+      conn = ContentSecurityPolicy.call(policy_conn(), [])
       [csp] = get_resp_header(conn, "content-security-policy")
       assert csp =~ "nonce-#{conn.assigns.csp_nonce}"
     end
 
     test "generates a unique nonce per request" do
-      conn1 = ContentSecurityPolicy.call(build_conn(), [])
-      conn2 = ContentSecurityPolicy.call(build_conn(), [])
+      conn1 = ContentSecurityPolicy.call(policy_conn(), [])
+      conn2 = ContentSecurityPolicy.call(policy_conn(), [])
       refute conn1.assigns.csp_nonce == conn2.assigns.csp_nonce
     end
   end
@@ -48,9 +57,12 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
       :ok
     end
 
-    test "includes CSP header on browser requests", ~M{conn} do
-      conn = get(conn, ~p"/")
-      assert get_resp_header(conn, "content-security-policy") != []
+    test "serves the full policy with the nonce in script-src", ~M{conn} do
+      conn = get(conn, ~p"/library")
+      [csp] = get_resp_header(conn, "content-security-policy")
+
+      assert String.replace(csp, ~r/ 'nonce-[A-Za-z0-9+\/=]+'/, "") ==
+               "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     end
 
     # `/` only redirects to the library, so this asserts against a route that actually
@@ -61,5 +73,9 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
       [_, nonce] = Regex.run(~r/'nonce-([A-Za-z0-9+\/=]+)'/, csp)
       assert conn.resp_body =~ ~s(nonce="#{nonce}")
     end
+  end
+
+  defp policy_conn do
+    put_resp_header(build_conn(), "content-security-policy", @base_policy)
   end
 end

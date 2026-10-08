@@ -1,23 +1,17 @@
 defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
   @moduledoc """
-  Generates a per-request CSP nonce and sets the Content-Security-Policy header.
+  Adds a per-request nonce to the Content-Security-Policy header.
 
-  The nonce is stored in `conn.assigns.csp_nonce` for use in templates. The
-  header this plug sets replaces the static policy the router passes to
-  `put_secure_browser_headers`, which exists only for Sobelow's static analysis.
+  The policy itself is the literal the router passes to `put_secure_browser_headers`,
+  which keeps it in one place that Sobelow's static analysis can read. This plug runs
+  after it and allows the nonce in `script-src`, so the root layout's inline script can
+  run without loosening the policy for any other script. The nonce is stored in
+  `conn.assigns.csp_nonce` for use in templates.
   """
 
   import Plug.Conn
 
-  @other_directives [
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
-    "font-src 'self' data:",
-    "connect-src 'self'",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ]
+  @script_src "script-src 'self'"
 
   @spec init(opts :: keyword()) :: keyword()
   def init(opts), do: opts
@@ -27,13 +21,27 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
     nonce = 16 |> :crypto.strong_rand_bytes() |> Base.encode64()
 
     csp =
-      Enum.join(
-        ["default-src 'self'", "script-src 'self' 'nonce-#{nonce}'" | @other_directives],
-        "; "
-      )
+      conn
+      |> get_resp_header("content-security-policy")
+      |> add_nonce(nonce)
 
     conn
     |> assign(:csp_nonce, nonce)
     |> put_resp_header("content-security-policy", csp)
+  end
+
+  # Raising beats passing the policy through: without the nonce the inline script is
+  # blocked, and that failure only shows up as a console error in the browser.
+  defp add_nonce([policy], nonce) do
+    if String.contains?(policy, @script_src) do
+      String.replace(policy, @script_src, "#{@script_src} 'nonce-#{nonce}'", global: false)
+    else
+      raise ArgumentError, "expected the content-security-policy to contain #{@script_src}"
+    end
+  end
+
+  defp add_nonce(_headers, _nonce) do
+    raise ArgumentError,
+          "expected one content-security-policy header, set by put_secure_browser_headers"
   end
 end
