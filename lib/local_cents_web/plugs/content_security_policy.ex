@@ -2,11 +2,9 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
   @moduledoc """
   Generates a per-request CSP nonce and sets the Content-Security-Policy header.
 
-  The nonce is stored in `conn.assigns.csp_nonce` for use in templates.
-  Use `fallback_csp/0` to get a static version (without nonce) for passing to
-  `put_secure_browser_headers` in the router — this satisfies sobelow's static
-  analysis, which only recognises CSP set via that plug and cannot follow this
-  custom plug at runtime.
+  The nonce is stored in `conn.assigns.csp_nonce` for use in templates. The
+  header this plug sets replaces the static policy the router passes to
+  `put_secure_browser_headers`, which exists only for Sobelow's static analysis.
   """
 
   import Plug.Conn
@@ -20,11 +18,6 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicy do
     "base-uri 'self'",
     "form-action 'self'"
   ]
-
-  @spec fallback_csp() :: String.t()
-  def fallback_csp do
-    Enum.join(["default-src 'self'", "script-src 'self'" | @other_directives], "; ")
-  end
 
   @spec init(opts :: keyword()) :: keyword()
   def init(opts), do: opts

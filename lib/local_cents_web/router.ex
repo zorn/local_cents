@@ -17,8 +17,12 @@ defmodule LocalCentsWeb.Router do
     plug :put_root_layout, html: {LocalCentsWeb.Layouts, :root}
     plug :protect_from_forgery
 
+    # The CSP plug below replaces this header with a per-request nonce policy, so this
+    # value is never served. It exists for Sobelow, which only recognizes a CSP set here
+    # and only as a literal — it reports a function call or module attribute as missing.
     plug :put_secure_browser_headers, %{
-      "content-security-policy" => LocalCentsWeb.Plugs.ContentSecurityPolicy.fallback_csp()
+      "content-security-policy" =>
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     }
 
     plug LocalCentsWeb.Plugs.ContentSecurityPolicy

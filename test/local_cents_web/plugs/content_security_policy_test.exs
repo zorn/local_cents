@@ -36,20 +36,6 @@ defmodule LocalCentsWeb.Plugs.ContentSecurityPolicyTest do
     end
   end
 
-  describe "fallback_csp/0" do
-    test "omits the per-request nonce" do
-      refute ContentSecurityPolicy.fallback_csp() =~ "nonce-"
-    end
-
-    test "includes expected directives" do
-      csp = ContentSecurityPolicy.fallback_csp()
-      assert csp =~ "default-src 'self'"
-      assert csp =~ "script-src 'self'"
-      assert csp =~ "frame-ancestors 'none'"
-      assert csp =~ "form-action 'self'"
-    end
-  end
-
   describe "browser pipeline integration" do
     @describetag :tmp_dir
 
