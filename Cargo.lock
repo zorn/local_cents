@@ -16,9 +16,9 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "automerge"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1b59cbd9e7685a1ac6bf6046ddcd8acb550fa5bf03c09f6c1056728a742b40d"
+checksum = "2fb849130973a7808a167887f56b1e8bdc36b9b541542602dcb337f34aecf47b"
 dependencies = [
  "cfg-if",
  "flate2",
@@ -40,9 +40,9 @@ dependencies = [
 
 [[package]]
 name = "autosurgeon"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f752152713595c654d109c4d53bebee0d71883447d5c629580c575fbe9569c7"
+checksum = "e55a80afb1c5489643a3502d84c92908f3404f8d870f808d29db682146f1e752"
 dependencies = [
  "automerge",
  "autosurgeon-derive",
@@ -52,9 +52,9 @@ dependencies = [
 
 [[package]]
 name = "autosurgeon-derive"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05d40c14f9a45c5dc3ddb857728ecc9d84a0756b65803d4bf25604caa8ad05cb"
+checksum = "5bc4c2639b1c354deaeccc8e3ab1b9b5ce08cbd8f52168d3a058dee6b8923258"
 dependencies = [
  "proc-macro2",
  "quote",
