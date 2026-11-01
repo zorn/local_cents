@@ -269,7 +269,7 @@ defmodule LocalCents.MixProject do
 
       # For high-level, browser-like feature tests that read as user flows
       # (`visit/2`, `click_button/2`, `fill_in/3`, `assert_has/3`).
-      {:phoenix_test, "~> 0.12.0", only: :test, runtime: false},
+      {:phoenix_test, "~> 0.13.1", only: :test, runtime: false},
 
       # For local, exploratory test-coverage reports (`mix coveralls.html`). Kept
       # `only: :test` and deliberately out of `precommit`/CI — coverage is an
@@ -291,7 +291,7 @@ defmodule LocalCents.MixProject do
 
       # For enforcing domain-context isolation at compile time — each context
       # exposes a public API boundary and keeps its internals private.
-      {:boundary, "~> 0.11.0", runtime: false},
+      {:boundary, "~> 0.12.0", runtime: false},
 
       # For security scans.
       {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
